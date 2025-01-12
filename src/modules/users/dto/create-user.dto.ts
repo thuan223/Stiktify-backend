@@ -14,3 +14,15 @@ export class CreateUserDto {
   @IsOptional()
   image: string;
 }
+
+export class UserCreateByManager {
+  @IsNotEmpty({ message: 'Name is required!' })
+  userName: string;
+
+  @IsNotEmpty({ message: 'Email is required!' })
+  @IsEmail({}, { message: 'Email is not valid' })
+  email: string;
+
+  @IsNotEmpty({ message: 'Password  is required!' })
+  password: string;
+}
