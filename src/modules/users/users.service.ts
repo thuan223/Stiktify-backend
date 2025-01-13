@@ -200,7 +200,7 @@ export class UsersService {
       throw new BadRequestException(`User is in banned state with ID: ${id}`)
     }
 
-    const result = await this.userModel.findByIdAndUpdate(id, { isBan: true })
+    const result = await this.userModel.findByIdAndUpdate(id, { isBan: true, status: "Offline" })
     return {
       _id: result._id,
       isBan: result.isBan
@@ -217,7 +217,7 @@ export class UsersService {
       throw new BadRequestException(`User is in unbanned state with ID: ${id}`)
     }
 
-    const result = await this.userModel.findByIdAndUpdate(id, { isBan: false })
+    const result = await this.userModel.findByIdAndUpdate(id, { isBan: false, status: "Offline" })
     return {
       _id: result._id,
       isBan: result.isBan
@@ -229,18 +229,35 @@ export class UsersService {
     if (isExistEmail) {
       throw new BadRequestException(`Email already exists: ${createDto.email}`);
     }
+
     const isExistUsername = await this.isUsernameExist(createDto.userName);
     if (isExistUsername) {
       throw new BadRequestException(`Username already exists: ${createDto.userName}`);
     }
+    const codeId = uuidv4();
     const hashPassword = await hashPasswordHelper(createDto.password)
+
     const result = await this.userModel.create(
       {
+        fullname: createDto.fullname,
         userName: createDto.userName,
         email: createDto.email,
         password: hashPassword,
-        role: "ADMIN"
+        role: "ADMIN",
+        activeCode: codeId,
+        codeExpired: dayjs().add(10, 'minutes'),
       })
+
+    this.mailerService.sendMail({
+      to: result.email, // list of receivers
+      // from: 'noreply@nestjs.com', // sender address
+      subject: 'Active your account at @ThuanTnn', // Subject line
+      template: 'register',
+      context: {
+        name: result.userName ?? result.email,
+        activationCode: codeId,
+      },
+    });
     return result
   }
 

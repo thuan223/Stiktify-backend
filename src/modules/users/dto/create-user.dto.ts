@@ -17,6 +17,9 @@ export class CreateUserDto {
 
 export class UserCreateByManager {
   @IsNotEmpty({ message: 'Name is required!' })
+  fullname: string;
+
+  @IsNotEmpty({ message: 'userName is required!' })
   userName: string;
 
   @IsNotEmpty({ message: 'Email is required!' })
