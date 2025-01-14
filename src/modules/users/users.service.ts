@@ -20,7 +20,7 @@ export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private readonly mailerService: MailerService,
-  ) { }
+  ) {}
   isEmailExist = async (email: string) => {
     const isExist = await this.userModel.exists({ email });
     if (isExist) return true;
@@ -140,7 +140,7 @@ export class UsersService {
       to: user.email, // list of receivers
       // from: 'noreply@nestjs.com', // sender address
       subject: 'Change your password account at @ThuanTnn', // Subject line
-      template: 'register',
+      template: 'forgotpassword',
       context: {
         name: user.userName ?? user.email,
         activationCode: codeId,
@@ -182,46 +182,52 @@ export class UsersService {
 
   async isIdExist(id: string) {
     try {
-      const result = await this.userModel.findById(id)
-      if (!result) return null
+      const result = await this.userModel.findById(id);
+      if (!result) return null;
       return result;
     } catch (error) {
-      return null
+      return null;
     }
   }
 
   async handleBanUser(id: string) {
     const checkId = await this.isIdExist(id);
     if (!checkId) {
-      throw new BadRequestException(`User not found with ID: ${id}`)
+      throw new BadRequestException(`User not found with ID: ${id}`);
     }
 
     if (checkId.isBan === true) {
-      throw new BadRequestException(`User is in banned state with ID: ${id}`)
+      throw new BadRequestException(`User is in banned state with ID: ${id}`);
     }
 
-    const result = await this.userModel.findByIdAndUpdate(id, { isBan: true, status: "Offline" })
+    const result = await this.userModel.findByIdAndUpdate(id, {
+      isBan: true,
+      status: 'Offline',
+    });
     return {
       _id: result._id,
-      isBan: result.isBan
-    }
+      isBan: result.isBan,
+    };
   }
 
   async handleUnBanUser(id: string) {
     const checkId = await this.isIdExist(id);
     if (!checkId) {
-      throw new BadRequestException(`User not found with ID: ${id}`)
+      throw new BadRequestException(`User not found with ID: ${id}`);
     }
 
     if (checkId.isBan === false) {
-      throw new BadRequestException(`User is in unbanned state with ID: ${id}`)
+      throw new BadRequestException(`User is in unbanned state with ID: ${id}`);
     }
 
-    const result = await this.userModel.findByIdAndUpdate(id, { isBan: false, status: "Offline" })
+    const result = await this.userModel.findByIdAndUpdate(id, {
+      isBan: false,
+      status: 'Offline',
+    });
     return {
       _id: result._id,
-      isBan: result.isBan
-    }
+      isBan: result.isBan,
+    };
   }
 
   async handleCreateUser(createDto: UserCreateByManager) {
@@ -232,21 +238,22 @@ export class UsersService {
 
     const isExistUsername = await this.isUsernameExist(createDto.userName);
     if (isExistUsername) {
-      throw new BadRequestException(`Username already exists: ${createDto.userName}`);
+      throw new BadRequestException(
+        `Username already exists: ${createDto.userName}`,
+      );
     }
     const codeId = uuidv4();
-    const hashPassword = await hashPasswordHelper(createDto.password)
+    const hashPassword = await hashPasswordHelper(createDto.password);
 
-    const result = await this.userModel.create(
-      {
-        fullname: createDto.fullname,
-        userName: createDto.userName,
-        email: createDto.email,
-        password: hashPassword,
-        role: "ADMIN",
-        activeCode: codeId,
-        codeExpired: dayjs().add(10, 'minutes'),
-      })
+    const result = await this.userModel.create({
+      fullname: createDto.fullname,
+      userName: createDto.userName,
+      email: createDto.email,
+      password: hashPassword,
+      role: 'ADMIN',
+      activeCode: codeId,
+      codeExpired: dayjs().add(10, 'minutes'),
+    });
 
     this.mailerService.sendMail({
       to: result.email, // list of receivers
@@ -258,53 +265,57 @@ export class UsersService {
         activationCode: codeId,
       },
     });
-    return result
+    return result;
   }
 
-
   async handleUpdate(updateUserDto: UpdateUserDto) {
-    const checkId = await this.isIdExist(updateUserDto._id)
+    const checkId = await this.isIdExist(updateUserDto._id);
     if (!checkId) {
-      throw new BadRequestException(`User not found with ID: ${updateUserDto._id}`)
+      throw new BadRequestException(
+        `User not found with ID: ${updateUserDto._id}`,
+      );
     }
 
-    const result = await this.userModel.findByIdAndUpdate(updateUserDto._id, updateUserDto)
+    const result = await this.userModel.findByIdAndUpdate(
+      updateUserDto._id,
+      updateUserDto,
+    );
     return {
-      _id: result._id
-    }
+      _id: result._id,
+    };
   }
 
   async handleGetListUser(query: string, current: number, pageSize: number) {
     const { filter, sort } = aqp(query);
 
-    if (filter.current) delete filter.current
-    if (filter.pageSize) delete filter.pageSize
+    if (filter.current) delete filter.current;
+    if (filter.pageSize) delete filter.pageSize;
 
-    if (!current) current = 1
-    if (!pageSize) pageSize = 10
+    if (!current) current = 1;
+    if (!pageSize) pageSize = 10;
 
     //Tính tổng số lượng
     const totalItems = (await this.userModel.find(filter)).length;
     //Tính tổng số trang
-    const totalPages = Math.ceil(totalItems / pageSize)
+    const totalPages = Math.ceil(totalItems / pageSize);
 
-    const skip = (+current - 1) * (+pageSize)
+    const skip = (+current - 1) * +pageSize;
 
     const result = await this.userModel
       .find(filter)
       .limit(pageSize)
       .skip(skip)
-      .select("-password")
-      .sort(sort as any)
+      .select('-password')
+      .sort(sort as any);
 
     return {
       meta: {
-        current: current,// trang hien tai
-        pageSize: pageSize,// so luong ban ghi
-        pages: totalPages,// tong so trang voi dieu kien query
-        total: totalItems// tong so ban ghi
+        current: current, // trang hien tai
+        pageSize: pageSize, // so luong ban ghi
+        pages: totalPages, // tong so trang voi dieu kien query
+        total: totalItems, // tong so ban ghi
       },
-      result: result
-    }
+      result: result,
+    };
   }
 }
