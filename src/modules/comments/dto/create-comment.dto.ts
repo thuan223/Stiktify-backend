@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional } from "class-validator";
+import { IsMongoId, IsNotEmpty, IsOptional } from "class-validator";
 
 export class CreateCommentDto {
     @IsNotEmpty({ message: 'User ID must not be empty!' })
@@ -14,7 +14,11 @@ export class CreateCommentDto {
     CommentDescription: string;
 }
 
-export class UpdateCommentDto {
-    @IsNotEmpty({})
-    _id: string
+export class UpdateCommentDescriptionDto {
+    @IsNotEmpty()
+    @IsMongoId()
+    _id: string;
+
+    @IsNotEmpty({ message: 'Comment description must not be empty!' })
+    CommentDescription: string;
 }

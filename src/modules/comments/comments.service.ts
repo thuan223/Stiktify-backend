@@ -1,11 +1,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { CreateCommentDto } from './dto/create-comment.dto';
+import { CreateCommentDto, UpdateCommentDescriptionDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 import { Comment } from './schema/comment.schema';
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import aqp from 'api-query-params';
-import { query } from 'express';
 
 @Injectable()
 export class CommentsService {
@@ -30,13 +29,13 @@ export class CommentsService {
     }
   }
 
-  async findAll(query: string, current: number, pageSize: number) {
+  async findAll(query: string, current: number, pageSize: number, parentId: string) {
     if (!current) current == 1;
     if (!pageSize) pageSize == 10;
     const { filter, sort } = aqp(query);
     if (filter.current) delete filter.current;
     if (filter.pageSize) delete filter.pageSize;
-    filter.parentId = { "$ne": null };
+    filter.parentId = mongoose.isValidObjectId(parentId) ? parentId : null;
     const totalItems = (await this.commentModel.find(filter)).length;
     const totalPages = Math.ceil(totalItems / pageSize);
     const skip = (current - 1) * (pageSize);
@@ -48,19 +47,31 @@ export class CommentsService {
     return { list, totalPages };
   }
 
-  async findAllOfParent(query: string, current: number, pageSize: number, id: string) {
-
+  async findOne(id: string) {
+    if (mongoose.isValidObjectId(id)) {
+      return await this.commentModel.findOne({ _id: id });
+    }
+    else {
+      throw new BadRequestException("Invalid format object id!");
+    }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} comment`;
+  async update(updateCommentDto: UpdateCommentDescriptionDto) {
+    return await this.commentModel.updateOne(
+      { _id: updateCommentDto._id },
+      { CommentDescription: updateCommentDto.CommentDescription }
+    );
   }
 
-  update(id: number, updateCommentDto: UpdateCommentDto) {
-    return `This action updates a #${id} comment`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} comment`;
+  async remove(id: string) {
+    // Check id
+    if (mongoose.isValidObjectId(id)) {
+      // Delete
+      return await this.commentModel.deleteOne({
+        _id: id
+      });
+    } else {
+      throw new BadRequestException("Invalid format object id");
+    }
   }
 }
