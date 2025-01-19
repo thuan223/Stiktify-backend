@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
+import { CreateUserDto, UserCreateByManager } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './schemas/user.schema';
@@ -13,6 +13,7 @@ import {
 import { hashPasswordHelper } from '@/helpers/ultil';
 import { v4 as uuidv4 } from 'uuid';
 import dayjs from 'dayjs';
+import aqp from 'api-query-params';
 
 @Injectable()
 export class UsersService {
@@ -30,6 +31,7 @@ export class UsersService {
     if (isExist) return true;
     return false;
   };
+
   async handleRegister(registerDto: CreateAuthDto) {
     const { userName, email, password } = registerDto;
 
@@ -69,9 +71,6 @@ export class UsersService {
     };
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
   async findByEmail(email: string) {
     return await this.userModel.findOne({ email });
   }
@@ -141,7 +140,7 @@ export class UsersService {
       to: user.email, // list of receivers
       // from: 'noreply@nestjs.com', // sender address
       subject: 'Change your password account at @ThuanTnn', // Subject line
-      template: 'register',
+      template: 'forgotpassword',
       context: {
         name: user.userName ?? user.email,
         activationCode: codeId,
@@ -179,5 +178,144 @@ export class UsersService {
       throw new BadRequestException('The code is invalid or has expired');
     }
     return user.email;
+  }
+
+  async isIdExist(id: string) {
+    try {
+      const result = await this.userModel.findById(id);
+      if (!result) return null;
+      return result;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async handleBanUser(id: string) {
+    const checkId = await this.isIdExist(id);
+    if (!checkId) {
+      throw new BadRequestException(`User not found with ID: ${id}`);
+    }
+
+    if (checkId.isBan === true) {
+      throw new BadRequestException(`User is in banned state with ID: ${id}`);
+    }
+
+    const result = await this.userModel.findByIdAndUpdate(id, {
+      isBan: true,
+      status: 'Offline',
+    });
+    return {
+      _id: result._id,
+      isBan: result.isBan,
+    };
+  }
+
+  async handleUnBanUser(id: string) {
+    const checkId = await this.isIdExist(id);
+    if (!checkId) {
+      throw new BadRequestException(`User not found with ID: ${id}`);
+    }
+
+    if (checkId.isBan === false) {
+      throw new BadRequestException(`User is in unbanned state with ID: ${id}`);
+    }
+
+    const result = await this.userModel.findByIdAndUpdate(id, {
+      isBan: false,
+      status: 'Offline',
+    });
+    return {
+      _id: result._id,
+      isBan: result.isBan,
+    };
+  }
+
+  async handleCreateUser(createDto: UserCreateByManager) {
+    const isExistEmail = await this.isEmailExist(createDto.email);
+    if (isExistEmail) {
+      throw new BadRequestException(`Email already exists: ${createDto.email}`);
+    }
+
+    const isExistUsername = await this.isUsernameExist(createDto.userName);
+    if (isExistUsername) {
+      throw new BadRequestException(
+        `Username already exists: ${createDto.userName}`,
+      );
+    }
+    const codeId = uuidv4();
+    const hashPassword = await hashPasswordHelper(createDto.password);
+
+    const result = await this.userModel.create({
+      fullname: createDto.fullname,
+      userName: createDto.userName,
+      email: createDto.email,
+      password: hashPassword,
+      role: 'ADMIN',
+      activeCode: codeId,
+      codeExpired: dayjs().add(10, 'minutes'),
+    });
+
+    this.mailerService.sendMail({
+      to: result.email, // list of receivers
+      // from: 'noreply@nestjs.com', // sender address
+      subject: 'Active your account at @ThuanTnn', // Subject line
+      template: 'register',
+      context: {
+        name: result.userName ?? result.email,
+        activationCode: codeId,
+      },
+    });
+    return result;
+  }
+
+  async handleUpdate(updateUserDto: UpdateUserDto) {
+    const checkId = await this.isIdExist(updateUserDto._id);
+    if (!checkId) {
+      throw new BadRequestException(
+        `User not found with ID: ${updateUserDto._id}`,
+      );
+    }
+
+    const result = await this.userModel.findByIdAndUpdate(
+      updateUserDto._id,
+      updateUserDto,
+    );
+    return {
+      _id: result._id,
+    };
+  }
+
+  async handleGetListUser(query: string, current: number, pageSize: number) {
+    const { filter, sort } = aqp(query);
+
+    if (filter.current) delete filter.current;
+    if (filter.pageSize) delete filter.pageSize;
+
+    if (!current) current = 1;
+    if (!pageSize) pageSize = 10;
+
+    //Tính tổng số lượng
+    const totalItems = (await this.userModel.find(filter)).length;
+    //Tính tổng số trang
+    const totalPages = Math.ceil(totalItems / pageSize);
+
+    const skip = (+current - 1) * +pageSize;
+
+    const result = await this.userModel
+      .find(filter)
+      .limit(pageSize)
+      .skip(skip)
+      .select('-password')
+      .sort(sort as any);
+
+    return {
+      meta: {
+        current: current, // trang hien tai
+        pageSize: pageSize, // so luong ban ghi
+        pages: totalPages, // tong so trang voi dieu kien query
+        total: totalItems, // tong so ban ghi
+      },
+      result: result,
+    };
   }
 }

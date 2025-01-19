@@ -6,20 +6,48 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
+import { CreateUserDto, UserCreateByManager } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ResponseMessage } from '@/decorator/customize';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
+  @Get("ban-user/:id")
+  @ResponseMessage('Banned user successfully')
+  banUser(@Param("id") id: string) {
+    return this.usersService.handleBanUser(id)
   }
 
+  @Get("unbanned-user/:id")
+  @ResponseMessage('Unbanned user successfully')
+  unBanUser(@Param("id") id: string) {
+    return this.usersService.handleUnBanUser(id)
+  }
+
+  @Post("create-user")
+  @ResponseMessage('Create Successfully')
+  create(@Body() createDto: UserCreateByManager) {
+    return this.usersService.handleCreateUser(createDto)
+  }
+
+  @Patch('update-user')
+  @ResponseMessage('Update Successfully')
+  update(@Body() updateUserDto: UpdateUserDto) {
+    return this.usersService.handleUpdate(updateUserDto);
+  }
+
+  @Get("list-user")
+  findAllUser(
+    @Query() query: string,
+    @Query("current") current: string,
+    @Query("pageSize") pageSize: string,
+  ) {
+    return this.usersService.handleGetListUser(query, +current, +pageSize)
+  }
 
 }

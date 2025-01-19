@@ -9,7 +9,7 @@ export class CreateAuthDto {
   @IsNotEmpty({ message: 'Password must not be empty' })
   password: string;
 }
-export class CodeAuthDto {
+export class  CodeAuthDto {
   @IsNotEmpty({ message: '_id must not be empty' })
   _id: string;
   @IsNotEmpty({ message: 'Code must not be empty' })
