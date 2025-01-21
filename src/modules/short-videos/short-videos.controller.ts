@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestj
 import { ShortVideosService } from './short-videos.service';
 import { CreateShortVideoDto } from './dto/create-short-video.dto';
 import { UpdateShortVideoDto } from './dto/update-short-video.dto';
+import { ResponseMessage } from '@/decorator/customize';
 
 @Controller('short-videos')
 export class ShortVideosController {
@@ -21,9 +22,10 @@ export class ShortVideosController {
     return this.shortVideosService.findAll(query, +current, +pageSize);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.shortVideosService.findOne(+id);
+  @Post('flag-video')
+  @ResponseMessage('Update state successfully')
+  findOne(@Body() req: { flag: boolean, _id: string }) {
+    return this.shortVideosService.handleFlagVideo(req);
   }
 
   @Patch(':id')

@@ -37,10 +37,10 @@ export class Video {
   @Prop()
   videoTag: string[];
 
-  @Prop()
+  @Prop({ default: false })
   isDelete: boolean;
 
-  @Prop()
+  @Prop({ default: false })
   flag: boolean;
 }
 

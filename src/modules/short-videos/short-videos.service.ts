@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateShortVideoDto } from './dto/create-short-video.dto';
 import { UpdateShortVideoDto } from './dto/update-short-video.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -68,5 +68,25 @@ export class ShortVideosService {
 
   remove(id: number) {
     return `This action removes a #${id} shortVideo`;
+  }
+
+  async isIdExist(id: string) {
+    try {
+      const result = await this.shortVideoModel.exists({ _id: id });
+      if (result) return true;
+      return false;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  async handleFlagVideo(req: { flag: boolean, _id: string }) {
+    const checkId = await this.isIdExist(req._id)
+    if (checkId === false) {
+      throw new BadRequestException(`Short video not found with ID: ${req._id}`);
+    } else {
+      const result = await this.shortVideoModel.findByIdAndUpdate(req._id, { flag: req.flag })
+      return result._id
+    }
   }
 }
