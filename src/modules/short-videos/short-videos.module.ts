@@ -12,4 +12,4 @@ import { Video, VideoSchema } from './schemas/short-video.schema';
   providers: [ShortVideosService],
   exports: [ShortVideosService],
 })
-export class ShortVideosModule {}
+export class ShortVideosModule { }
