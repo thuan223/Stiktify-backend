@@ -1,11 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { ReactionTypesService } from './reaction-types.service';
-import { CreateReactionTypeDto } from './dto/create-reaction-type.dto';
+import { CreateReactionTypeDto, UpdateReactionTypeDTO } from './dto/create-reaction-type.dto';
 import { UpdateReactionTypeDto } from './dto/update-reaction-type.dto';
 
 @Controller('reaction-types')
 export class ReactionTypesController {
-  constructor(private readonly reactionTypesService: ReactionTypesService) {}
+  constructor(private readonly reactionTypesService: ReactionTypesService) { }
 
   @Post()
   create(@Body() createReactionTypeDto: CreateReactionTypeDto) {
@@ -13,8 +13,10 @@ export class ReactionTypesController {
   }
 
   @Get()
-  findAll() {
-    return this.reactionTypesService.findAll();
+  async findAll(
+    @Query() query: string,
+  ) {
+    return await this.reactionTypesService.findAll(query);
   }
 
   @Get(':id')
@@ -22,9 +24,9 @@ export class ReactionTypesController {
     return this.reactionTypesService.findOne(+id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateReactionTypeDto: UpdateReactionTypeDto) {
-    return this.reactionTypesService.update(+id, updateReactionTypeDto);
+  @Patch()
+  update(@Body() updateReactionTypeDto: UpdateReactionTypeDTO) {
+    return this.reactionTypesService.update(updateReactionTypeDto);
   }
 
   @Delete(':id')
