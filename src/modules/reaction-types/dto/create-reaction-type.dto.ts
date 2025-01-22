@@ -1,4 +1,4 @@
-import { IsNotEmpty } from "class-validator";
+import { IsMongoId, IsNotEmpty } from "class-validator";
 
 export class CreateReactionTypeDto {
     @IsNotEmpty()
@@ -9,6 +9,10 @@ export class CreateReactionTypeDto {
 }
 
 export class UpdateReactionTypeDTO {
+    @IsMongoId()
+    @IsNotEmpty()
+    _id: string
+
     @IsNotEmpty()
     reactionIcon: string;
 }
