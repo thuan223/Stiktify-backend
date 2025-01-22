@@ -23,7 +23,7 @@ export class ShortVideosController {
   }
 
   @Post('flag-video')
-  @ResponseMessage('Update state successfully')
+  @ResponseMessage('Update status successfully')
   findOne(@Body() req: { flag: boolean, _id: string }) {
     return this.shortVideosService.handleFlagVideo(req);
   }
