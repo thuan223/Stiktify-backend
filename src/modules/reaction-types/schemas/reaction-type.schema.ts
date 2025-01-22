@@ -7,6 +7,9 @@ export type ReactionTypeDocument = HydratedDocument<ReactionType>;
 export class ReactionType {
   @Prop()
   reactionTypeName: string;
+
+  @Prop()
+  reactionIcon: string;
 }
 
 export const ReactionTypeSchema = SchemaFactory.createForClass(ReactionType);
