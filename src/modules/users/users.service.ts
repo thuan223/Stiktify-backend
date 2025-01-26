@@ -266,13 +266,12 @@ export class UsersService {
     userId: string,
     updateFields: Partial<{ fullname: string; email: string; phone: string; dob: string; address: string }>,
   ) {
-    // Kiểm tra _id hợp lệ
+
     const checkId = await this.isIdExist(userId);
     if (!checkId) {
       throw new BadRequestException(`User not found with ID: ${userId}`);
     }
   
-    // Kiểm tra và xử lý cập nhật email nếu có
     if (updateFields.email) {
       const isExistEmail = await this.isEmailExist(updateFields.email);
       if (isExistEmail) {
@@ -280,14 +279,12 @@ export class UsersService {
       }
     }
   
-    // Cập nhật user trong database
     const result = await this.userModel.findByIdAndUpdate(
       userId,
       { $set: updateFields },
       { new: true },
     );
   
-    // Trả về thông tin cập nhật
     return {
       _id: result._id,
       fullname: result.fullname,
@@ -387,6 +384,56 @@ export class UsersService {
         total: totalItems, // tong so ban ghi
       },
       result: result,
+    };
+  }
+
+  async handleSearchUser(
+    search: string,
+    current: number = 1,
+    pageSize: number = 10,
+    sort: any = {},
+  ) {
+    if (!search || search.trim() === '') {
+      throw new BadRequestException('Search keyword cannot be empty!');
+    }
+  
+    const searchRegex = new RegExp(search, 'i');
+    const filter = {
+      $and: [
+        {
+          $or: [
+            { userName: searchRegex },
+            { fullname: searchRegex },
+          ],
+        },
+        { role: { $ne: 'ADMIN' } }, 
+      ],
+    };
+  
+    const totalItems = await this.userModel.countDocuments(filter);
+  
+    // Nếu không tìm thấy kết quả nào
+    if (totalItems === 0) {
+      throw new BadRequestException('No users found matching your search criteria!');
+    }
+  
+    const skip = (current - 1) * pageSize;
+  
+    const result = await this.userModel
+      .find(filter)
+      .skip(skip)
+      .limit(pageSize)
+      .sort(sort)
+      .select('userName fullname'); 
+  
+    return {
+      meta: {
+        current,
+        pageSize,
+        totalItems,
+        totalPages: Math.ceil(totalItems / pageSize),
+      },
+      result,
     };
   }
 }
