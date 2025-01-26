@@ -89,4 +89,39 @@ export class ShortVideosService {
       return result._id
     }
   }
+
+  async findUserVideos(userId: string, current: number, pageSize: number) {
+    const filter = { userId }; 
+    const totalItems = await this.shortVideoModel.countDocuments(filter);
+    if (totalItems === 0) {
+      return {
+        meta: {
+          current,
+          pageSize,
+          totalItems: 0,
+          totalPages: 0,
+        },
+        result: [],
+        message: 'No videos found for this user',
+      };
+    }
+    const skip = (current - 1) * pageSize;
+    const result = await this.shortVideoModel
+      .find(filter)
+      .skip(skip)
+      .limit(pageSize)
+      .sort({ createdAt: -1 }) // Sắp xếp theo thời gian tạo mới nhấ
+      .select('videoUrl totalFavorite totalReaction totalViews videoDescription') 
+  
+    return {
+      meta: {
+        current,
+        pageSize,
+        totalItems,
+        totalPages: Math.ceil(totalItems / pageSize),
+      },
+      result,
+    };
+  }
+  
 }

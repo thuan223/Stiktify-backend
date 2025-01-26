@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Request } from '@nestjs/common';
 import { ShortVideosService } from './short-videos.service';
 import { CreateShortVideoDto } from './dto/create-short-video.dto';
 import { UpdateShortVideoDto } from './dto/update-short-video.dto';
@@ -36,5 +36,16 @@ export class ShortVideosController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.shortVideosService.remove(+id);
+  }
+
+  @Get('my-videos')
+  @ResponseMessage('Fetch user videos successfully')
+  getMyVideos(
+    @Request() req, 
+    @Query('current') current: string,
+    @Query('pageSize') pageSize: string,
+  ) {
+    const userId = req.user._id; // userId được gắn từ token sau khi login
+    return this.shortVideosService.findUserVideos(userId, +current || 1, +pageSize || 10);
   }
 }
