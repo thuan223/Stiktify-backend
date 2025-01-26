@@ -262,6 +262,43 @@ export class UsersService {
     };
   }
 
+  async handleUpdateInformation(
+    userId: string,
+    updateFields: Partial<{ fullname: string; email: string; phone: string; dob: string; address: string }>,
+  ) {
+    // Kiểm tra _id hợp lệ
+    const checkId = await this.isIdExist(userId);
+    if (!checkId) {
+      throw new BadRequestException(`User not found with ID: ${userId}`);
+    }
+  
+    // Kiểm tra và xử lý cập nhật email nếu có
+    if (updateFields.email) {
+      const isExistEmail = await this.isEmailExist(updateFields.email);
+      if (isExistEmail) {
+        throw new BadRequestException(`Email already exists: ${updateFields.email}`);
+      }
+    }
+  
+    // Cập nhật user trong database
+    const result = await this.userModel.findByIdAndUpdate(
+      userId,
+      { $set: updateFields },
+      { new: true },
+    );
+  
+    // Trả về thông tin cập nhật
+    return {
+      _id: result._id,
+      fullname: result.fullname,
+      email: result.email,
+      phone: result.phone,
+      dob: result.dob,
+      address: result.address,
+    };
+  }
+  
+
   async handleGetListUser(query: string, current: number, pageSize: number) {
     const { filter, sort } = aqp(query);
 

@@ -56,4 +56,11 @@ export class UsersController {
   ) {
     return this.usersService.handleFilterAndSearch(query, +current, +pageSize)
   }
+  
+  @Patch('update-profile')
+  @ResponseMessage('Profile updated successfully')
+  updateProfile(@Body() updateUserDto: UpdateUserDto) {
+    const { _id, ...updateFields } = updateUserDto; 
+    return this.usersService.handleUpdateInformation(_id, updateFields); 
+  }
 }
