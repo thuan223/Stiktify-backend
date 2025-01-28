@@ -40,12 +40,11 @@ export class ShortVideosService {
     const wishList = await this.wishListService.getWishListByUserId(data);
     const wishListVideoIds = wishList.map((item) => item.videoId);
 
-    let videos = await this.videoModel.find({ _id: { $in: wishListVideoIds } });
-
+    let videos = await this.videoModel.find({ _id: { $in: wishListVideoIds }}).populate('userId');
     const topVideos = await this.videoModel
       .find({ _id: { $nin: wishListVideoIds } })
       .sort({ totalViews: -1 })
-      .limit(10);
+      .limit(10).populate('userId');
     if (topVideos.length > 0) {
       const randomIndex = Math.floor(Math.random() * topVideos.length);
       const randomTopVideo = topVideos[randomIndex];
@@ -63,12 +62,15 @@ export class ShortVideosService {
         },
         { $sample: { size: remainingCount } },
       ]);
-
-      videos = [...videos, ...randomVideos];
+      const populatedVideos = await this.videoModel.populate(randomVideos, [
+        { path: "userId" },
+      ]);
+      videos = [...videos, ...populatedVideos];
     }
+  
     await this.wishListService.deleteWishListByUserId(data.userId);
-    return videos.map((video) => video.videoDescription);
-    // return videos;
+    // return videos.map((video) => video.videoDescription);
+    return videos;
   }
   async createWishListVideos(data: CreateWishListVideoDto) {
     const wishList = await this.wishListService.getWishListByUserId(data);
