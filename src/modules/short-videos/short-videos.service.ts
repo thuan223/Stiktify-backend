@@ -36,7 +36,7 @@ export class ShortVideosService {
   remove(id: number) {
     return `This action removes a #${id} shortVideo`;
   }
-  async getTrendingVideos(data: TrendingVideoDto) {
+  async getTrendingVideosByUser(data: TrendingVideoDto) {
     const wishList = await this.wishListService.getWishListByUserId(data);
     const wishListVideoIds = wishList.map((item) => item.videoId);
 
@@ -72,6 +72,22 @@ export class ShortVideosService {
     // return videos.map((video) => video.videoDescription);
     return videos;
   }
+  async getTrendingVideosByGuest() {
+    let videos=[];
+    const remainingCount = 10;
+
+    if (remainingCount > 0) {
+      const randomVideos = await this.videoModel.aggregate([
+        { $sample: { size: remainingCount } },
+      ]);
+      const populatedVideos = await this.videoModel.populate(randomVideos, [
+        { path: "userId" },
+      ]);
+      videos = [...videos, ...populatedVideos];
+    }
+    // return videos.map((video) => video.videoDescription);
+    return videos;
+  }
   async createWishListVideos(data: CreateWishListVideoDto) {
     const wishList = await this.wishListService.getWishListByUserId(data);
 
@@ -96,7 +112,7 @@ export class ShortVideosService {
             'category',
           );
         }
-        return;
+      return {statusCode:201,message:"Create WishList"};
       } else {
         const randomCreatorVideo = await this.getRandomCreatorVideo(
           data.videoId,
@@ -109,7 +125,7 @@ export class ShortVideosService {
           );
         }
       }
-      return;
+    return {statusCode:201,message:"Create WishList"};
     } else if (!isCategoryComplete) {
       const randomCategoryVideo = await this.getRandomCategoryVideo(
         data.videoId,
@@ -121,7 +137,7 @@ export class ShortVideosService {
           'category',
         );
       }
-      return;
+    return {statusCode:201,message:"Create WishList"};
     } else if (!isCreatorComplete) {
       const randomCreatorVideo = await this.getRandomCreatorVideo(data.videoId);
       if (randomCreatorVideo) {
@@ -131,7 +147,7 @@ export class ShortVideosService {
           'creator',
         );
       }
-      return;
+    return {statusCode:201,message:"Create WishList"};
     } else {
       const replaceType = Math.random() < 0.5 ? 'category' : 'creator';
 
@@ -146,7 +162,7 @@ export class ShortVideosService {
             'category',
           );
         }
-        return;
+      return {statusCode:201,message:"Create WishList"};
       } else {
         const randomCreatorVideo = await this.getRandomCreatorVideo(
           data.videoId,
@@ -158,7 +174,7 @@ export class ShortVideosService {
             'creator',
           );
         }
-        return;
+      return {statusCode:201,message:"Create WishList"};
       }
     }
   }

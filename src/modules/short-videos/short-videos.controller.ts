@@ -45,14 +45,18 @@ export class ShortVideosController {
     return this.shortVideosService.remove(+id);
   }
 
-  @Post('trending-videos')
+  @Post('trending-guest-videos')
   @Public()
-  getTrendingVideos(@Body() trendingVideoDto: TrendingVideoDto) {
-    return this.shortVideosService.getTrendingVideos(trendingVideoDto);
+  getTrendingVideosByGuest() {
+    return this.shortVideosService.getTrendingVideosByGuest();
   }
 
-  @Post('create-wishlist-videos')
-  @Public()
+  @Post('trending-user-videos')
+  getTrendingVideosByUser(@Body() trendingVideoDto: TrendingVideoDto) {
+    return this.shortVideosService.getTrendingVideosByUser(trendingVideoDto);
+  }
+
+  @Post('create-wishlist-videos') 
   createWishListVideos(
     @Body() createWishlistVideosDto: CreateWishListVideoDto,
   ) {

@@ -1,7 +1,17 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+} from '@nestjs/common';
 import { ViewinghistoryService } from './viewinghistory.service';
 import { CreateViewinghistoryDto } from './dto/create-viewinghistory.dto';
 import { UpdateViewinghistoryDto } from './dto/update-viewinghistory.dto';
+import { Public } from '@/decorator/customize';
 
 @Controller('viewinghistory')
 export class ViewinghistoryController {
@@ -10,6 +20,18 @@ export class ViewinghistoryController {
   @Post()
   create(@Body() createViewinghistoryDto: CreateViewinghistoryDto) {
     return this.viewinghistoryService.create(createViewinghistoryDto);
+  }
+  @Get('list-viewing-history')
+  findAllUser(
+    @Query() query: string,
+    @Query('current') current: string,
+    @Query('pageSize') pageSize: string,
+  ) {
+    return this.viewinghistoryService.handleGetListViewingHistory(
+      query,
+      +current,
+      +pageSize,
+    );
   }
 
   @Get()
@@ -23,7 +45,10 @@ export class ViewinghistoryController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateViewinghistoryDto: UpdateViewinghistoryDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateViewinghistoryDto: UpdateViewinghistoryDto,
+  ) {
     return this.viewinghistoryService.update(+id, updateViewinghistoryDto);
   }
 
