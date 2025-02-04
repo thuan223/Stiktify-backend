@@ -1,4 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Request } from '@nestjs/common';
+
+
+import { Public } from '@/decorator/customize';
+import { TrendingVideoDto } from './dto/trending-video.dto';
+import { CreateWishListVideoDto } from './dto/create-wishlist-videos.dto';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { ShortVideosService } from './short-videos.service';
 import { CreateShortVideoDto } from './dto/create-short-video.dto';
 import { UpdateShortVideoDto } from './dto/update-short-video.dto';
@@ -29,7 +34,10 @@ export class ShortVideosController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateShortVideoDto: UpdateShortVideoDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateShortVideoDto: UpdateShortVideoDto,
+  ) {
     return this.shortVideosService.update(+id, updateShortVideoDto);
   }
 
@@ -38,14 +46,23 @@ export class ShortVideosController {
     return this.shortVideosService.remove(+id);
   }
 
-  @Get('my-videos')
-  @ResponseMessage('Fetch user videos successfully')
-  getMyVideos(
-    @Request() req, 
-    @Query('current') current: string,
-    @Query('pageSize') pageSize: string,
+  @Post('trending-guest-videos')
+  @Public()
+  getTrendingVideosByGuest() {
+    return this.shortVideosService.getTrendingVideosByGuest();
+  }
+
+  @Post('trending-user-videos')
+  getTrendingVideosByUser(@Body() trendingVideoDto: TrendingVideoDto) {
+    return this.shortVideosService.getTrendingVideosByUser(trendingVideoDto);
+  }
+
+  @Post('create-wishlist-videos') 
+  createWishListVideos(
+    @Body() createWishlistVideosDto: CreateWishListVideoDto,
   ) {
-    const userId = req.user._id; // userId được gắn từ token sau khi login
-    return this.shortVideosService.ViewUserVideos(userId, +current || 1, +pageSize || 10);
+    return this.shortVideosService.createWishListVideos(
+      createWishlistVideosDto,
+    );
   }
 }
