@@ -83,7 +83,7 @@ export class UsersService {
       activeCode: checkCodeDto.activeCode,
     });
     if (!user) {
-      throw new BadRequestException('The code is invalid or has expired');
+      throw new BadRequestException('Invalid code or user does not exist');
     }
 
     const isBeforeCheck = dayjs().isBefore(user.codeExpired);
