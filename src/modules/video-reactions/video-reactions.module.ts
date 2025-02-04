@@ -6,12 +6,14 @@ import {
   VideoReaction,
   VideoReactionSchema,
 } from './schemas/video-reaction.schema';
+import { ShortVideosModule } from '../short-videos/short-videos.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: VideoReaction.name, schema: VideoReactionSchema },
     ]),
+    ShortVideosModule,
   ],
   controllers: [VideoReactionsController],
   providers: [VideoReactionsService],

@@ -1,8 +1,19 @@
-import { Controller, Post, UseGuards, Request, Body } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  UseGuards,
+  Request,
+  Body,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Public, ResponseMessage } from '@/decorator/customize';
 import { LocalAuthGuard } from './passport/local-auth.guard';
-import { ChangePasswordAuthDto, CodeAuthDto, CreateAuthDto } from './dto/create-auth.dto';
+import {
+  ChangePasswordAuthDto,
+  CodeAuthDto,
+  CreateAuthDto,
+} from './dto/create-auth.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -38,5 +49,14 @@ export class AuthController {
   @Public()
   changePassword(@Body() data: ChangePasswordAuthDto) {
     return this.authService.changePassword(data);
+  }
+
+  @Post('getUser')
+  @Public()
+  async getUser(@Body('token') token: string) {
+    if (!token) {
+      throw new UnauthorizedException('Token is required');
+    }
+    return this.authService.getUser(token);
   }
 }

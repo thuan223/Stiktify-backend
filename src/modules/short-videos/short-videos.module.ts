@@ -14,6 +14,6 @@ import { VideoCategoriesModule } from '../video-categories/video-categories.modu
   ],
   controllers: [ShortVideosController],
   providers: [ShortVideosService],
-  exports: [ShortVideosService],
+  exports: [ShortVideosService, MongooseModule],
 })
 export class ShortVideosModule { }

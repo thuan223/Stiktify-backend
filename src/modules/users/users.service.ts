@@ -6,6 +6,7 @@ import { User } from './schemas/user.schema';
 import { Model } from 'mongoose';
 import { MailerService } from '@nestjs-modules/mailer';
 import {
+  ChangePasswordAfterLoginAuthDto,
   ChangePasswordAuthDto,
   CodeAuthDto,
   CreateAuthDto,
@@ -33,7 +34,7 @@ export class UsersService {
   };
 
   async handleRegister(registerDto: CreateAuthDto) {
-    const { userName, email, password } = registerDto;
+    const { userName, email, password, fullname } = registerDto;
 
     // check email
     const isExistEmail = await this.isEmailExist(email);
@@ -49,6 +50,7 @@ export class UsersService {
     const user = await this.userModel.create({
       userName,
       email,
+      fullname,
       password: hashPassword,
       isActive: false,
       activeCode: codeId,
@@ -76,6 +78,9 @@ export class UsersService {
   }
   async findByUsername(userName: string) {
     return await this.userModel.findOne({ userName });
+  }
+  async findById(_id: string) {
+    return await this.userModel.findOne({ _id });
   }
   async handleCheckCode(checkCodeDto: CodeAuthDto) {
     const user = await this.userModel.findOne({
@@ -177,6 +182,18 @@ export class UsersService {
     } else {
       throw new BadRequestException('The code is invalid or has expired');
     }
+    return user.email;
+  }
+
+  async changePasswordAfterLogin(data: ChangePasswordAfterLoginAuthDto) {
+    let user = await this.userModel.findOne({
+      email: data.email,
+    });
+    if (!user) {
+      throw new BadRequestException('The account does not exist');
+    }
+    const newPassword = await hashPasswordHelper(data.password);
+    await user.updateOne({ password: newPassword });
     return user.email;
   }
 
