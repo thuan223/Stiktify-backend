@@ -11,6 +11,9 @@ export class Video {
   videoUrl: string;
 
   @Prop({ default: 0, min: 0 })
+  totalFavorite: number;
+
+  @Prop({ default: 0, min: 0 })
   totalReaction: number;
 
   @Prop({ default: 0, min: 0 })
@@ -33,18 +36,6 @@ export class Video {
 
   @Prop()
   videoTag: string[];
-
-  @Prop()
-  totalComment: number;
-
-  @Prop()
-  videoType: string;
-
-  @Prop({ default: false })
-  isDelete: boolean;
-
-  @Prop({ default: false })
-  flag: boolean;
 }
 
 export const VideoSchema = SchemaFactory.createForClass(Video);

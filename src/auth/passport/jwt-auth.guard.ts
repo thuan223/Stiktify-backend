@@ -25,7 +25,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     return super.canActivate(context);
   }
 
-  handleRequest(err, user, info, context: ExecutionContext) {
+  handleRequest(err, user, info) {
     // You can throw an exception based on either "info" or "err" arguments
     if (err || !user) {
       throw (
@@ -33,9 +33,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         new UnauthorizedException('Access Token không hợp lệ hoặc không có')
       );
     }
-
-    const req = context.switchToHttp().getRequest();
-    req.user = user;
     return user;
   }
 }

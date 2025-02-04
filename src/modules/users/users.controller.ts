@@ -17,15 +17,17 @@ import { ResponseMessage } from '@/decorator/customize';
 export class UsersController {
   constructor(private readonly usersService: UsersService) { }
 
-  @Post("ban-user")
-  @ResponseMessage('Update status ban user successfully')
-  banUser(
-    @Body() req: { isBan: boolean, _id: string }
-
-  ) {
-    return this.usersService.handleBanOrUnbannedUser(req)
+  @Get("ban-user/:id")
+  @ResponseMessage('Banned user successfully')
+  banUser(@Param("id") id: string) {
+    return this.usersService.handleBanUser(id)
   }
 
+  @Get("unbanned-user/:id")
+  @ResponseMessage('Unbanned user successfully')
+  unBanUser(@Param("id") id: string) {
+    return this.usersService.handleUnBanUser(id)
+  }
 
   @Post("create-user")
   @ResponseMessage('Create Successfully')
@@ -48,35 +50,4 @@ export class UsersController {
     return this.usersService.handleGetListUser(query, +current, +pageSize)
   }
 
-  @Get("filter-search")
-  findAllUserByFilterAndSearch(
-    @Query() query: string,
-    @Query("current") current: string,
-    @Query("pageSize") pageSize: string,
-  ) {
-    return this.usersService.handleFilterAndSearch(query, +current, +pageSize)
-  }
-
-  @Patch('update-profile')
-  @ResponseMessage('Profile updated successfully')
-  updateProfile(@Body() updateUserDto: UpdateUserDto) {
-    const { _id, ...updateFields } = updateUserDto; 
-    return this.usersService.handleUpdateInformation(_id, updateFields); 
-  }
-
-  @Get('search-name')
-  @ResponseMessage('Search users successfully')
-  searchUsers(
-  @Query('search') search: string, 
-  @Query('current') current: string,
-  @Query('pageSize') pageSize: string, 
-  @Query('sort') sort: string, 
-  ) {
-  return this.usersService.handleSearchUser(
-    search,
-    +current || 1, 
-    +pageSize || 10, 
-    sort ? JSON.parse(sort) : {}, 
-  );
-}
 }

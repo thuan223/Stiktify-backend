@@ -1,56 +1,26 @@
 import { Injectable } from '@nestjs/common';
 import { CreateVideoReactionDto } from './dto/create-video-reaction.dto';
-import { InjectModel } from '@nestjs/mongoose';
-import {
-  VideoReaction,
-  VideoReactionDocument,
-} from './schemas/video-reaction.schema';
-import { Model, Types } from 'mongoose';
-import { Video } from '../short-videos/schemas/short-video.schema';
-import { DeleteVideoReactionDto } from './dto/delete-video-reaction.dto';
+import { UpdateVideoReactionDto } from './dto/update-video-reaction.dto';
 
 @Injectable()
 export class VideoReactionsService {
-  constructor(
-    @InjectModel(VideoReaction.name)
-    private readonly videoReactionModel: Model<VideoReactionDocument>,
-    @InjectModel(Video.name) private VideoModal: Model<Video>,
-  ) {}
-
-  async reactToVideo(userId: string, dto: CreateVideoReactionDto) {
-    const existingReaction = await this.videoReactionModel.findOne({
-      videoId: dto.videoId,
-      userId,
-    });
-
-    if (existingReaction) {
-      existingReaction.reactionTypeId = dto.reactionTypeId;
-      return existingReaction.save();
-    } else {
-      const newReaction = new this.videoReactionModel({
-        ...dto,
-        userId,
-      });
-      await this.VideoModal.findByIdAndUpdate(dto.videoId, {
-        $inc: { totalReaction: 1 },
-      });
-
-      return newReaction.save();
-    }
+  create(createVideoReactionDto: CreateVideoReactionDto) {
+    return 'This action adds a new videoReaction';
   }
 
-  async unreactToVideo(userId: string, dto: DeleteVideoReactionDto) {
-    const reaction = await this.videoReactionModel.findOneAndDelete({
-      videoId: dto.videoId,
-      userId,
-    });
+  findAll() {
+    return `This action returns all videoReactions`;
+  }
 
-    if (reaction) {
-      await this.VideoModal.findByIdAndUpdate(dto.videoId, {
-        $inc: { totalReaction: -1 },
-      });
-    }
+  findOne(id: number) {
+    return `This action returns a #${id} videoReaction`;
+  }
 
-    return { message: 'Reaction removed successfully' };
+  update(id: number, updateVideoReactionDto: UpdateVideoReactionDto) {
+    return `This action updates a #${id} videoReaction`;
+  }
+
+  remove(id: number) {
+    return `This action removes a #${id} videoReaction`;
   }
 }

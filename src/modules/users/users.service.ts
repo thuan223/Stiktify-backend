@@ -6,7 +6,6 @@ import { User } from './schemas/user.schema';
 import { Model } from 'mongoose';
 import { MailerService } from '@nestjs-modules/mailer';
 import {
-  ChangePasswordAfterLoginAuthDto,
   ChangePasswordAuthDto,
   CodeAuthDto,
   CreateAuthDto,
@@ -21,7 +20,7 @@ export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private readonly mailerService: MailerService,
-  ) { }
+  ) {}
   isEmailExist = async (email: string) => {
     const isExist = await this.userModel.exists({ email });
     if (isExist) return true;
@@ -34,7 +33,7 @@ export class UsersService {
   };
 
   async handleRegister(registerDto: CreateAuthDto) {
-    const { userName, email, password, fullname } = registerDto;
+    const { userName, email, password } = registerDto;
 
     // check email
     const isExistEmail = await this.isEmailExist(email);
@@ -50,7 +49,6 @@ export class UsersService {
     const user = await this.userModel.create({
       userName,
       email,
-      fullname,
       password: hashPassword,
       isActive: false,
       activeCode: codeId,
@@ -79,16 +77,13 @@ export class UsersService {
   async findByUsername(userName: string) {
     return await this.userModel.findOne({ userName });
   }
-  async findById(_id: string) {
-    return await this.userModel.findOne({ _id });
-  }
   async handleCheckCode(checkCodeDto: CodeAuthDto) {
     const user = await this.userModel.findOne({
       _id: checkCodeDto._id,
       activeCode: checkCodeDto.activeCode,
     });
     if (!user) {
-      throw new BadRequestException('Invalid code or user does not exist');
+      throw new BadRequestException('The code is invalid or has expired');
     }
 
     const isBeforeCheck = dayjs().isBefore(user.codeExpired);
@@ -185,18 +180,6 @@ export class UsersService {
     return user.email;
   }
 
-  async changePasswordAfterLogin(data: ChangePasswordAfterLoginAuthDto) {
-    let user = await this.userModel.findOne({
-      email: data.email,
-    });
-    if (!user) {
-      throw new BadRequestException('The account does not exist');
-    }
-    const newPassword = await hashPasswordHelper(data.password);
-    await user.updateOne({ password: newPassword });
-    return user.email;
-  }
-
   async isIdExist(id: string) {
     try {
       const result = await this.userModel.findById(id);
@@ -207,14 +190,18 @@ export class UsersService {
     }
   }
 
-  async handleBanOrUnbannedUser(req: { isBan: boolean, _id: string }) {
-    const checkId = await this.isIdExist(req._id);
+  async handleBanUser(id: string) {
+    const checkId = await this.isIdExist(id);
     if (!checkId) {
-      throw new BadRequestException(`User not found with ID: ${req._id}`);
+      throw new BadRequestException(`User not found with ID: ${id}`);
     }
 
-    const result = await this.userModel.findByIdAndUpdate(req._id, {
-      isBan: req.isBan,
+    if (checkId.isBan === true) {
+      throw new BadRequestException(`User is in banned state with ID: ${id}`);
+    }
+
+    const result = await this.userModel.findByIdAndUpdate(id, {
+      isBan: true,
       status: 'Offline',
     });
     return {
@@ -223,6 +210,25 @@ export class UsersService {
     };
   }
 
+  async handleUnBanUser(id: string) {
+    const checkId = await this.isIdExist(id);
+    if (!checkId) {
+      throw new BadRequestException(`User not found with ID: ${id}`);
+    }
+
+    if (checkId.isBan === false) {
+      throw new BadRequestException(`User is in unbanned state with ID: ${id}`);
+    }
+
+    const result = await this.userModel.findByIdAndUpdate(id, {
+      isBan: false,
+      status: 'Offline',
+    });
+    return {
+      _id: result._id,
+      isBan: result.isBan,
+    };
+  }
 
   async handleCreateUser(createDto: UserCreateByManager) {
     const isExistEmail = await this.isEmailExist(createDto.email);
@@ -279,40 +285,6 @@ export class UsersService {
     };
   }
 
-  async handleUpdateInformation(
-    userId: string,
-    updateFields: Partial<{ fullname: string; email: string; phone: string; dob: string; address: string }>,
-  ) {
-
-    const checkId = await this.isIdExist(userId);
-    if (!checkId) {
-      throw new BadRequestException(`User not found with ID: ${userId}`);
-    }
-  
-    if (updateFields.email) {
-      const isExistEmail = await this.isEmailExist(updateFields.email);
-      if (isExistEmail) {
-        throw new BadRequestException(`Email already exists: ${updateFields.email}`);
-      }
-    }
-  
-    const result = await this.userModel.findByIdAndUpdate(
-      userId,
-      { $set: updateFields },
-      { new: true },
-    );
-  
-    return {
-      _id: result._id,
-      fullname: result.fullname,
-      email: result.email,
-      phone: result.phone,
-      dob: result.dob,
-      address: result.address,
-    };
-  }
-  
-
   async handleGetListUser(query: string, current: number, pageSize: number) {
     const { filter, sort } = aqp(query);
 
@@ -344,111 +316,6 @@ export class UsersService {
         total: totalItems, // tong so ban ghi
       },
       result: result,
-    };
-  }
-
-  checkFilterAction(filter: string) {
-    if (filter === "lock") {
-      return { isBan: true }
-    } else if (filter === "unlock") {
-      return { isBan: false }
-    } else {
-      return {}
-    }
-  }
-
-  async handleFilterAndSearch(query: string, current: number, pageSize: number) {
-    const { filter, sort } = aqp(query);
-
-    if (filter.current) delete filter.current;
-    if (filter.pageSize) delete filter.pageSize;
-
-    if (!current) current = 1;
-    if (!pageSize) pageSize = 10;
-
-    const totalItems = (await this.userModel.find(filter)).length;
-    const totalPages = Math.ceil(totalItems / pageSize);
-
-    const skip = (+current - 1) * +pageSize;
-    const searchRegex = new RegExp(`^${filter.search}`, 'i');
-
-    const handleFilter = this.checkFilterAction(filter.filterReq)
-
-    let handleSearch = [];
-    if (filter.search.length > 0) {
-      handleSearch = [
-        { email: searchRegex },
-        { userName: searchRegex },
-        { fullname: searchRegex },
-      ]
-    }
-
-    const result = await this.userModel
-      .find({
-        ...handleFilter,
-        $or: handleSearch,
-      })
-      .limit(pageSize)
-      .skip(skip)
-      .select('-password')
-      .sort(sort as any)
-
-    return {
-      meta: {
-        current: current, // trang hien tai
-        pageSize: pageSize, // so luong ban ghi
-        pages: totalPages, // tong so trang voi dieu kien query
-        total: totalItems, // tong so ban ghi
-      },
-      result: result,
-    };
-  }
-
-  async handleSearchUser(
-    search: string,
-    current: number = 1,
-    pageSize: number = 10,
-    sort: any = {},
-  ) {
-    if (!search || search.trim() === '') {
-      throw new BadRequestException('Search keyword cannot be empty!');
-    }
-  
-    const searchRegex = new RegExp(search, 'i');
-    const filter = {
-      $and: [
-        {
-          $or: [
-            { userName: searchRegex },
-            { fullname: searchRegex },
-          ],
-        },
-        { role: { $ne: 'ADMIN' } }, 
-      ],
-    };
-  
-    const totalItems = await this.userModel.countDocuments(filter);
-
-    if (totalItems === 0) {
-      throw new BadRequestException('No users found matching your search criteria!');
-    }
-  
-    const skip = (current - 1) * pageSize;
-    const result = await this.userModel
-      .find(filter)
-      .skip(skip)
-      .limit(pageSize)
-      .sort(sort)
-      .select('userName fullname'); 
-  
-    return {
-      meta: {
-        current,
-        pageSize,
-        totalItems,
-        totalPages: Math.ceil(totalItems / pageSize),
-      },
-      result,
     };
   }
 }

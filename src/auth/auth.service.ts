@@ -1,10 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  ChangePasswordAfterLoginAuthDto,
-  ChangePasswordAuthDto,
-  CodeAuthDto,
-  CreateAuthDto,
-} from './dto/create-auth.dto';
+import { ChangePasswordAuthDto, CodeAuthDto, CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '@/modules/users/users.service';
@@ -34,7 +29,6 @@ export class AuthService {
         email: user.email,
         _id: user._id,
         name: user.name,
-        role: user.role,
       },
       access_token: this.jwtService.sign(payload),
     };
@@ -55,29 +49,4 @@ export class AuthService {
   changePassword = async (data: ChangePasswordAuthDto) => {
     return await this.usersService.changePassword(data);
   };
-
-  changePasswordAfterLogin = async (data: ChangePasswordAfterLoginAuthDto) => {
-    return await this.usersService.changePasswordAfterLogin(data);
-  };
-
-  async getUser(token: string) {
-    try {
-      const decoded = this.jwtService.verify(token);
-
-      const user = await this.usersService.findById(decoded.sub);
-
-      if (!user) {
-        throw new Error('User not found');
-      }
-
-      return {
-        _id: user._id,
-        email: user.email,
-        name: user.fullname,
-        role: user.role,
-      };
-    } catch (error) {
-      throw new Error('Invalid or expired token');
-    }
-  }
 }

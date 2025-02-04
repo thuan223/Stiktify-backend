@@ -22,9 +22,6 @@ import { AuthModule } from './auth/auth.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { UploadMiddleware } from './middlewares/upload.middleware';
-import { WishlistModule } from './modules/wishlist/wishlist.module';
-import { ViewingHistory } from './modules/viewinghistory/schemas/viewinghistory.entity';
-import { ViewinghistoryModule } from './modules/viewinghistory/viewinghistory.module';
 @Module({
   imports: [
     AuthModule,
@@ -40,8 +37,6 @@ import { ViewinghistoryModule } from './modules/viewinghistory/viewinghistory.mo
     ReactionTypesModule,
     VideoReactionsModule,
     CommentReactionsModule,
-    WishlistModule,
-    ViewinghistoryModule,
     ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
