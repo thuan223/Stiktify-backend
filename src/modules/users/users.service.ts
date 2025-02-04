@@ -411,14 +411,12 @@ export class UsersService {
     };
   
     const totalItems = await this.userModel.countDocuments(filter);
-  
-    // Nếu không tìm thấy kết quả nào
+
     if (totalItems === 0) {
       throw new BadRequestException('No users found matching your search criteria!');
     }
   
     const skip = (current - 1) * pageSize;
-  
     const result = await this.userModel
       .find(filter)
       .skip(skip)

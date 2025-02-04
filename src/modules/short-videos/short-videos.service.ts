@@ -3,7 +3,7 @@ import { CreateShortVideoDto } from './dto/create-short-video.dto';
 import { UpdateShortVideoDto } from './dto/update-short-video.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Video } from './schemas/short-video.schema';
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import aqp from 'api-query-params';
 import { User } from '../users/schemas/user.schema';
 
@@ -90,8 +90,8 @@ export class ShortVideosService {
     }
   }
 
-  async findUserVideos(userId: string, current: number, pageSize: number) {
-    const filter = { userId }; 
+  async ViewUserVideos(userId: string, current: number, pageSize: number) {
+    const filter = { userId: new mongoose.Types.ObjectId(userId) }; 
     const totalItems = await this.shortVideoModel.countDocuments(filter);
     if (totalItems === 0) {
       return {
@@ -110,7 +110,7 @@ export class ShortVideosService {
       .find(filter)
       .skip(skip)
       .limit(pageSize)
-      .sort({ createdAt: -1 }) // Sắp xếp theo thời gian tạo mới nhấ
+      .sort({ createdAt: -1 }) 
       .select('videoUrl totalFavorite totalReaction totalViews videoDescription') 
   
     return {

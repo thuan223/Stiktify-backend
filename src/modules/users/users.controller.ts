@@ -67,9 +67,9 @@ export class UsersController {
   @Get('search-name')
   @ResponseMessage('Search users successfully')
   searchUsers(
-  @Query('search') search: string, // Từ khóa tìm kiếm
-  @Query('current') current: string, // Trang hiện tại
-  @Query('pageSize') pageSize: string, // Kích thước mỗi trang
+  @Query('search') search: string, 
+  @Query('current') current: string,
+  @Query('pageSize') pageSize: string, 
   @Query('sort') sort: string, 
   ) {
   return this.usersService.handleSearchUser(

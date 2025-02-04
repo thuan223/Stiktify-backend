@@ -46,6 +46,6 @@ export class ShortVideosController {
     @Query('pageSize') pageSize: string,
   ) {
     const userId = req.user._id; // userId được gắn từ token sau khi login
-    return this.shortVideosService.findUserVideos(userId, +current || 1, +pageSize || 10);
+    return this.shortVideosService.ViewUserVideos(userId, +current || 1, +pageSize || 10);
   }
 }
