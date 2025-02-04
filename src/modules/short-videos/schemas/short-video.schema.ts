@@ -36,6 +36,12 @@ export class Video {
 
   @Prop()
   videoTag: string[];
+
+  @Prop({ default: false })
+  isDelete: boolean;
+
+  @Prop({ default: false })
+  flag: boolean;
 }
 
 export const VideoSchema = SchemaFactory.createForClass(Video);
