@@ -4,7 +4,7 @@ import { UpdateShortVideoDto } from './dto/update-short-video.dto';
 import { TrendingVideoDto } from './dto/trending-video.dto';
 import { Video } from './schemas/short-video.schema';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import { WishlistService } from '../wishlist/wishlist.service';
 import { CreateWishListVideoDto } from './dto/create-wishlist-videos.dto';
 import { VideoCategoriesService } from '../video-categories/video-categories.service';
@@ -299,4 +299,39 @@ export class ShortVideosService {
       return result._id
     }
   }
+
+  async ViewUserVideos(userId: string, current: number, pageSize: number) {
+    const filter = { userId: new mongoose.Types.ObjectId(userId) }; 
+    const totalItems = await this.videoModel.countDocuments(filter);
+    if (totalItems === 0) {
+      return {
+        meta: {
+          current,
+          pageSize,
+          totalItems: 0,
+          totalPages: 0,
+        },
+        result: [],
+        message: 'No videos found for this user',
+      };
+    }
+    const skip = (current - 1) * pageSize;
+    const result = await this.videoModel
+      .find(filter)
+      .skip(skip)
+      .limit(pageSize)
+      .sort({ createdAt: -1 }) 
+      .select('videoUrl totalFavorite totalReaction totalViews videoDescription') 
+  
+    return {
+      meta: {
+        current,
+        pageSize,
+        totalItems,
+        totalPages: Math.ceil(totalItems / pageSize),
+      },
+      result,
+    };
+  }
+  
 }

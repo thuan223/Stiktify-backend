@@ -56,4 +56,27 @@ export class UsersController {
   ) {
     return this.usersService.handleFilterAndSearch(query, +current, +pageSize)
   }
+
+  @Patch('update-profile')
+  @ResponseMessage('Profile updated successfully')
+  updateProfile(@Body() updateUserDto: UpdateUserDto) {
+    const { _id, ...updateFields } = updateUserDto; 
+    return this.usersService.handleUpdateInformation(_id, updateFields); 
+  }
+
+  @Get('search-name')
+  @ResponseMessage('Search users successfully')
+  searchUsers(
+  @Query('search') search: string, 
+  @Query('current') current: string,
+  @Query('pageSize') pageSize: string, 
+  @Query('sort') sort: string, 
+  ) {
+  return this.usersService.handleSearchUser(
+    search,
+    +current || 1, 
+    +pageSize || 10, 
+    sort ? JSON.parse(sort) : {}, 
+  );
+}
 }

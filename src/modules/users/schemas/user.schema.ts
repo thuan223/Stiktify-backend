@@ -18,6 +18,15 @@ export class User {
   email: string;
 
   @Prop()
+  phone: number;
+
+  @Prop()
+  address: string;
+
+  @Prop()
+  dob: Date;
+
+  @Prop()
   isBan: boolean;
 
   @Prop({ default: 'Offline' })
