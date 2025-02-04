@@ -8,8 +8,10 @@ export class CreateAuthDto {
   email: string;
   @IsNotEmpty({ message: 'Password must not be empty' })
   password: string;
+  @IsNotEmpty({ message: 'Fullname must not be empty' })
+  fullname: string;
 }
-export class  CodeAuthDto {
+export class CodeAuthDto {
   @IsNotEmpty({ message: '_id must not be empty' })
   _id: string;
   @IsNotEmpty({ message: 'Code must not be empty' })
@@ -25,4 +27,13 @@ export class ChangePasswordAuthDto {
   password: string;
   @IsNotEmpty({ message: 'Confirm Password must not be empty' })
   confirmPassword: string;
+}
+
+export class ChangePasswordAfterLoginAuthDto {
+  @IsNotEmpty({ message: 'Username or Email must not be empty' })
+  email: string;
+  @IsNotEmpty({ message: 'Password must not be empty' })
+  newPassword: string;
+  @IsNotEmpty({ message: 'Password must not be empty' })
+  password: string;
 }
