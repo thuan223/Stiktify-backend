@@ -10,6 +10,6 @@ import { Video, VideoSchema } from './schemas/short-video.schema';
   ],
   controllers: [ShortVideosController],
   providers: [ShortVideosService],
-  exports: [ShortVideosService],
+  exports: [ShortVideosService, MongooseModule],
 })
 export class ShortVideosModule {}

@@ -1,34 +1,23 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
 import { VideoReactionsService } from './video-reactions.service';
+import { JwtAuthGuard } from '@/auth/passport/jwt-auth.guard';
 import { CreateVideoReactionDto } from './dto/create-video-reaction.dto';
-import { UpdateVideoReactionDto } from './dto/update-video-reaction.dto';
+import { DeleteVideoReactionDto } from './dto/delete-video-reaction.dto';
 
 @Controller('video-reactions')
 export class VideoReactionsController {
-  constructor(private readonly videoReactionsService: VideoReactionsService) {}
+  constructor(private readonly videoReactionService: VideoReactionsService) {}
 
-  @Post()
-  create(@Body() createVideoReactionDto: CreateVideoReactionDto) {
-    return this.videoReactionsService.create(createVideoReactionDto);
+  @UseGuards(JwtAuthGuard)
+  @Post('react')
+  async reactToVideo(@Request() req, @Body() dto: CreateVideoReactionDto) {
+    const userId = req.user._id;
+    return this.videoReactionService.reactToVideo(userId, dto);
   }
 
-  @Get()
-  findAll() {
-    return this.videoReactionsService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.videoReactionsService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateVideoReactionDto: UpdateVideoReactionDto) {
-    return this.videoReactionsService.update(+id, updateVideoReactionDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.videoReactionsService.remove(+id);
+  @Post('unreact')
+  async unreactToVideo(@Request() req, @Body() dto: DeleteVideoReactionDto) {
+    const userId = req.user._id;
+    return this.videoReactionService.unreactToVideo(userId, dto);
   }
 }
