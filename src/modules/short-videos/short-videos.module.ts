@@ -16,4 +16,4 @@ import { VideoCategoriesModule } from '../video-categories/video-categories.modu
   providers: [ShortVideosService],
   exports: [ShortVideosService],
 })
-export class ShortVideosModule {}
+export class ShortVideosModule { }

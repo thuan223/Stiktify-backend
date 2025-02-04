@@ -20,7 +20,7 @@ export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private readonly mailerService: MailerService,
-  ) {}
+  ) { }
   isEmailExist = async (email: string) => {
     const isExist = await this.userModel.exists({ email });
     if (isExist) return true;
@@ -190,18 +190,14 @@ export class UsersService {
     }
   }
 
-  async handleBanUser(id: string) {
-    const checkId = await this.isIdExist(id);
+  async handleBanOrUnbannedUser(req: { isBan: boolean, _id: string }) {
+    const checkId = await this.isIdExist(req._id);
     if (!checkId) {
-      throw new BadRequestException(`User not found with ID: ${id}`);
+      throw new BadRequestException(`User not found with ID: ${req._id}`);
     }
 
-    if (checkId.isBan === true) {
-      throw new BadRequestException(`User is in banned state with ID: ${id}`);
-    }
-
-    const result = await this.userModel.findByIdAndUpdate(id, {
-      isBan: true,
+    const result = await this.userModel.findByIdAndUpdate(req._id, {
+      isBan: req.isBan,
       status: 'Offline',
     });
     return {
@@ -210,25 +206,6 @@ export class UsersService {
     };
   }
 
-  async handleUnBanUser(id: string) {
-    const checkId = await this.isIdExist(id);
-    if (!checkId) {
-      throw new BadRequestException(`User not found with ID: ${id}`);
-    }
-
-    if (checkId.isBan === false) {
-      throw new BadRequestException(`User is in unbanned state with ID: ${id}`);
-    }
-
-    const result = await this.userModel.findByIdAndUpdate(id, {
-      isBan: false,
-      status: 'Offline',
-    });
-    return {
-      _id: result._id,
-      isBan: result.isBan,
-    };
-  }
 
   async handleCreateUser(createDto: UserCreateByManager) {
     const isExistEmail = await this.isEmailExist(createDto.email);
@@ -307,6 +284,63 @@ export class UsersService {
       .skip(skip)
       .select('-password')
       .sort(sort as any);
+
+    return {
+      meta: {
+        current: current, // trang hien tai
+        pageSize: pageSize, // so luong ban ghi
+        pages: totalPages, // tong so trang voi dieu kien query
+        total: totalItems, // tong so ban ghi
+      },
+      result: result,
+    };
+  }
+
+  checkFilterAction(filter: string) {
+    if (filter === "lock") {
+      return { isBan: true }
+    } else if (filter === "unlock") {
+      return { isBan: false }
+    } else {
+      return {}
+    }
+  }
+
+  async handleFilterAndSearch(query: string, current: number, pageSize: number) {
+    const { filter, sort } = aqp(query);
+
+    if (filter.current) delete filter.current;
+    if (filter.pageSize) delete filter.pageSize;
+
+    if (!current) current = 1;
+    if (!pageSize) pageSize = 10;
+
+    const totalItems = (await this.userModel.find(filter)).length;
+    const totalPages = Math.ceil(totalItems / pageSize);
+
+    const skip = (+current - 1) * +pageSize;
+    const searchRegex = new RegExp(`^${filter.search}`, 'i');
+
+    const handleFilter = this.checkFilterAction(filter.filterReq)
+
+    let handleSearch = [];
+    if (filter.search.length > 0) {
+      handleSearch = [
+        { email: searchRegex },
+        { userName: searchRegex },
+        { fullname: searchRegex },
+      ]
+    }
+
+    const result = await this.userModel
+      .find({
+        ...handleFilter,
+        $or: handleSearch,
+      })
+      .limit(pageSize)
+      .skip(skip)
+      .select('-password')
+      .sort(sort as any)
 
     return {
       meta: {

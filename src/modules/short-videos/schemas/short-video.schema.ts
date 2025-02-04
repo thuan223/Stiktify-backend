@@ -40,14 +40,11 @@ export class Video {
   @Prop()
   videoType: string;
 
-  @Prop()
-  createAt: Date;
+  @Prop({ default: false })
+  isDelete: boolean;
 
-  @Prop()
-  isDelete: Boolean;
-
-  @Prop()
-  flag: string[];
+  @Prop({ default: false })
+  flag: boolean;
 }
 
 export const VideoSchema = SchemaFactory.createForClass(Video);
