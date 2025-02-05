@@ -74,5 +74,16 @@ export class ShortVideosController {
   ) {
     return this.shortVideosService.ViewUserVideos(userId, +current, +pageSize);
   }
+
+  @Get('search-video')
+  searchVideoByDescription(
+  @Query('searchText') searchText: string,
+  @Query('current') current: string,
+  @Query('pageSize') pageSize: string,
+) {
+  return this.shortVideosService.searchVideosByDescription(searchText, +current || 1, +pageSize || 10);
+}
+
+
   
 }
