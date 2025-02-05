@@ -65,4 +65,14 @@ export class ShortVideosController {
       createWishlistVideosDto,
     );
   }
+
+  @Get('my-videos')
+  getUserVideos(
+    @Query('userId') userId: string,
+    @Query('current') current: string,
+    @Query('pageSize') pageSize: string,
+  ) {
+    return this.shortVideosService.ViewUserVideos(userId, +current, +pageSize);
+  }
+  
 }

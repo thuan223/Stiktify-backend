@@ -301,8 +301,9 @@ export class ShortVideosService {
   }
 
   async ViewUserVideos(userId: string, current: number, pageSize: number) {
-    const filter = { userId: new mongoose.Types.ObjectId(userId) }; 
+    const filter = {userId: new mongoose.Types.ObjectId(userId) };
     const totalItems = await this.videoModel.countDocuments(filter);
+  
     if (totalItems === 0) {
       return {
         meta: {
@@ -315,13 +316,14 @@ export class ShortVideosService {
         message: 'No videos found for this user',
       };
     }
+  
     const skip = (current - 1) * pageSize;
     const result = await this.videoModel
       .find(filter)
       .skip(skip)
       .limit(pageSize)
       .sort({ createdAt: -1 }) 
-      .select('videoUrl totalFavorite totalReaction totalViews videoDescription') 
+      .select('videoUrl totalFavorite totalReaction totalViews videoDescription')
   
     return {
       meta: {
@@ -333,5 +335,6 @@ export class ShortVideosService {
       result,
     };
   }
+  
   
 }
