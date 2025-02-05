@@ -84,6 +84,15 @@ export class ShortVideosController {
   return this.shortVideosService.searchVideosByDescription(searchText, +current || 1, +pageSize || 10);
 }
 
+@Get('filter-by-category')
+  async filterByCategory(
+    @Query('category') category: string,
+    @Query('current') current?: string,
+    @Query('pageSize') pageSize?: string,
+  ) {
+    return this.shortVideosService.findByCategory(category, +current || 1, +pageSize || 10);
+  }
+
 
   
 }

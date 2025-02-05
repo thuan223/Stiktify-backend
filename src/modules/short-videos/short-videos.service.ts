@@ -9,7 +9,11 @@ import { WishlistService } from '../wishlist/wishlist.service';
 import { CreateWishListVideoDto } from './dto/create-wishlist-videos.dto';
 import { VideoCategoriesService } from '../video-categories/video-categories.service';
 import aqp from 'api-query-params';
+import { CategoriesService } from '../categories/categories.service';
 import { User } from '../users/schemas/user.schema';
+
+
+
 
 @Injectable()
 export class ShortVideosService {
@@ -18,6 +22,7 @@ export class ShortVideosService {
     private videoModel: Model<Video>,
     private wishListService: WishlistService,
     private videoCategoriesService: VideoCategoriesService,
+    private categoriesService: CategoriesService,
   ) {}
 
 
@@ -358,5 +363,20 @@ export class ShortVideosService {
     };
   }
 
+  async findByCategory(categoryName: string, current: number = 1, pageSize: number = 10) {
+    const category = await this.categoriesService.findCategoryByName(categoryName);
+    if (!category) {
+      throw new BadRequestException(`Category '${categoryName}' not found in categories!`);
+    }
+    const videoCategories = await this.videoCategoriesService.findVideosByCategoryId(category._id.toString());
+    const videoIds = videoCategories.map(vc => vc.videoId.toString());
+    const result = await this.videoModel.find(
+      { _id: { $in: videoIds } }
+  )
+  .select('videoUrl totalFavorite totalReaction totalViews videoDescription videoThumbnail videoTag') // ✅ Chỉ lấy các trường cần thiết
+  .exec();
+    return result;
+  }
+  
   
 }
