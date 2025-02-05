@@ -8,6 +8,7 @@ import { ShortVideosService } from './short-videos.service';
 import { CreateShortVideoDto } from './dto/create-short-video.dto';
 import { UpdateShortVideoDto } from './dto/update-short-video.dto';
 import { ResponseMessage } from '@/decorator/customize';
+import { flagShortVideoDto } from './dto/flag-short-video.dto';
 
 @Controller('short-videos')
 export class ShortVideosController {
@@ -29,8 +30,8 @@ export class ShortVideosController {
 
   @Post('flag-video')
   @ResponseMessage('Update status successfully')
-  findOne(@Body() req: { flag: boolean, _id: string }) {
-    return this.shortVideosService.handleFlagVideo(req);
+  findOne(@Body() req: flagShortVideoDto) {
+    return this.shortVideosService.handleFlagVideo(req._id, req.flag);
   }
 
   @Patch(':id')
@@ -57,7 +58,7 @@ export class ShortVideosController {
     return this.shortVideosService.getTrendingVideosByUser(trendingVideoDto);
   }
 
-  @Post('create-wishlist-videos') 
+  @Post('create-wishlist-videos')
   createWishListVideos(
     @Body() createWishlistVideosDto: CreateWishListVideoDto,
   ) {
