@@ -93,6 +93,29 @@ export class ShortVideosController {
     return this.shortVideosService.findByCategory(category, +current || 1, +pageSize || 10);
   }
 
+  @Get('admin-search')
+  async searchAdminVideos(
+    @Query('searchText') searchText: string, 
+    @Query('current') current?: string,    
+    @Query('pageSize') pageSize?: string,   
+  ) {
+    return this.shortVideosService.searchAdminVideos(
+      searchText, +current || 1, +pageSize || 10
+    );
+  }
 
-  
+
+  @Get('admin-filter-by-category')
+  filterAdminVideosByCategory(
+  @Query('category') category: string,
+  @Query('current') current?: string,
+  @Query('pageSize') pageSize?: string,
+) {
+  return this.shortVideosService.filterAdminVideosByCategory(
+    category, +current || 1, +pageSize || 10
+  );
 }
+
+}
+
+

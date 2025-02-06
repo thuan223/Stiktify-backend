@@ -14,12 +14,12 @@ import { User } from '../users/schemas/user.schema';
 
 
 
-
 @Injectable()
 export class ShortVideosService {
   constructor(
     @InjectModel(Video.name)
-    private videoModel: Model<Video>,
+    private videoModel: Model<Video>, 
+    @InjectModel(User.name) private userModel: Model<User>,
     private wishListService: WishlistService,
     private videoCategoriesService: VideoCategoriesService,
     private categoriesService: CategoriesService,
@@ -377,6 +377,74 @@ export class ShortVideosService {
   .exec();
     return result;
   }
-  
+
+  async searchAdminVideos(
+    searchText: string,
+    current: number = 1,
+    pageSize: number = 10,
+  ) {
+    const adminUsers = await this.userModel.find({ role: 'ADMIN' }).select('_id').exec();
+    const adminUserIds = adminUsers.map(user => user._id.toString());
+    const filter: any = {};
+    filter.userId = { $in: adminUserIds };
+    if (searchText) {
+      filter.videoDescription = { $regex: new RegExp(searchText, 'i') };
+    }
+    const totalItems = await this.videoModel.countDocuments(filter);
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const skip = (current - 1) * pageSize;
+    const result = await this.videoModel
+      .find(filter)
+      .skip(skip)
+      .limit(pageSize)
+      .sort({ createdAt: -1 })
+      .select('videoUrl totalFavorite totalReaction totalViews videoDescription videoThumbnail videoTag videoType ')
+      .exec();
+    return {
+      meta: {
+        current,
+        pageSize,
+        totalItems,
+        totalPages,
+      },
+      result,
+    };
+  }  
+
+
+  async filterAdminVideosByCategory(categoryName: string, current: number = 1, pageSize: number = 10) {
+    const category = await this.categoriesService.findCategoryByName(categoryName);
+    if (!category) {
+      throw new BadRequestException(`Category '${categoryName}' not found in categories!`);
+    }
+    const videoCategories = await this.videoCategoriesService.findVideosByCategoryId(category._id.toString());
+    const videoIds = videoCategories.map(vc => vc.videoId.toString());
+    const adminUsers = await this.userModel.find({ role: 'admin' }).select('_id').exec();
+    const adminUserIds = adminUsers.map(user => user._id.toString());
+    const filter: any = { 
+      _id: { $in: videoIds }, 
+      userId: { $in: adminUserIds } 
+    };
+    const totalItems = await this.videoModel.countDocuments(filter);
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const skip = (current - 1) * pageSize;
+    const result = await this.videoModel
+      .find(filter)
+      .skip(skip)
+      .limit(pageSize)
+      .sort({ createdAt: -1 })
+      .select('videoUrl totalFavorite totalReaction totalViews videoDescription videoThumbnail videoTag videoType ')
+      .exec();
+    return {
+      meta: {
+        current,
+        pageSize,
+        totalItems,
+        totalPages,
+      },
+      result,
+    };
+  }
   
 }
+  
