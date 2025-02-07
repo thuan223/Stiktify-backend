@@ -18,16 +18,12 @@ import { User } from '../users/schemas/user.schema';
 export class ShortVideosService {
   constructor(
     @InjectModel(Video.name)
-    private videoModel: Model<Video>, 
+    private videoModel: Model<Video>,
     @InjectModel(User.name) private userModel: Model<User>,
     private wishListService: WishlistService,
     private videoCategoriesService: VideoCategoriesService,
-<<<<<<< HEAD
     private categoriesService: CategoriesService,
-  ) {}
-=======
   ) { }
->>>>>>> 2ae5fbff37c0a78052877915f8bc002995fcbe16
 
 
 
@@ -311,11 +307,7 @@ export class ShortVideosService {
   }
 
   async ViewUserVideos(userId: string, current: number, pageSize: number) {
-<<<<<<< HEAD
-    const filter = {userId: new mongoose.Types.ObjectId(userId) };
-=======
     const filter = { userId: new mongoose.Types.ObjectId(userId) };
->>>>>>> 2ae5fbff37c0a78052877915f8bc002995fcbe16
     const totalItems = await this.videoModel.countDocuments(filter);
     if (totalItems === 0) {
       return {
@@ -334,15 +326,9 @@ export class ShortVideosService {
       .find(filter)
       .skip(skip)
       .limit(pageSize)
-<<<<<<< HEAD
-      .sort({ createdAt: -1 }) 
-      .select('videoUrl totalFavorite totalReaction totalViews videoDescription')
-  
-=======
       .sort({ createdAt: -1 })
       .select('videoUrl totalFavorite totalReaction totalViews videoDescription')
 
->>>>>>> 2ae5fbff37c0a78052877915f8bc002995fcbe16
     return {
       meta: {
         current,
@@ -353,10 +339,9 @@ export class ShortVideosService {
       result,
     };
   }
-<<<<<<< HEAD
-  
+
   async searchVideosByDescription(searchText: string, current: number, pageSize: number) {
-    const regex = new RegExp(searchText, 'i'); 
+    const regex = new RegExp(searchText, 'i');
     const filter = { videoDescription: { $regex: regex } };
     const totalItems = await this.videoModel.countDocuments(filter);
     const totalPages = Math.ceil(totalItems / pageSize);
@@ -367,7 +352,7 @@ export class ShortVideosService {
       .limit(pageSize)
       .sort({ createdAt: -1 })
       .select('videoUrl totalFavorite totalReaction totalViews videoDescription videoThumbnail')
-    
+
     return {
       meta: {
         current,
@@ -388,9 +373,9 @@ export class ShortVideosService {
     const videoIds = videoCategories.map(vc => vc.videoId.toString());
     const result = await this.videoModel.find(
       { _id: { $in: videoIds } }
-  )
-  .select('videoUrl totalFavorite totalReaction totalViews videoDescription videoThumbnail videoTag') // ✅ Chỉ lấy các trường cần thiết
-  .exec();
+    )
+      .select('videoUrl totalFavorite totalReaction totalViews videoDescription videoThumbnail videoTag') // ✅ Chỉ lấy các trường cần thiết
+      .exec();
     return result;
   }
 
@@ -425,7 +410,7 @@ export class ShortVideosService {
       },
       result,
     };
-  }  
+  }
 
 
   async filterAdminVideosByCategory(categoryName: string, current: number = 1, pageSize: number = 10) {
@@ -437,9 +422,9 @@ export class ShortVideosService {
     const videoIds = videoCategories.map(vc => vc.videoId.toString());
     const adminUsers = await this.userModel.find({ role: 'admin' }).select('_id').exec();
     const adminUserIds = adminUsers.map(user => user._id.toString());
-    const filter: any = { 
-      _id: { $in: videoIds }, 
-      userId: { $in: adminUserIds } 
+    const filter: any = {
+      _id: { $in: videoIds },
+      userId: { $in: adminUserIds }
     };
     const totalItems = await this.videoModel.countDocuments(filter);
     const totalPages = Math.ceil(totalItems / pageSize);
@@ -461,9 +446,6 @@ export class ShortVideosService {
       result,
     };
   }
-  
-=======
 
->>>>>>> 2ae5fbff37c0a78052877915f8bc002995fcbe16
 }
-  
+
