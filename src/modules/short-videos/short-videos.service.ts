@@ -339,6 +339,9 @@ export class ShortVideosService {
       result,
     };
   }
+ async findVideoById(videoId:string){
+    return await this.videoModel.findById(videoId);
+  }
 
   async searchVideosByDescription(searchText: string, current: number, pageSize: number) {
     const regex = new RegExp(searchText, 'i');

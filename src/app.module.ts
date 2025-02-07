@@ -25,6 +25,7 @@ import { UploadMiddleware } from './middlewares/upload.middleware';
 import { WishlistModule } from './modules/wishlist/wishlist.module';
 import { ViewingHistory } from './modules/viewinghistory/schemas/viewinghistory.entity';
 import { ViewinghistoryModule } from './modules/viewinghistory/viewinghistory.module';
+import { WishlistScoreModule } from './modules/wishlist-score/wishlist-score.module';
 @Module({
   imports: [
     AuthModule,
@@ -42,6 +43,7 @@ import { ViewinghistoryModule } from './modules/viewinghistory/viewinghistory.mo
     CommentReactionsModule,
     WishlistModule,
     ViewinghistoryModule,
+    WishlistScoreModule,
     ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
