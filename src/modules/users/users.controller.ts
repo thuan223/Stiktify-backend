@@ -15,6 +15,7 @@ import { CreateUserDto, UserCreateByManager } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ResponseMessage } from '@/decorator/customize';
 import { JwtAuthGuard } from '@/auth/passport/jwt-auth.guard';
+import { BanUserDto } from './dto/ban-user.dto';
 
 @Controller('users')
 export class UsersController {
@@ -30,10 +31,9 @@ export class UsersController {
   @Post("ban-user")
   @ResponseMessage('Update status ban user successfully')
   banUser(
-    @Body() req: { isBan: boolean, _id: string }
-
+    @Body() req: BanUserDto
   ) {
-    return this.usersService.handleBanOrUnbannedUser(req)
+    return this.usersService.handleBanOrUnbannedUser(req._id, req.isBan)
   }
 
 
@@ -79,16 +79,16 @@ export class UsersController {
   @Get('search-name')
   @ResponseMessage('Search users successfully')
   searchUsers(
-  @Query('search') search: string, 
-  @Query('current') current: string,
-  @Query('pageSize') pageSize: string, 
-  @Query('sort') sort: string, 
+    @Query('search') search: string,
+    @Query('current') current: string,
+    @Query('pageSize') pageSize: string,
+    @Query('sort') sort: string,
   ) {
-  return this.usersService.handleSearchUser(
-    search,
-    +current || 1, 
-    +pageSize || 10, 
-    sort ? JSON.parse(sort) : {}, 
-  );
-}
+    return this.usersService.handleSearchUser(
+      search,
+      +current || 1,
+      +pageSize || 10,
+      sort ? JSON.parse(sort) : {},
+    );
+  }
 }
