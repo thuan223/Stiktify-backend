@@ -279,11 +279,7 @@ export class UsersService {
     };
   }
 
-  async handleUpdateInformation(
-    userId: string,
-    updateFields: Partial<{ fullname: string; email: string; phone: string; dob: string; address: string }>,
-  ) {
-
+  async handleUpdateInformation(userId: string, updateFields: UpdateUserDto) {
     const checkId = await this.isIdExist(userId);
     if (!checkId) {
       throw new BadRequestException(`User not found with ID: ${userId}`);
@@ -303,7 +299,6 @@ export class UsersService {
     );
 
     return {
-      _id: result._id,
       fullname: result.fullname,
       email: result.email,
       phone: result.phone,
@@ -311,8 +306,7 @@ export class UsersService {
       address: result.address,
     };
   }
-
-
+  
   async handleGetListUser(query: string, current: number, pageSize: number) {
     const { filter, sort } = aqp(query);
 
@@ -451,4 +445,13 @@ export class UsersService {
       result,
     };
   }
+
+  async getUserById(id: string) {
+    const user = await this.userModel.findById(id).select('-password');
+    if (!user) {
+      throw new BadRequestException(`User not found`);
+    }
+    return user;
+  }
+  
 }

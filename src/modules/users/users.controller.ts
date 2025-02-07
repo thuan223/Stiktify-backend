@@ -7,16 +7,26 @@ import {
   Param,
   Delete,
   Query,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto, UserCreateByManager } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ResponseMessage } from '@/decorator/customize';
+import { JwtAuthGuard } from '@/auth/passport/jwt-auth.guard';
 import { BanUserDto } from './dto/ban-user.dto';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) { }
+
+  @Get('get-user')
+  @UseGuards(JwtAuthGuard)
+  @ResponseMessage('Get user information successfully')
+  getUser(@Request() req) {
+  return this.usersService.getUserById(req.user._id);
+  }
 
   @Post("ban-user")
   @ResponseMessage('Update status ban user successfully')
@@ -58,11 +68,13 @@ export class UsersController {
   }
 
   @Patch('update-profile')
+  @UseGuards(JwtAuthGuard)  // Đảm bảo chỉ cho phép người dùng đã đăng nhập
   @ResponseMessage('Profile updated successfully')
-  updateProfile(@Body() updateUserDto: UpdateUserDto) {
-    const { _id, ...updateFields } = updateUserDto;
-    return this.usersService.handleUpdateInformation(_id, updateFields);
+  updateProfile(@Body() updateUserDto: UpdateUserDto, @Request() req) {
+    const userId = req.user._id;  // Lấy userId từ token, không cần gửi _id từ client
+    return this.usersService.handleUpdateInformation(userId, updateUserDto); // Truyền userId vào service
   }
+  
 
   @Get('search-name')
   @ResponseMessage('Search users successfully')

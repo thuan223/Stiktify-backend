@@ -5,12 +5,17 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Video, VideoSchema } from './schemas/short-video.schema';
 import { WishlistModule } from '../wishlist/wishlist.module';
 import { VideoCategoriesModule } from '../video-categories/video-categories.module';
+import { CategoriesModule } from '../categories/categories.module';
+import { UsersModule } from '../users/users.module';
+
 
 @Module({
   imports: [
     WishlistModule,
     VideoCategoriesModule,
     MongooseModule.forFeature([{ name: Video.name, schema: VideoSchema }]),
+    CategoriesModule,
+    UsersModule
   ],
   controllers: [ShortVideosController],
   providers: [ShortVideosService],
