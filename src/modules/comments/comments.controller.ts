@@ -12,13 +12,14 @@ import {
 import { CommentsService } from './comments.service';
 import { JwtAuthGuard } from '@/auth/passport/jwt-auth.guard';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { Types } from 'mongoose';
 
 @Controller('comments')
 export class CommentsController {
   constructor(private readonly commentsService: CommentsService) {}
 
-  @Post('video/:videoId')
-  async getCommentsByVideoId(@Param('videoId') videoId: number) {
+  @Get('video/:videoId')
+  async getCommentsByVideoId(@Param('videoId') videoId: Types.ObjectId) {
     return await this.commentsService.getCommentsByVideoId(videoId);
   }
 

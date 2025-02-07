@@ -10,3 +10,9 @@ export class CreateVideoReactionDto {
   @IsNotEmpty()
   reactionTypeId: Types.ObjectId;
 }
+
+export class GetReaction {
+  @IsMongoId()
+  @IsNotEmpty()
+  videoId: Types.ObjectId;
+}
