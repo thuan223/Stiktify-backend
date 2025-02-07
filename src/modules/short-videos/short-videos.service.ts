@@ -18,7 +18,7 @@ export class ShortVideosService {
     private videoModel: Model<Video>,
     private wishListService: WishlistService,
     private videoCategoriesService: VideoCategoriesService,
-  ) {}
+  ) { }
 
 
 
@@ -81,7 +81,7 @@ export class ShortVideosService {
     const wishList = await this.wishListService.getWishListByUserId(data);
     const wishListVideoIds = wishList.map((item) => item.videoId);
 
-    let videos = await this.videoModel.find({ _id: { $in: wishListVideoIds }}).populate('userId');
+    let videos = await this.videoModel.find({ _id: { $in: wishListVideoIds } }).populate('userId');
     const topVideos = await this.videoModel
       .find({ _id: { $nin: wishListVideoIds } })
       .sort({ totalViews: -1 })
@@ -108,13 +108,13 @@ export class ShortVideosService {
       ]);
       videos = [...videos, ...populatedVideos];
     }
-  
+
     await this.wishListService.deleteWishListByUserId(data.userId);
     // return videos.map((video) => video.videoDescription);
     return videos;
   }
   async getTrendingVideosByGuest() {
-    let videos=[];
+    let videos = [];
     const remainingCount = 10;
 
     if (remainingCount > 0) {
@@ -153,7 +153,7 @@ export class ShortVideosService {
             'category',
           );
         }
-      return {statusCode:201,message:"Create WishList"};
+        return { statusCode: 201, message: "Create WishList" };
       } else {
         const randomCreatorVideo = await this.getRandomCreatorVideo(
           data.videoId,
@@ -166,7 +166,7 @@ export class ShortVideosService {
           );
         }
       }
-    return {statusCode:201,message:"Create WishList"};
+      return { statusCode: 201, message: "Create WishList" };
     } else if (!isCategoryComplete) {
       const randomCategoryVideo = await this.getRandomCategoryVideo(
         data.videoId,
@@ -178,7 +178,7 @@ export class ShortVideosService {
           'category',
         );
       }
-    return {statusCode:201,message:"Create WishList"};
+      return { statusCode: 201, message: "Create WishList" };
     } else if (!isCreatorComplete) {
       const randomCreatorVideo = await this.getRandomCreatorVideo(data.videoId);
       if (randomCreatorVideo) {
@@ -188,7 +188,7 @@ export class ShortVideosService {
           'creator',
         );
       }
-    return {statusCode:201,message:"Create WishList"};
+      return { statusCode: 201, message: "Create WishList" };
     } else {
       const replaceType = Math.random() < 0.5 ? 'category' : 'creator';
 
@@ -203,7 +203,7 @@ export class ShortVideosService {
             'category',
           );
         }
-      return {statusCode:201,message:"Create WishList"};
+        return { statusCode: 201, message: "Create WishList" };
       } else {
         const randomCreatorVideo = await this.getRandomCreatorVideo(
           data.videoId,
@@ -215,7 +215,7 @@ export class ShortVideosService {
             'creator',
           );
         }
-      return {statusCode:201,message:"Create WishList"};
+        return { statusCode: 201, message: "Create WishList" };
       }
     }
   }
@@ -279,7 +279,8 @@ export class ShortVideosService {
         video._id,
         type,
       );
-    }}
+    }
+  }
   async isIdExist(id: string) {
     try {
       const result = await this.videoModel.exists({ _id: id });
@@ -290,18 +291,18 @@ export class ShortVideosService {
     }
   }
 
-  async handleFlagVideo(req: { flag: boolean, _id: string }) {
-    const checkId = await this.isIdExist(req._id)
+  async handleFlagVideo(_id: string, flag: boolean) {
+    const checkId = await this.isIdExist(_id)
     if (checkId === false) {
-      throw new BadRequestException(`Short video not found with ID: ${req._id}`);
+      throw new BadRequestException(`Short video not found with ID: ${_id}`);
     } else {
-      const result = await this.videoModel.findByIdAndUpdate(req._id, { flag: req.flag })
+      const result = await this.videoModel.findByIdAndUpdate(_id, { flag: flag })
       return result._id
     }
   }
 
   async ViewUserVideos(userId: string, current: number, pageSize: number) {
-    const filter = { userId: new mongoose.Types.ObjectId(userId) }; 
+    const filter = { userId: new mongoose.Types.ObjectId(userId) };
     const totalItems = await this.videoModel.countDocuments(filter);
     if (totalItems === 0) {
       return {
@@ -320,9 +321,9 @@ export class ShortVideosService {
       .find(filter)
       .skip(skip)
       .limit(pageSize)
-      .sort({ createdAt: -1 }) 
-      .select('videoUrl totalFavorite totalReaction totalViews videoDescription') 
-  
+      .sort({ createdAt: -1 })
+      .select('videoUrl totalFavorite totalReaction totalViews videoDescription')
+
     return {
       meta: {
         current,
@@ -333,5 +334,5 @@ export class ShortVideosService {
       result,
     };
   }
-  
+
 }
