@@ -333,5 +333,7 @@ export class ShortVideosService {
       result,
     };
   }
-  
+ async findVideoById(videoId:string){
+    return await this.videoModel.findById(videoId);
+  }
 }

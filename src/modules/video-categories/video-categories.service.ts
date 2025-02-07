@@ -42,6 +42,8 @@ export class VideoCategoriesService {
       ]);
       return randomCategoryVideo;
     }
-    
+    async findVideoCategoriesById(videoId:string){
+      return await this.videoCategoryModel.find({videoId});
+    }
     
 }
