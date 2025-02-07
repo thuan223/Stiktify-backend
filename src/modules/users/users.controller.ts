@@ -21,7 +21,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) { }
 
   @Get('get-user')
-  @UseGuards(JwtAuthGuard) // Bảo vệ API, chỉ user đăng nhập mới gọi được
+  @UseGuards(JwtAuthGuard)
   @ResponseMessage('Get user information successfully')
   getUser(@Request() req) {
   return this.usersService.getUserById(req.user._id);
@@ -68,11 +68,13 @@ export class UsersController {
   }
 
   @Patch('update-profile')
+  @UseGuards(JwtAuthGuard)  // Đảm bảo chỉ cho phép người dùng đã đăng nhập
   @ResponseMessage('Profile updated successfully')
-  updateProfile(@Body() updateUserDto: UpdateUserDto) {
-    const { _id, ...updateFields } = updateUserDto; 
-    return this.usersService.handleUpdateInformation(_id, updateFields); 
+  updateProfile(@Body() updateUserDto: UpdateUserDto, @Request() req) {
+    const userId = req.user._id;  // Lấy userId từ token, không cần gửi _id từ client
+    return this.usersService.handleUpdateInformation(userId, updateUserDto); // Truyền userId vào service
   }
+  
 
   @Get('search-name')
   @ResponseMessage('Search users successfully')
