@@ -7,15 +7,25 @@ import {
   Param,
   Delete,
   Query,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto, UserCreateByManager } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ResponseMessage } from '@/decorator/customize';
+import { JwtAuthGuard } from '@/auth/passport/jwt-auth.guard';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) { }
+
+  @Get('get-user')
+  @UseGuards(JwtAuthGuard) // Bảo vệ API, chỉ user đăng nhập mới gọi được
+  @ResponseMessage('Get user information successfully')
+  getUser(@Request() req) {
+  return this.usersService.getUserById(req.user._id);
+  }
 
   @Post("ban-user")
   @ResponseMessage('Update status ban user successfully')

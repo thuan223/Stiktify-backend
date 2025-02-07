@@ -451,4 +451,13 @@ export class UsersService {
       result,
     };
   }
+
+  async getUserById(id: string) {
+    const user = await this.userModel.findById(id).select('-password');
+    if (!user) {
+      throw new BadRequestException(`User not found`);
+    }
+    return user;
+  }
+  
 }
