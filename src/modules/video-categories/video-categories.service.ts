@@ -46,4 +46,12 @@ export class VideoCategoriesService {
       return await this.videoCategoryModel.find({videoId});
     }
     
+    async findCategoryByName(categoryName: string) {
+      return await this.videoCategoryModel.findOne({ categoryName }).exec();
+    }
+    
+    async findVideosByCategoryId(categoryId: string) {
+      return await this.videoCategoryModel.find({ categoryId }).exec();
+    }
+    
 }

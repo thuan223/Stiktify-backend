@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { CreateVideoReactionDto } from './dto/create-video-reaction.dto';
+import {
+  CreateVideoReactionDto,
+  GetReaction,
+} from './dto/create-video-reaction.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import {
   VideoReaction,
@@ -17,11 +20,18 @@ export class VideoReactionsService {
     @InjectModel(Video.name) private VideoModal: Model<Video>,
   ) {}
 
+  async getUserReaction(userId: string, dto: GetReaction) {
+    return this.videoReactionModel
+      .findOne({ userId, videoId: dto.videoId })
+      .select('reactionTypeId');
+  }
+
   async reactToVideo(userId: string, dto: CreateVideoReactionDto) {
     const existingReaction = await this.videoReactionModel.findOne({
       videoId: dto.videoId,
       userId,
     });
+    console.log(dto);
 
     if (existingReaction) {
       existingReaction.reactionTypeId = dto.reactionTypeId;

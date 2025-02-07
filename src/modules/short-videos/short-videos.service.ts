@@ -9,16 +9,21 @@ import { WishlistService } from '../wishlist/wishlist.service';
 import { CreateWishListVideoDto } from './dto/create-wishlist-videos.dto';
 import { VideoCategoriesService } from '../video-categories/video-categories.service';
 import aqp from 'api-query-params';
+import { CategoriesService } from '../categories/categories.service';
 import { User } from '../users/schemas/user.schema';
+
+
 
 @Injectable()
 export class ShortVideosService {
   constructor(
     @InjectModel(Video.name)
     private videoModel: Model<Video>,
+    @InjectModel(User.name) private userModel: Model<User>,
     private wishListService: WishlistService,
     private videoCategoriesService: VideoCategoriesService,
-  ) {}
+    private categoriesService: CategoriesService,
+  ) { }
 
 
 
@@ -81,7 +86,7 @@ export class ShortVideosService {
     const wishList = await this.wishListService.getWishListByUserId(data);
     const wishListVideoIds = wishList.map((item) => item.videoId);
 
-    let videos = await this.videoModel.find({ _id: { $in: wishListVideoIds }}).populate('userId');
+    let videos = await this.videoModel.find({ _id: { $in: wishListVideoIds } }).populate('userId');
     const topVideos = await this.videoModel
       .find({ _id: { $nin: wishListVideoIds } })
       .sort({ totalViews: -1 })
@@ -108,13 +113,13 @@ export class ShortVideosService {
       ]);
       videos = [...videos, ...populatedVideos];
     }
-  
+
     await this.wishListService.deleteWishListByUserId(data.userId);
     // return videos.map((video) => video.videoDescription);
     return videos;
   }
   async getTrendingVideosByGuest() {
-    let videos=[];
+    let videos = [];
     const remainingCount = 10;
 
     if (remainingCount > 0) {
@@ -153,7 +158,7 @@ export class ShortVideosService {
             'category',
           );
         }
-      return {statusCode:201,message:"Create WishList"};
+        return { statusCode: 201, message: "Create WishList" };
       } else {
         const randomCreatorVideo = await this.getRandomCreatorVideo(
           data.videoId,
@@ -166,7 +171,7 @@ export class ShortVideosService {
           );
         }
       }
-    return {statusCode:201,message:"Create WishList"};
+      return { statusCode: 201, message: "Create WishList" };
     } else if (!isCategoryComplete) {
       const randomCategoryVideo = await this.getRandomCategoryVideo(
         data.videoId,
@@ -178,7 +183,7 @@ export class ShortVideosService {
           'category',
         );
       }
-    return {statusCode:201,message:"Create WishList"};
+      return { statusCode: 201, message: "Create WishList" };
     } else if (!isCreatorComplete) {
       const randomCreatorVideo = await this.getRandomCreatorVideo(data.videoId);
       if (randomCreatorVideo) {
@@ -188,7 +193,7 @@ export class ShortVideosService {
           'creator',
         );
       }
-    return {statusCode:201,message:"Create WishList"};
+      return { statusCode: 201, message: "Create WishList" };
     } else {
       const replaceType = Math.random() < 0.5 ? 'category' : 'creator';
 
@@ -203,7 +208,7 @@ export class ShortVideosService {
             'category',
           );
         }
-      return {statusCode:201,message:"Create WishList"};
+        return { statusCode: 201, message: "Create WishList" };
       } else {
         const randomCreatorVideo = await this.getRandomCreatorVideo(
           data.videoId,
@@ -215,7 +220,7 @@ export class ShortVideosService {
             'creator',
           );
         }
-      return {statusCode:201,message:"Create WishList"};
+        return { statusCode: 201, message: "Create WishList" };
       }
     }
   }
@@ -279,7 +284,8 @@ export class ShortVideosService {
         video._id,
         type,
       );
-    }}
+    }
+  }
   async isIdExist(id: string) {
     try {
       const result = await this.videoModel.exists({ _id: id });
@@ -290,18 +296,18 @@ export class ShortVideosService {
     }
   }
 
-  async handleFlagVideo(req: { flag: boolean, _id: string }) {
-    const checkId = await this.isIdExist(req._id)
+  async handleFlagVideo(_id: string, flag: boolean) {
+    const checkId = await this.isIdExist(_id)
     if (checkId === false) {
-      throw new BadRequestException(`Short video not found with ID: ${req._id}`);
+      throw new BadRequestException(`Short video not found with ID: ${_id}`);
     } else {
-      const result = await this.videoModel.findByIdAndUpdate(req._id, { flag: req.flag })
+      const result = await this.videoModel.findByIdAndUpdate(_id, { flag: flag })
       return result._id
     }
   }
 
   async ViewUserVideos(userId: string, current: number, pageSize: number) {
-    const filter = { userId: new mongoose.Types.ObjectId(userId) }; 
+    const filter = { userId: new mongoose.Types.ObjectId(userId) };
     const totalItems = await this.videoModel.countDocuments(filter);
     if (totalItems === 0) {
       return {
@@ -320,9 +326,9 @@ export class ShortVideosService {
       .find(filter)
       .skip(skip)
       .limit(pageSize)
-      .sort({ createdAt: -1 }) 
-      .select('videoUrl totalFavorite totalReaction totalViews videoDescription') 
-  
+      .sort({ createdAt: -1 })
+      .select('videoUrl totalFavorite totalReaction totalViews videoDescription')
+
     return {
       meta: {
         current,
@@ -336,4 +342,113 @@ export class ShortVideosService {
  async findVideoById(videoId:string){
     return await this.videoModel.findById(videoId);
   }
+
+  async searchVideosByDescription(searchText: string, current: number, pageSize: number) {
+    const regex = new RegExp(searchText, 'i');
+    const filter = { videoDescription: { $regex: regex } };
+    const totalItems = await this.videoModel.countDocuments(filter);
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const skip = (current - 1) * pageSize;
+    const result = await this.videoModel
+      .find(filter)
+      .skip(skip)
+      .limit(pageSize)
+      .sort({ createdAt: -1 })
+      .select('videoUrl totalFavorite totalReaction totalViews videoDescription videoThumbnail')
+
+    return {
+      meta: {
+        current,
+        pageSize,
+        totalItems,
+        totalPages,
+      },
+      result,
+    };
+  }
+
+  async findByCategory(categoryName: string, current: number = 1, pageSize: number = 10) {
+    const category = await this.categoriesService.findCategoryByName(categoryName);
+    if (!category) {
+      throw new BadRequestException(`Category '${categoryName}' not found in categories!`);
+    }
+    const videoCategories = await this.videoCategoriesService.findVideosByCategoryId(category._id.toString());
+    const videoIds = videoCategories.map(vc => vc.videoId.toString());
+    const result = await this.videoModel.find(
+      { _id: { $in: videoIds } }
+    )
+      .select('videoUrl totalFavorite totalReaction totalViews videoDescription videoThumbnail videoTag') // ✅ Chỉ lấy các trường cần thiết
+      .exec();
+    return result;
+  }
+
+  async searchAdminVideos(
+    searchText: string,
+    current: number = 1,
+    pageSize: number = 10,
+  ) {
+    const adminUsers = await this.userModel.find({ role: 'ADMIN' }).select('_id').exec();
+    const adminUserIds = adminUsers.map(user => user._id.toString());
+    const filter: any = {};
+    filter.userId = { $in: adminUserIds };
+    if (searchText) {
+      filter.videoDescription = { $regex: new RegExp(searchText, 'i') };
+    }
+    const totalItems = await this.videoModel.countDocuments(filter);
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const skip = (current - 1) * pageSize;
+    const result = await this.videoModel
+      .find(filter)
+      .skip(skip)
+      .limit(pageSize)
+      .sort({ createdAt: -1 })
+      .select('videoUrl totalFavorite totalReaction totalViews videoDescription videoThumbnail videoTag videoType ')
+      .exec();
+    return {
+      meta: {
+        current,
+        pageSize,
+        totalItems,
+        totalPages,
+      },
+      result,
+    };
+  }
+
+
+  async filterAdminVideosByCategory(categoryName: string, current: number = 1, pageSize: number = 10) {
+    const category = await this.categoriesService.findCategoryByName(categoryName);
+    if (!category) {
+      throw new BadRequestException(`Category '${categoryName}' not found in categories!`);
+    }
+    const videoCategories = await this.videoCategoriesService.findVideosByCategoryId(category._id.toString());
+    const videoIds = videoCategories.map(vc => vc.videoId.toString());
+    const adminUsers = await this.userModel.find({ role: 'admin' }).select('_id').exec();
+    const adminUserIds = adminUsers.map(user => user._id.toString());
+    const filter: any = {
+      _id: { $in: videoIds },
+      userId: { $in: adminUserIds }
+    };
+    const totalItems = await this.videoModel.countDocuments(filter);
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const skip = (current - 1) * pageSize;
+    const result = await this.videoModel
+      .find(filter)
+      .skip(skip)
+      .limit(pageSize)
+      .sort({ createdAt: -1 })
+      .select('videoUrl totalFavorite totalReaction totalViews videoDescription videoThumbnail videoTag videoType ')
+      .exec();
+    return {
+      meta: {
+        current,
+        pageSize,
+        totalItems,
+        totalPages,
+      },
+      result,
+    };
+  }
+
 }
+
