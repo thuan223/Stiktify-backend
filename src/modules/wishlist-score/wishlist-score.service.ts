@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { CreateWishlistScoreDto } from './dto/create-wishlist-score.dto';
 import { UpdateWishlistScoreDto } from './dto/update-wishlist-score.dto';
 import { TriggerWishlistScoreDto } from './dto/trigger-wishlist-score';
@@ -13,6 +13,7 @@ export class WishlistScoreService {
   constructor(
     @InjectModel(WishlistScore.name)
     private wishListScoreModel: Model<WishlistScore>,
+        @Inject(forwardRef(() => ShortVideosService)) 
     private videoService: ShortVideosService,
     private videoCategoriesService: VideoCategoriesService,
   ) {}
@@ -53,18 +54,18 @@ export class WishlistScoreService {
     }
     if (suggest?.tags?.length) {
       for (const tag of suggest.tags) {
-        this.triggerWishListScoretag(tag, triggerWishlistScoreDto.userId, scoreIncrase);
+      await  this.triggerWishListScoretag(tag, triggerWishlistScoreDto.userId, scoreIncrase);
       }
     }
     if (suggest?.musicId) {
-      this.triggerWishListScoreMusic(
+    await  this.triggerWishListScoreMusic(
         suggest.musicId,
         triggerWishlistScoreDto.userId,
         scoreIncrase,
       );
     }
     if (suggest?.creatorId) {
-      this.triggerWishListScoreCreator(
+     await this.triggerWishListScoreCreator(
         suggest.creatorId,
         triggerWishlistScoreDto.userId,
         scoreIncrase,
@@ -72,7 +73,7 @@ export class WishlistScoreService {
     }
     if (suggest?.categoryId?.length) {
       for (const category of suggest.categoryId) {
-        this.triggerWishListScoreCategory(
+     await   this.triggerWishListScoreCategory(
           category,
           triggerWishlistScoreDto.userId,
           scoreIncrase,
@@ -82,10 +83,10 @@ export class WishlistScoreService {
     return suggest;
   }
   async triggerWishListScoretag(tag: string, userId: string, scoreBonus) {
-    const existingTag = await this.wishListScoreModel.findOne({ tag });
+    const existingTag = await this.wishListScoreModel.findOne({ tag,userId });
     if (existingTag) {
       await this.wishListScoreModel.updateOne(
-        { tag },
+        { tag,userId },
         { $inc: { score: scoreBonus } },
       );
     } else {
@@ -98,10 +99,10 @@ export class WishlistScoreService {
     }
   }
   async triggerWishListScoreMusic(musicId: string, userId: string, scoreBonus) {
-    const existingTag = await this.wishListScoreModel.findOne({ musicId });
+    const existingTag = await this.wishListScoreModel.findOne({ musicId,userId });
     if (existingTag) {
       await this.wishListScoreModel.updateOne(
-        { musicId },
+        { musicId,userId },
         { $inc: { score: scoreBonus } },
       );
     } else {
@@ -118,10 +119,10 @@ export class WishlistScoreService {
     userId: string,
     scoreBonus,
   ) {
-    const existingTag = await this.wishListScoreModel.findOne({ creatorId });
+    const existingTag = await this.wishListScoreModel.findOne({ creatorId,userId });
     if (existingTag) {
       await this.wishListScoreModel.updateOne(
-        { creatorId },
+        { creatorId,userId },
         { $inc: { score: scoreBonus } },
       );
     } else {
@@ -138,10 +139,10 @@ export class WishlistScoreService {
     userId: string,
     scoreBonus,
   ) {
-    const existingTag = await this.wishListScoreModel.findOne({ categoryId });
+    const existingTag = await this.wishListScoreModel.findOne({ categoryId,userId });
     if (existingTag) {
       await this.wishListScoreModel.updateOne(
-        { categoryId },
+        { categoryId,userId },
         { $inc: { score: scoreBonus } },
       );
     } else {
@@ -156,7 +157,6 @@ export class WishlistScoreService {
   async findSuggestByVideo(videoId: string) {
     let suggest = { tags: [], musicId: null, creatorId: null, categoryId: [] };
     const video = await this.videoService.findVideoById(videoId);
-    console.log(video._id);
     if (video) {
       suggest.tags = video.videoTag || [];
       suggest.musicId = video.musicId || null;
@@ -169,6 +169,43 @@ export class WishlistScoreService {
     }
     return suggest;
   }
+  async getScoreByTag(tag:string,userId:string){
+    return await this.wishListScoreModel.findOne({tag:tag,userId:userId, wasCheck:false})
+  }
+  async getScoreByMusic(musicId:string,userId:string){
+    return await this.wishListScoreModel.findOne({musicId:musicId,userId:userId, wasCheck:false})
+  }
+  async getScoreByCreator(creatorId:string,userId:string){
+    return await this.wishListScoreModel.findOne({creatorId:creatorId,userId:userId, wasCheck:false})
+  }
+  async getScoreByCategory(categoryId:string,userId:string){
+    return await this.wishListScoreModel.findOne({categoryId:categoryId,userId:userId, wasCheck:false})
+  }
+  async checkAndResetWasCheck(userId: string) {
+    const totalCount = await this.wishListScoreModel.countDocuments({ userId: userId });
+    const checkedCount = await this.wishListScoreModel.countDocuments({ userId: userId, wasCheck: true });
+
+    
+    if (totalCount > 0 && checkedCount / totalCount > 0.3) {
+      console.log("totalCount");
+     return await this.wishListScoreModel.updateMany(
+        { userId: userId },
+        { $set: { wasCheck: false } }
+      );
+    }
+    return null;
+  }
+  
+  async updateWasCheckByUserId(_id: string, userId: string) {
+    return await this.wishListScoreModel.updateMany(
+      { _id: _id, userId: userId },
+      {
+        $set: { wasCheck: true },
+        $mul: { score: 0.9 },
+      }
+    );
+  }
+  
   findAll() {
     return `This action returns all wishlistScore`;
   }

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable } from '@nestjs/common';
 import { CreateShortVideoDto } from './dto/create-short-video.dto';
 import { UpdateShortVideoDto } from './dto/update-short-video.dto';
 import { TrendingVideoDto } from './dto/trending-video.dto';
@@ -20,7 +20,8 @@ export class ShortVideosService {
     @InjectModel(Video.name)
     private videoModel: Model<Video>,
     @InjectModel(User.name) private userModel: Model<User>,
-    private wishListService: WishlistService,
+     @Inject(forwardRef(() => WishlistService)) 
+    private wishListService:WishlistService,
     private videoCategoriesService: VideoCategoriesService,
     private categoriesService: CategoriesService,
   ) { }

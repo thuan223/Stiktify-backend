@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ShortVideosService } from './short-videos.service';
 import { ShortVideosController } from './short-videos.controller';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -11,7 +11,7 @@ import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
-    WishlistModule,
+    forwardRef(() => WishlistModule),
     VideoCategoriesModule,
     MongooseModule.forFeature([{ name: Video.name, schema: VideoSchema }]),
     CategoriesModule,

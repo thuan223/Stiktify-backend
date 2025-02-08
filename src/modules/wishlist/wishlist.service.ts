@@ -1,21 +1,93 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { CreateWishlistDto } from './dto/create-wishlist.dto';
 import { UpdateWishlistDto } from './dto/update-wishlist.dto';
 import { TrendingVideoDto } from '../short-videos/dto/trending-video.dto';
 import { WishList } from './schemas/wishlist.entity';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
+import { WishlistScoreService } from '../wishlist-score/wishlist-score.service';
 
 @Injectable()
 export class WishlistService {
   constructor(
     @InjectModel(WishList.name)
     private wishListModel: Model<WishList>,
+    @Inject(forwardRef(() => WishlistScoreService))
+    private wishListScoreService: WishlistScoreService,
   ) {}
-  create(createWishlistDto: CreateWishlistDto) {
-    return 'This action adds a new wishlist';
+  async create(createWishlistDto: CreateWishlistDto) {
+    console.log(createWishlistDto);
+    let suggestByVideo;
+    if (createWishlistDto.triggerAction != 'ScrollVideo') {
+      suggestByVideo =
+        await this.wishListScoreService.triggerWishListScore(createWishlistDto);
+    } else {
+      suggestByVideo = await this.wishListScoreService.findSuggestByVideo(
+        createWishlistDto.id,
+      );
+    }
+    if (suggestByVideo) {
+      const wishListScore = await this.getScoreBySuggestIDAndType(
+        suggestByVideo,
+        createWishlistDto.userId,
+      );
+      return wishListScore;
+    }
+    return null;
   }
+  async getScoreBySuggestIDAndType(
+    suggestByVideo: {
+      tags: string[];
+      musicId: string;
+      creatorId: string;
+      categoryId: string[];
+    },
+    userId: string,
+  ) {
+    await this.wishListScoreService.checkAndResetWasCheck(userId);
+    let wishListScores = [];
+    console.log(suggestByVideo);
+    if (suggestByVideo.tags) {
+      for (const tag of suggestByVideo.tags) {
+        const tagScore = await this.wishListScoreService.getScoreByTag(
+          tag,
+          userId,
+        );
+        if (tagScore) wishListScores.push(tagScore);
+      }
+    }
+    if (suggestByVideo.musicId) {
+      const musicScore = await this.wishListScoreService.getScoreByMusic(
+        suggestByVideo.musicId,
+        userId,
+      );
+      if (musicScore) wishListScores.push(musicScore);
+    }
+    if (suggestByVideo.creatorId) {
+      const creatorScore = await this.wishListScoreService.getScoreByCreator(
+        suggestByVideo.creatorId,
+        userId,
+      );
+      if (creatorScore) wishListScores.push(creatorScore);
+    }
+    if (suggestByVideo.categoryId) {
+      for (const cateId of suggestByVideo.categoryId) {
+        const cateScore = await this.wishListScoreService.getScoreByCategory(
+          cateId,
+          userId,
+        );
+        if (cateScore) wishListScores.push(cateScore);
+      }
+    }
 
+    for (const wishListScore of wishListScores) {
+      await this.wishListScoreService.updateWasCheckByUserId(
+        wishListScore._id,
+        userId,
+      );
+    }
+    return wishListScores;
+  }
   findAll() {
     return `This action returns all wishlist`;
   }
@@ -41,7 +113,7 @@ export class WishlistService {
       deletedCount: result.deletedCount,
     };
   }
-  
+
   async addToWishList(
     userId: string,
     videoId: string,
@@ -92,9 +164,9 @@ export class WishlistService {
     if (existingItem) {
       throw new Error('Video already exists in the wish list');
     }
-    wishListItem.videoId=newVideoId;
-    wishListItem.wishListType=newType;
-    Object.assign(wishListItem,newVideoId, newType);
+    wishListItem.videoId = newVideoId;
+    wishListItem.wishListType = newType;
+    Object.assign(wishListItem, newVideoId, newType);
     return await wishListItem.save();
   }
 }
