@@ -33,20 +33,6 @@ export class ShortVideosController {
   findOne(@Body() req: flagShortVideoDto) {
     return this.shortVideosService.handleFlagVideo(req._id, req.flag);
   }
-
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateShortVideoDto: UpdateShortVideoDto,
-  ) {
-    return this.shortVideosService.update(+id, updateShortVideoDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.shortVideosService.remove(+id);
-  }
-
   @Post('trending-guest-videos')
   @Public()
   getTrendingVideosByGuest() {
@@ -116,6 +102,41 @@ export class ShortVideosController {
     category, +current || 1, +pageSize || 10
   );
 }
+// Upload a new video
+@Post('upload')
+async uploadVideo(@Body() createShortVideoDto: CreateShortVideoDto) {
+  return this.shortVideosService.create(createShortVideoDto);
+}
+
+// Update video
+@Patch(':id')
+async update(@Param('id') id: string, @Body() updateShortVideoDto: UpdateShortVideoDto) {
+  return this.shortVideosService.update(id, updateShortVideoDto);
+}
+// Delete Short Video cho trạng thái isDeleted thành True  
+@Delete(':id')
+async deleteVideo(@Param('id') id: string, @Body('userId') userId: string) {
+  return this.shortVideosService.remove(id, userId);
+}
+// Share Short Video 
+@Patch(':id/share')
+async shareVideo(@Param('id') id: string) {
+  return this.shortVideosService.shareVideo(id);
+}
+// // Report video
+// @Post(':id/report')
+// async reportVideo(
+//   @Param('id') id: string,
+//   @Body('reason') reason: string,
+//   @Body('userId') userId: string,
+// ) {
+//   return this.shortVideosService.reportVideo(id, reason, userId);
+// }
+// // Like or Unlike a video
+// @Patch(':id/like')
+// async likeVideo(@Param('id') videoId: string, @Body('userId') userId: string) {
+//   return this.shortVideosService.likeVideo(videoId, userId);
+// }
 
 }
 

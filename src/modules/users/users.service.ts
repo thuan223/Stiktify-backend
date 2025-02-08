@@ -454,4 +454,16 @@ export class UsersService {
     return user;
   }
   
+    // Detail user - ThangLH
+    async handleGetUserDetail(id: string) {
+      try {
+        const user = await this.userModel.findById(id).select('-password'); 
+        if (!user) {
+          throw new BadRequestException(`User not found with ID: ${id}`);
+        }
+        return user;
+      } catch (error) {
+        throw new BadRequestException('Invalid user ID or user not found');
+      }
+    }
 }
