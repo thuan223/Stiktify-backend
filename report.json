@@ -1,0 +1,41 @@
+[
+    {
+        "videoId": "6741b59d342097607f012a51",
+        "report": [
+            {
+                "userId": "67a1cecd847fc98e6151ff95",
+                "reasons": "Inappropriate content"
+            },
+            {
+                "userId": "6742d6dacc0d32268bcd639f",
+                "reasons": "Harassment or bullying"
+            },
+            {
+                "userId": "6783fece5f16da1a9ba06e44",
+                "reasons": "Harassment or bullying"
+            }
+        ]
+    },
+    {
+        "videoId": "6741b59d342097607f012a52",
+        "report": [
+            {
+                "userId": "67a1cecd847fc98e6151ff95",
+                "reasons": "Copyright violation"
+            },
+            {
+                "userId": "6741ab10342097607f0129f9",
+                "reasons": "Violence or hate speech"
+            }
+        ]
+    },
+    {
+        "videoId": "6741b59d342097607f012a53",
+        "report": [
+            {
+                "userId": "6742d6dacc0d32268bcd639f",
+                "reasons": "Spam or misleading"
+            }
+        ]
+    }
+]

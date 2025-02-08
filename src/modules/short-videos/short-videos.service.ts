@@ -71,6 +71,22 @@ export class ShortVideosService {
     }
   }
 
+  async checkVideoById(id: string) {
+    try {
+      const result = await this.videoModel
+        .findById(id)
+        .populate("userId", "userName")
+        .select("-totalComment -totalReaction")
+
+      if (result) {
+        return result
+      }
+      return null
+    } catch (error) {
+      return null
+    }
+  }
+
   findOne(id: number) {
     return `This action returns a #${id} shortVideo`;
   }
@@ -339,7 +355,7 @@ export class ShortVideosService {
       result,
     };
   }
- async findVideoById(videoId:string){
+  async findVideoById(videoId: string) {
     return await this.videoModel.findById(videoId);
   }
 
