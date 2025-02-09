@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
 import aqp from 'api-query-params';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Report } from './schemas/report.schema';
 import { ShortVideosService } from '../short-videos/short-videos.service';
 import { UsersService } from '../users/users.service';
@@ -12,6 +12,7 @@ import { UsersService } from '../users/users.service';
 export class ReportService {
   constructor(
     @InjectModel(Report.name) private reportModel: Model<Report>,
+    @Inject(forwardRef(() => ShortVideosService))
     private shortVideosService: ShortVideosService,
     private usersService: UsersService,
   ) { }
@@ -30,7 +31,13 @@ export class ReportService {
     if (!current) current = 1;
     if (!pageSize) pageSize = 10;
 
-    const totalItems = (await this.reportModel.distinct("videoId", filter)).length;
+    const itemData = (await this.reportModel.find(filter).populate({
+      path: "videoId",
+      select: "isDelete",
+      match: { isDelete: false },
+    })).filter(item => item.videoId !== null)
+
+    const totalItems = new Set(itemData.map((item: any) => item.videoId._id)).size;
     const totalPages = Math.ceil(totalItems / pageSize);
 
     const skip = (+current - 1) * +pageSize;
@@ -41,6 +48,7 @@ export class ReportService {
           _id: "$videoId",
           report: {
             $push: {
+              _id: "$_id",
               userId: "$userId",
               reasons: "$reasons"
             }
@@ -59,7 +67,6 @@ export class ReportService {
     ]) as IReportResult[]
 
     const result = []
-
     for (const element of resultReport) {
       const item = await this.shortVideosService.checkVideoById(element.videoId)
       const report = element.report
@@ -109,7 +116,26 @@ export class ReportService {
     return `This action updates a #${id} report`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} report`;
+  async checkReportVideoId(id: string) {
+    try {
+      const result = await this.reportModel.find({ videoId: new Types.ObjectId(id) });
+
+      if (result) {
+        return true
+      }
+      return false
+    } catch (error) {
+      return false
+    }
+  }
+
+  async remove(id: string) {
+    const check = await this.checkReportVideoId(id)
+    if (!check) {
+      return ""
+    }
+
+    const result = await this.reportModel.deleteMany({ videoId: new Types.ObjectId(id) })
+    return result
   }
 }

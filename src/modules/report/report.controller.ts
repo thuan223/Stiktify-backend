@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, BadRequestException } from '@nestjs/common';
 import { ReportService } from './report.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
+import { ResponseMessage } from '@/decorator/customize';
 
 @Controller('report')
 export class ReportController {
@@ -21,6 +22,13 @@ export class ReportController {
     return this.reportService.findAll(query, +current, +pageSize);
   }
 
+  @Delete('delete-report/:_id')
+  @ResponseMessage('Deleted successfully')
+  remove(@Param('_id') _id: string) {
+    if (!_id) throw new BadRequestException('id must not be empty');
+    return this.reportService.remove(_id);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.reportService.findOne(+id);
@@ -31,8 +39,5 @@ export class ReportController {
     return this.reportService.update(+id, updateReportDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.reportService.remove(+id);
-  }
+
 }
