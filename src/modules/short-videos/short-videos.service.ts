@@ -323,7 +323,7 @@ export class ShortVideosService {
       throw new BadRequestException(`Short video not found with ID: ${_id}`);
     } else {
       const result = await this.videoModel.findByIdAndUpdate(_id, { flag: flag })
-      await this.reportService.remove(_id)
+      // await this.reportService.remove(_id)
       return result._id
     }
   }
