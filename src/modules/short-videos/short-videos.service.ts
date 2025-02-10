@@ -306,7 +306,7 @@ export class ShortVideosService {
     }
   }
 
-  async ViewUserVideos(userId: string, current: number, pageSize: number) {
+  async ViewVideoPosted(userId: string, current: number, pageSize: number) {
     const filter = { userId: new mongoose.Types.ObjectId(userId) };
     const totalItems = await this.videoModel.countDocuments(filter);
     if (totalItems === 0) {
@@ -327,7 +327,7 @@ export class ShortVideosService {
       .skip(skip)
       .limit(pageSize)
       .sort({ createdAt: -1 })
-      .select('videoUrl totalFavorite totalReaction totalViews videoDescription')
+      .select('videoThumbnail totalReaction totalViews totalComment videoDescription')
 
     return {
       meta: {
@@ -339,6 +339,7 @@ export class ShortVideosService {
       result,
     };
   }
+
  async findVideoById(videoId:string){
     return await this.videoModel.findById(videoId);
   }
