@@ -32,6 +32,21 @@ export class UsersService {
     return false;
   };
 
+  async checkUserById(id: string) {
+    try {
+      const result = await this.userModel
+        .findById(id)
+        .select("userName image")
+
+      if (result) {
+        return result
+      }
+      return null
+    } catch (error) {
+      return null
+    }
+  }
+
   async handleRegister(registerDto: CreateAuthDto) {
     const { userName, email, password, fullname } = registerDto;
 

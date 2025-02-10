@@ -26,6 +26,7 @@ import { WishlistModule } from './modules/wishlist/wishlist.module';
 import { ViewingHistory } from './modules/viewinghistory/schemas/viewinghistory.entity';
 import { ViewinghistoryModule } from './modules/viewinghistory/viewinghistory.module';
 import { WishlistScoreModule } from './modules/wishlist-score/wishlist-score.module';
+import { ReportModule } from './modules/report/report.module';
 @Module({
   imports: [
     AuthModule,
@@ -44,6 +45,7 @@ import { WishlistScoreModule } from './modules/wishlist-score/wishlist-score.mod
     WishlistModule,
     ViewinghistoryModule,
     WishlistScoreModule,
+    ReportModule,
     ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
