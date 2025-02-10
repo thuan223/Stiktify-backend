@@ -7,6 +7,7 @@ import { WishlistModule } from '../wishlist/wishlist.module';
 import { VideoCategoriesModule } from '../video-categories/video-categories.module';
 import { CategoriesModule } from '../categories/categories.module';
 import { UsersModule } from '../users/users.module';
+import { ReportModule } from '../report/report.module';
 
 
 @Module({
@@ -15,7 +16,8 @@ import { UsersModule } from '../users/users.module';
     VideoCategoriesModule,
     MongooseModule.forFeature([{ name: Video.name, schema: VideoSchema }]),
     CategoriesModule,
-    UsersModule
+    UsersModule,
+    forwardRef(() => ReportModule)
   ],
   controllers: [ShortVideosController],
   providers: [ShortVideosService],
