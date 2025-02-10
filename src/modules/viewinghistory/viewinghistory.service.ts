@@ -84,4 +84,7 @@ export class ViewinghistoryService {
   remove(id: number) {
     return `This action removes a #${id} viewinghistory`;
   }
+  async findByVideoId(videoId: string, userId: string) {
+    return await this.viewingHistoryModel.findOne({ videoId, userId });
+  }
 }

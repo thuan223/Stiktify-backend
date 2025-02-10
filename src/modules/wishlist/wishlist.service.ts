@@ -6,6 +6,7 @@ import { WishList } from './schemas/wishlist.entity';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { WishlistScoreService } from '../wishlist-score/wishlist-score.service';
+import { ViewinghistoryService } from '../viewinghistory/viewinghistory.service';
 
 @Injectable()
 export class WishlistService {
@@ -14,27 +15,162 @@ export class WishlistService {
     private wishListModel: Model<WishList>,
     @Inject(forwardRef(() => WishlistScoreService))
     private wishListScoreService: WishlistScoreService,
+    private viewingHistoryService: ViewinghistoryService,
   ) {}
   async create(createWishlistDto: CreateWishlistDto) {
-    console.log(createWishlistDto);
     let suggestByVideo;
     if (createWishlistDto.triggerAction != 'ScrollVideo') {
-      suggestByVideo =
-        await this.wishListScoreService.triggerWishListScore(createWishlistDto);
-    } else {
-      suggestByVideo = await this.wishListScoreService.findSuggestByVideo(
-        createWishlistDto.id,
-      );
+      await this.wishListScoreService.triggerWishListScore(createWishlistDto);
     }
+    suggestByVideo = await this.wishListScoreService.findSuggestByVideo(
+      createWishlistDto.id,
+    );
+
     if (suggestByVideo) {
-      const wishListScore = await this.getScoreBySuggestIDAndType(
+      const wishListScores = await this.getScoreBySuggestIDAndType(
         suggestByVideo,
         createWishlistDto.userId,
       );
-      return wishListScore;
+      let scoreChecks = [];
+      for (let n = 0; n < wishListScores.length; n++) {
+        scoreChecks[n] = true;
+      }
+      // Sắp xếp wishlistScores theo score tăng dần
+      wishListScores.sort((a, b) => a.score - b.score);
+      const videoFound = await this.wishListScoreService.findBestVideo(
+        wishListScores,
+        scoreChecks,
+        createWishlistDto.id,
+        -1,
+      );
+      if (videoFound.length === 1) {
+        return await this.createWishListVideo(
+          videoFound[0]._id,
+          createWishlistDto.userId,
+        );
+      } else if (videoFound.length == 0) {
+        throw new Error('Not found any video suggest!');
+      }
+      const bestVideo = await this.getTheBestChoiceFromListVideo(
+        videoFound,
+        createWishlistDto.userId,
+      );
+      return await this.createWishListVideo(
+        bestVideo._id,
+        createWishlistDto.userId,
+      );
     }
     return null;
   }
+  async getTheBestChoiceFromListVideo(videoList: any, userId: string) {
+    let filteredList = [];
+    console.log('length', videoList.length);
+    for (const video of videoList) {
+      if (
+        !(await this.viewingHistoryService.findByVideoId(video._id, userId))
+      ) {
+        filteredList.push(video);
+      }
+    }
+
+    videoList = filteredList.length > 0 ? filteredList : videoList;
+    filteredList = [];
+    console.log('length', videoList.length);
+    for (const video of videoList) {
+      if (
+        !(await this.findByVideoId(video._id, userId))
+      ) {
+        filteredList.push(video);
+      }
+    }
+    videoList = filteredList.length > 0 ? filteredList : videoList;
+    console.log('length', videoList.length);
+    if (videoList.length === 1) {
+      return videoList[0];
+    }
+
+    let maxScore = 0;
+    let maxScoreVideo: any[] = [];
+
+    for (const video of videoList) {
+      let currentScore = 0;
+      const videoSuggest = await this.wishListScoreService.findSuggestByVideo(
+        video._id,
+      );
+
+      if (videoSuggest.tags) {
+        for (const tag of videoSuggest.tags) {
+          const score = await this.wishListScoreService.getScoreByTag(
+            tag,
+            userId,
+          );
+          if (score) currentScore += score.score;
+        }
+      }
+      if (videoSuggest.categoryId) {
+        for (const category of videoSuggest.categoryId) {
+          const score = await this.wishListScoreService.getScoreByCategory(
+            category,
+            userId,
+          );
+          if (score) currentScore += score.score;
+        }
+      }
+      if (videoSuggest.musicId) {
+        const score = await this.wishListScoreService.getScoreByMusic(
+          videoSuggest.musicId,
+          userId,
+        );
+        if (score) currentScore += score.score;
+      }
+      if (videoSuggest.creatorId) {
+        const score = await this.wishListScoreService.getScoreByCreator(
+          videoSuggest.creatorId,
+          userId,
+        );
+        if (score) currentScore += score.score;
+      }
+      console.log(video._id);
+      console.log('currentScore', currentScore);
+
+      if (currentScore > maxScore) {
+        maxScore = currentScore;
+        maxScoreVideo = [video]; // Gán lại danh sách mới
+      } else if (currentScore === maxScore) {
+        maxScoreVideo.push(video);
+      }
+    }
+
+    if (maxScoreVideo.length === 1) {
+      return maxScoreVideo[0];
+    }
+
+    const bestVideo = maxScoreVideo.reduce(
+      (max, video) => (video.totalViews > max.totalViews ? video : max),
+      maxScoreVideo[0] || { totalViews: 0 },
+    );
+
+    return bestVideo;
+  }
+
+  async createWishListVideo(videoId: string, userId: string) {
+    const existingWishListItem = await this.wishListModel.findOne({
+      userId: userId,
+      videoId: videoId,
+    });
+
+    if (!existingWishListItem) {
+      const newWishListItem = new this.wishListModel({
+        userId: userId,
+        videoId: videoId,
+      });
+
+      return await newWishListItem.save();
+    } else {
+      throw new Error('Wishlist item already exists');
+    }
+  }
+
   async getScoreBySuggestIDAndType(
     suggestByVideo: {
       tags: string[];
@@ -46,7 +182,6 @@ export class WishlistService {
   ) {
     await this.wishListScoreService.checkAndResetWasCheck(userId);
     let wishListScores = [];
-    console.log(suggestByVideo);
     if (suggestByVideo.tags) {
       for (const tag of suggestByVideo.tags) {
         const tagScore = await this.wishListScoreService.getScoreByTag(
@@ -88,6 +223,9 @@ export class WishlistService {
     }
     return wishListScores;
   }
+async findByVideoId(videoId:string,userId:string){
+return await this.wishListModel.findOne({videoId,userId})
+} 
   findAll() {
     return `This action returns all wishlist`;
   }

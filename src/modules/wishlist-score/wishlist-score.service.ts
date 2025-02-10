@@ -187,7 +187,6 @@ export class WishlistScoreService {
 
     
     if (totalCount > 0 && checkedCount / totalCount > 0.3) {
-      console.log("totalCount");
      return await this.wishListScoreModel.updateMany(
         { userId: userId },
         { $set: { wasCheck: false } }
@@ -195,12 +194,65 @@ export class WishlistScoreService {
     }
     return null;
   }
-  
+  async findBestVideo(
+    wishlistScores: any[], 
+    scoreChecks: boolean[],
+    videoId: string,
+    current:number
+) {
+  // console.log(wishlistScores)
+  // console.log(scoreChecks.every(check => !check))
+    if (scoreChecks.every(check => !check)) return [];
+    let suggest = { tags: [], musicID: null, creatorId: null, categoryId: [] };
+
+    for (let n = 0; n < wishlistScores.length; n++) {
+        if (scoreChecks[n]) {
+            if (wishlistScores[n].wishlistType === "Tag") {
+                suggest.tags.push(wishlistScores[n].tag);
+            } else if (wishlistScores[n].wishlistType === "Music") {
+                suggest.musicID = wishlistScores[n].musicId;
+            } else if (wishlistScores[n].wishlistType === "Creator") {
+                suggest.creatorId = wishlistScores[n].creatorId;
+            } else if (wishlistScores[n].wishlistType === "Category") {
+                suggest.categoryId.push(wishlistScores[n].categoryId);
+            }
+        }
+    }
+
+    const videoListFound = await this.videoService.findVideoBySuggest(suggest, videoId);
+    // console.log(videoListFound)
+    if (videoListFound.length > 0) return videoListFound;
+
+    if (scoreChecks.every(check => check)){
+      scoreChecks[0]=false;
+      console.log(scoreChecks)
+      return this.findBestVideo(wishlistScores,scoreChecks,videoId,0)
+    }else{
+      const indexLargeFalse = scoreChecks.lastIndexOf(false);
+      if(!(current==indexLargeFalse&&!scoreChecks[scoreChecks.length-1])){
+        scoreChecks[current]=true;
+        scoreChecks[current+1]=false;
+        console.log(scoreChecks)
+        return this.findBestVideo(wishlistScores,scoreChecks,videoId,current+1)
+      }else{
+        const indexSmallTrue = scoreChecks.findIndex(check => check);
+        scoreChecks[current]=true;
+        scoreChecks[indexSmallTrue]=false;
+        scoreChecks[indexSmallTrue+1]=false;
+        current=indexSmallTrue+1;
+        console.log(scoreChecks)
+        return this.findBestVideo(wishlistScores,scoreChecks,videoId,current)
+      }
+    }
+
+}
+
+
   async updateWasCheckByUserId(_id: string, userId: string) {
     return await this.wishListScoreModel.updateMany(
       { _id: _id, userId: userId },
       {
-        $set: { wasCheck: true },
+        // $set: { wasCheck: true },
         $mul: { score: 0.9 },
       }
     );
