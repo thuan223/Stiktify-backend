@@ -94,11 +94,13 @@ export class UsersController {
   }
 
   // Detail user - ThangLH
-  @Get('detail/:id')
+  @Get('get-user/:id')
   @ResponseMessage('Fetched user details successfully')
-  getUserDetail(@Param('id') id: string) {
-    return this.usersService.handleGetUserDetail(id);
+  async getUserDetail(@Param('id') id: string) {
+    return this.usersService.getUserById(id);
+  
 }
 
 
 }
+ 

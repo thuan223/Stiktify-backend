@@ -81,15 +81,15 @@ async remove(videoId: string, userId: string): Promise<{ message: string }> {
 }
 
   // Share a video
-  async shareVideo(videoId: string): Promise<{ message: string; shareLink: string }> {
-    const video = await this.videoModel.findById(videoId);
+  async shareVideo(id: string): Promise<{ videoUrl: string }> {
+    const video = await this.videoModel.findById(id).select("videoUrl");
     if (!video) {
       throw new BadRequestException('Video not found');
     }
   
-    const shareLink = `https://yourplatform.com/videos/${videoId}`;
-    return { message: 'Video shared successfully', shareLink };
+    return { videoUrl: video.videoUrl };
   }
+  
 
 // // Report video
 // async reportVideo(videoId: string, reason: string, userId: string): Promise<Video> {

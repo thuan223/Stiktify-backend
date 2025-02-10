@@ -119,10 +119,11 @@ async deleteVideo(@Param('id') id: string, @Body('userId') userId: string) {
   return this.shortVideosService.remove(id, userId);
 }
 // Share Short Video 
-@Patch(':id/share')
+@Get('share/:id')
 async shareVideo(@Param('id') id: string) {
   return this.shortVideosService.shareVideo(id);
 }
+
 // // Report video
 // @Post(':id/report')
 // async reportVideo(
