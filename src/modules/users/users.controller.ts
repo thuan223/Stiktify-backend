@@ -17,6 +17,7 @@ import { ResponseMessage } from '@/decorator/customize';
 import { JwtAuthGuard } from '@/auth/passport/jwt-auth.guard';
 import { BanUserDto } from './dto/ban-user.dto';
 
+
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) { }
@@ -91,4 +92,15 @@ export class UsersController {
       sort ? JSON.parse(sort) : {},
     );
   }
+
+  // Detail user - ThangLH
+  @Get('get-user/:id')
+  @ResponseMessage('Fetched user details successfully')
+  async getUserDetail(@Param('id') id: string) {
+    return this.usersService.getUserById(id);
+  
 }
+
+
+}
+ 

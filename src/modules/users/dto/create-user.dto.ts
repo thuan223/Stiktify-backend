@@ -29,3 +29,9 @@ export class UserCreateByManager {
   @IsNotEmpty({ message: 'Password  is required!' })
   password: string;
 }
+
+export class GetUserDetailDto{
+  @IsNotEmpty({ message: 'Id is required!' })
+  _id: string;
+
+}

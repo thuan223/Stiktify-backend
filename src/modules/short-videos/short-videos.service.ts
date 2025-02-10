@@ -30,10 +30,114 @@ export class ShortVideosService {
   ) { }
 
 
-
-  create(createShortVideoDto: CreateShortVideoDto) {
-    return 'This action adds a new shortVideo';
+  // Upload a new video
+  async create(createShortVideoDto: CreateShortVideoDto): Promise<Video> {
+    try {
+      const newVideo = new this.videoModel(createShortVideoDto);
+      return await newVideo.save();
+    } catch (error) {
+      throw new BadRequestException('Failed to upload video');
+    }
   }
+
+// Find one video by ID
+async findOne(id: string): Promise<Video> {
+  try {
+    const video = await this.videoModel.findById(id).exec();
+    if (!video || video.isDelete) {
+      throw new BadRequestException('Video not found or is deleted');
+    }
+    return video;
+  } catch (error) {
+    throw new BadRequestException('Failed to retrieve the video');
+  }
+}
+
+// Update a video's details
+async update(id: string, updateShortVideoDto: UpdateShortVideoDto): Promise<Video> {
+  try {
+    const updatedVideo = await this.videoModel.findByIdAndUpdate(id, updateShortVideoDto, { new: true }).exec();
+    if (!updatedVideo) {
+      throw new BadRequestException('Video not found');
+    }
+    return updatedVideo;
+  } catch (error) {
+    throw new BadRequestException('Failed to update video');
+  }
+}
+  
+
+// Delete (mark isDeleted as True) a short video
+async remove(videoId: string, userId: string): Promise<{ message: string }> {
+  const video = await this.videoModel.findById(videoId);
+  if (!video) {
+    throw new BadRequestException('Video not found');
+  }
+  if (video.userId.toString() !== userId) {
+    throw new BadRequestException('Unauthorized to delete this video');
+  }
+
+  // Set isDeleted to true
+  video.isDelete = true;
+  await video.save();
+
+  return { message: 'Video marked as deleted successfully' };
+}
+
+  // Share a video
+  async shareVideo(id: string): Promise<{ videoUrl: string }> {
+    const video = await this.videoModel.findById(id).select("videoUrl");
+    if (!video) {
+      throw new BadRequestException('Video not found');
+    }
+  
+    return { videoUrl: video.videoUrl };
+  }
+  
+
+// // Report video
+// async reportVideo(videoId: string, reason: string, userId: string): Promise<Video> {
+//   const video = await this.videoModel.findById(videoId);
+
+//   if (!video) {
+//     throw new BadRequestException('Video not found');
+//   }
+//   // Kiểm tra xem người dùng đã báo cáo video chưa
+//   if (video.reports.includes(userId)) {
+//     throw new BadRequestException('You have already reported this video');
+//   }
+//   // Thêm lý do vào danh sách báo cáo
+//   video.reports.push(reason);
+//   video.totalReports += 1; // Tăng tổng số báo cáo
+//   await video.save();
+//   return video;
+// }
+
+// // Like or unlike a video
+// async likeVideo(videoId: string, userId: string): Promise<{ message: string; totalLikes: number }> {
+//   const video = await this.videoModel.findById(videoId);
+//   if (!video) {
+//     throw new BadRequestException('Video not found');
+//   }
+
+//   // Check if the user already liked the video
+//   const index = video.likedBy.indexOf(userId as any);
+//   if (index === -1) {
+//     // Add like
+//     video.likedBy.push(userId as any);
+//   } else {
+//     // Remove like (unlike)
+//     video.likedBy.splice(index, 1);
+//   }
+
+//   // Update totalFavorite
+//   video.totalFavorite = video.likedBy.length;
+//   await video.save();
+
+//   const message = index === -1 ? 'Video liked successfully' : 'Video unliked successfully';
+//   return { message, totalLikes: video.totalFavorite };
+// }
+
 
   async findAll(query: string, current: number, pageSize: number) {
     try {
@@ -75,6 +179,7 @@ export class ShortVideosService {
       return null
     }
   }
+  
 
   async checkVideoById(id: string) {
     try {
@@ -91,18 +196,6 @@ export class ShortVideosService {
     } catch (error) {
       return null
     }
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} shortVideo`;
-  }
-
-  update(id: number, updateShortVideoDto: UpdateShortVideoDto) {
-    return `This action updates a #${id} shortVideo`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} shortVideo`;
   }
   async getTrendingVideosByUser(data: TrendingVideoDto) {
     const wishList = await this.wishListService.getWishListByUserId(data);

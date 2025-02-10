@@ -451,7 +451,7 @@ export class UsersService {
       result,
     };
   }
-
+    // Detail user - ThangLH
   async getUserById(id: string) {
     const user = await this.userModel.findById(id).select('-password');
     if (!user) {
@@ -459,4 +459,6 @@ export class UsersService {
     }
     return user;
   }
+  
+    
 }
