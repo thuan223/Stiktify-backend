@@ -15,9 +15,11 @@ export class FollowService {
     return 'This action adds a new follow';
   }
 
-  async findAll():Promise<string[]> {
-    const follow = await this.followModel.find().select('userFollowingId').exec();
-    return follow.map(follow => follow.userFollowingId)
+  async findAll(userId:string) {
+    const result = await this.followModel.find({userId:new Types.ObjectId(userId)});
+    const filter = result.map(x=>x.userFollowingId)
+    return filter;
+  
   }
 
   findOne(id: number) {
@@ -44,6 +46,11 @@ export class FollowService {
   }
 
   async followAnotherUser(followerId:string, followingId: string){
+    console.log(followerId,followingId);
+    
+    if (!followerId || !followingId) {
+      throw new BadRequestException("Missing field!!!")
+    }
     const alreadyFollow = await this.checkFollow(followerId, followingId)
     if(alreadyFollow){
    const unfollow =  await this.followModel.deleteOne({
