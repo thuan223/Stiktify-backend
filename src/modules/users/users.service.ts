@@ -6,7 +6,6 @@ import { User } from './schemas/user.schema';
 import { Model } from 'mongoose';
 import { MailerService } from '@nestjs-modules/mailer';
 import {
-  ChangePasswordAfterLoginAuthDto,
   ChangePasswordAuthDto,
   CodeAuthDto,
   CreateAuthDto,
@@ -21,7 +20,7 @@ export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private readonly mailerService: MailerService,
-  ) { }
+  ) {}
   isEmailExist = async (email: string) => {
     const isExist = await this.userModel.exists({ email });
     if (isExist) return true;
@@ -32,6 +31,21 @@ export class UsersService {
     if (isExist) return true;
     return false;
   };
+
+  async checkUserById(id: string) {
+    try {
+      const result = await this.userModel
+        .findById(id)
+        .select("userName image")
+
+      if (result) {
+        return result
+      }
+      return null
+    } catch (error) {
+      return null
+    }
+  }
 
   async handleRegister(registerDto: CreateAuthDto) {
     const { userName, email, password, fullname } = registerDto;
@@ -60,7 +74,7 @@ export class UsersService {
     this.mailerService.sendMail({
       to: user.email, // list of receivers
       // from: 'noreply@nestjs.com', // sender address
-      subject: 'Active your account at @ThuanTnn', // Subject line
+      subject: 'Active your account at @Stiktify', // Subject line
       template: 'register',
       context: {
         name: user.userName ?? user.email,
@@ -121,7 +135,7 @@ export class UsersService {
     this.mailerService.sendMail({
       to: user.email, // list of receivers
       // from: 'noreply@nestjs.com', // sender address
-      subject: 'Active your account at @ThuanTnn', // Subject line
+      subject: 'Active your account at @Stiktify', // Subject line
       template: 'register',
       context: {
         name: user.userName ?? user.email,
@@ -144,7 +158,7 @@ export class UsersService {
     this.mailerService.sendMail({
       to: user.email, // list of receivers
       // from: 'noreply@nestjs.com', // sender address
-      subject: 'Change your password account at @ThuanTnn', // Subject line
+      subject: 'Change your password account at @Stiktify', // Subject line
       template: 'forgotpassword',
       context: {
         name: user.userName ?? user.email,
@@ -185,18 +199,6 @@ export class UsersService {
     return user.email;
   }
 
-  async changePasswordAfterLogin(data: ChangePasswordAfterLoginAuthDto) {
-    let user = await this.userModel.findOne({
-      email: data.email,
-    });
-    if (!user) {
-      throw new BadRequestException('The account does not exist');
-    }
-    const newPassword = await hashPasswordHelper(data.password);
-    await user.updateOne({ password: newPassword });
-    return user.email;
-  }
-
   async isIdExist(id: string) {
     try {
       const result = await this.userModel.findById(id);
@@ -222,7 +224,6 @@ export class UsersService {
       isBan: result.isBan,
     };
   }
-
 
   async handleCreateUser(createDto: UserCreateByManager) {
     const isExistEmail = await this.isEmailExist(createDto.email);
@@ -252,7 +253,7 @@ export class UsersService {
     this.mailerService.sendMail({
       to: result.email, // list of receivers
       // from: 'noreply@nestjs.com', // sender address
-      subject: 'Active your account at @ThuanTnn', // Subject line
+      subject: 'Active your account at @Stiktify', // Subject line
       template: 'register',
       context: {
         name: result.userName ?? result.email,
@@ -288,7 +289,9 @@ export class UsersService {
     if (updateFields.email) {
       const isExistEmail = await this.isEmailExist(updateFields.email);
       if (isExistEmail) {
-        throw new BadRequestException(`Email already exists: ${updateFields.email}`);
+        throw new BadRequestException(
+          `Email already exists: ${updateFields.email}`,
+        );
       }
     }
 
@@ -306,7 +309,7 @@ export class UsersService {
       address: result.address,
     };
   }
-  
+
   async handleGetListUser(query: string, current: number, pageSize: number) {
     const { filter, sort } = aqp(query);
 
@@ -342,16 +345,20 @@ export class UsersService {
   }
 
   checkFilterAction(filter: string) {
-    if (filter === "lock") {
-      return { isBan: true }
-    } else if (filter === "unlock") {
-      return { isBan: false }
+    if (filter === 'lock') {
+      return { isBan: true };
+    } else if (filter === 'unlock') {
+      return { isBan: false };
     } else {
-      return {}
+      return {};
     }
   }
 
-  async handleFilterAndSearch(query: string, current: number, pageSize: number) {
+  async handleFilterAndSearch(
+    query: string,
+    current: number,
+    pageSize: number,
+  ) {
     const { filter, sort } = aqp(query);
 
     if (filter.current) delete filter.current;
@@ -366,7 +373,7 @@ export class UsersService {
     const skip = (+current - 1) * +pageSize;
     const searchRegex = new RegExp(`^${filter.search}`, 'i');
 
-    const handleFilter = this.checkFilterAction(filter.filterReq)
+    const handleFilter = this.checkFilterAction(filter.filterReq);
 
     let handleSearch = [];
     if (filter.search.length > 0) {
@@ -374,7 +381,7 @@ export class UsersService {
         { email: searchRegex },
         { userName: searchRegex },
         { fullname: searchRegex },
-      ]
+      ];
     }
 
     const result = await this.userModel
@@ -385,7 +392,7 @@ export class UsersService {
       .limit(pageSize)
       .skip(skip)
       .select('-password')
-      .sort(sort as any)
+      .sort(sort as any);
 
     return {
       meta: {
@@ -412,10 +419,7 @@ export class UsersService {
     const filter = {
       $and: [
         {
-          $or: [
-            { userName: searchRegex },
-            { fullname: searchRegex },
-          ],
+          $or: [{ userName: searchRegex }, { fullname: searchRegex }],
         },
         { role: { $ne: 'ADMIN' } },
       ],
@@ -424,7 +428,9 @@ export class UsersService {
     const totalItems = await this.userModel.countDocuments(filter);
 
     if (totalItems === 0) {
-      throw new BadRequestException('No users found matching your search criteria!');
+      throw new BadRequestException(
+        'No users found matching your search criteria!',
+      );
     }
 
     const skip = (current - 1) * pageSize;
