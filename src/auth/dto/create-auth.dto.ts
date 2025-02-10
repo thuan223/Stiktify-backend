@@ -28,12 +28,3 @@ export class ChangePasswordAuthDto {
   @IsNotEmpty({ message: 'Confirm Password must not be empty' })
   confirmPassword: string;
 }
-
-export class ChangePasswordAfterLoginAuthDto {
-  @IsNotEmpty({ message: 'Username or Email must not be empty' })
-  email: string;
-  @IsNotEmpty({ message: 'Password must not be empty' })
-  newPassword: string;
-  @IsNotEmpty({ message: 'Password must not be empty' })
-  password: string;
-}
