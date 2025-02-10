@@ -1,0 +1,74 @@
+[
+    {
+        "_id": {
+            "$oid": "67a628a5965dc3c48907e0d6"
+        },
+        "videoId": {
+            "$oid": "6741b59d342097607f012a51"
+        },
+        "userId": {
+            "$oid": "67a1cecd847fc98e6151ff95"
+        },
+        "reasons": "Inappropriate content"
+    },
+    {
+        "_id": {
+            "$oid": "67a628a5965dc3c48907e0d7"
+        },
+        "videoId": {
+            "$oid": "6741b59d342097607f012a52"
+        },
+        "userId": {
+            "$oid": "67a1cecd847fc98e6151ff95"
+        },
+        "reasons": "Copyright violation"
+    },
+    {
+        "_id": {
+            "$oid": "67a628a5965dc3c48907e0d8"
+        },
+        "videoId": {
+            "$oid": "6741b59d342097607f012a53"
+        },
+        "userId": {
+            "$oid": "6742d6dacc0d32268bcd639f"
+        },
+        "reasons": "Spam or misleading"
+    },
+    {
+        "_id": {
+            "$oid": "67a628a5965dc3c48907e0d9"
+        },
+        "videoId": {
+            "$oid": "6741b59d342097607f012a52"
+        },
+        "userId": {
+            "$oid": "6741ab10342097607f0129f9"
+        },
+        "reasons": "Violence or hate speech"
+    },
+    {
+        "_id": {
+            "$oid": "67a628a5965dc3c48907e0da"
+        },
+        "videoId": {
+            "$oid": "6741b59d342097607f012a51"
+        },
+        "userId": {
+            "$oid": "6742d6dacc0d32268bcd639f"
+        },
+        "reasons": "Harassment or bullying"
+    },
+    {
+        "_id": {
+            "$oid": "67a628a5965dc3c48907e0db"
+        },
+        "videoId": {
+            "$oid": "6741b59d342097607f012a51"
+        },
+        "userId": {
+            "$oid": "6783fece5f16da1a9ba06e44"
+        },
+        "reasons": "Harassment or bullying"
+    }
+]

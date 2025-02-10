@@ -38,7 +38,7 @@ export class CommentsService {
       userId,
     });
     await this.VideoModal.findByIdAndUpdate(createCommentDto.videoId, {
-      $inc: { totalReaction: 1 },
+      $inc: { totalComment: 1 },
     });
     return await newComment.save();
   }

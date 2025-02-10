@@ -29,7 +29,7 @@ export class ShortVideosController {
   }
 
   @Post('flag-video')
-  @ResponseMessage('Update status successfully')
+  @ResponseMessage('Updated successfully')
   findOne(@Body() req: flagShortVideoDto) {
     return this.shortVideosService.handleFlagVideo(req._id, req.flag);
   }
@@ -79,14 +79,14 @@ export class ShortVideosController {
 
   @Get('search-video')
   searchVideoByDescription(
-  @Query('searchText') searchText: string,
-  @Query('current') current: string,
-  @Query('pageSize') pageSize: string,
-) {
-  return this.shortVideosService.searchVideosByDescription(searchText, +current || 1, +pageSize || 10);
-}
+    @Query('searchText') searchText: string,
+    @Query('current') current: string,
+    @Query('pageSize') pageSize: string,
+  ) {
+    return this.shortVideosService.searchVideosByDescription(searchText, +current || 1, +pageSize || 10);
+  }
 
-@Get('filter-by-category')
+  @Get('filter-by-category')
   async filterByCategory(
     @Query('category') category: string,
     @Query('current') current?: string,

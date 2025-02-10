@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable } from '@nestjs/common';
 import { CreateShortVideoDto } from './dto/create-short-video.dto';
 import { UpdateShortVideoDto } from './dto/update-short-video.dto';
 import { TrendingVideoDto } from './dto/trending-video.dto';
@@ -11,6 +11,7 @@ import { VideoCategoriesService } from '../video-categories/video-categories.ser
 import aqp from 'api-query-params';
 import { CategoriesService } from '../categories/categories.service';
 import { User } from '../users/schemas/user.schema';
+import { ReportService } from '../report/report.service';
 
 
 
@@ -20,9 +21,12 @@ export class ShortVideosService {
     @InjectModel(Video.name)
     private videoModel: Model<Video>,
     @InjectModel(User.name) private userModel: Model<User>,
-    private wishListService: WishlistService,
+     @Inject(forwardRef(() => WishlistService)) 
+    private wishListService:WishlistService,
     private videoCategoriesService: VideoCategoriesService,
     private categoriesService: CategoriesService,
+    @Inject(forwardRef(() => ReportService))
+    private reportService: ReportService,
   ) { }
 
 
@@ -42,7 +46,7 @@ export class ShortVideosService {
       if (!pageSize) pageSize = 10;
 
       //Tính tổng số lượng
-      const totalItems = (await this.videoModel.find(filter)).length;
+      const totalItems = (await this.videoModel.find(filter).where({ isDelete: false })).length;
       //Tính tổng số trang
       const totalPages = Math.ceil(totalItems / pageSize);
 
@@ -55,6 +59,7 @@ export class ShortVideosService {
         .select('-password')
         .sort(sort as any)
         .populate("userId", 'userName')
+        .where({ isDelete: false })
 
       return {
         meta: {
@@ -67,6 +72,23 @@ export class ShortVideosService {
       }
     } catch (error) {
       console.log(error);
+      return null
+    }
+  }
+
+  async checkVideoById(id: string) {
+    try {
+      const result = await this.videoModel
+        .findById(id)
+        .populate("userId", "userName")
+        .select("-totalComment -totalReaction")
+        .where({ isDelete: false })
+
+      if (result) {
+        return result
+      }
+      return null
+    } catch (error) {
       return null
     }
   }
@@ -302,6 +324,7 @@ export class ShortVideosService {
       throw new BadRequestException(`Short video not found with ID: ${_id}`);
     } else {
       const result = await this.videoModel.findByIdAndUpdate(_id, { flag: flag })
+      // await this.reportService.remove(_id)
       return result._id
     }
   }

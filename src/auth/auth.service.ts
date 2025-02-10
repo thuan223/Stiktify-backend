@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import {
-  ChangePasswordAfterLoginAuthDto,
   ChangePasswordAuthDto,
   CodeAuthDto,
   CreateAuthDto,
@@ -54,10 +53,6 @@ export class AuthService {
   };
   changePassword = async (data: ChangePasswordAuthDto) => {
     return await this.usersService.changePassword(data);
-  };
-
-  changePasswordAfterLogin = async (data: ChangePasswordAfterLoginAuthDto) => {
-    return await this.usersService.changePasswordAfterLogin(data);
   };
 
   async getUser(token: string) {
