@@ -329,7 +329,7 @@ export class ShortVideosService {
     }
   }
 
-  async ViewUserVideos(userId: string, current: number, pageSize: number) {
+  async ViewVideoPosted(userId: string, current: number, pageSize: number) {
     const filter = { userId: new mongoose.Types.ObjectId(userId) };
     const totalItems = await this.videoModel.countDocuments(filter);
     if (totalItems === 0) {
@@ -350,7 +350,7 @@ export class ShortVideosService {
       .skip(skip)
       .limit(pageSize)
       .sort({ createdAt: -1 })
-      .select('videoUrl totalFavorite totalReaction totalViews videoDescription')
+      .select('videoThumbnail totalReaction totalViews totalComment videoDescription')
 
     return {
       meta: {
@@ -362,7 +362,8 @@ export class ShortVideosService {
       result,
     };
   }
-  async findVideoById(videoId: string) {
+
+ async findVideoById(videoId:string){
     return await this.videoModel.findById(videoId);
   }
 
@@ -378,6 +379,7 @@ export class ShortVideosService {
       .limit(pageSize)
       .sort({ createdAt: -1 })
       .select('videoUrl totalFavorite totalReaction totalViews videoDescription videoThumbnail')
+      .populate('userId', 'userName');
 
     return {
       meta: {
@@ -395,83 +397,83 @@ export class ShortVideosService {
     if (!category) {
       throw new BadRequestException(`Category '${categoryName}' not found in categories!`);
     }
+    const regex = new RegExp(categoryName, 'i');
     const videoCategories = await this.videoCategoriesService.findVideosByCategoryId(category._id.toString());
+    const filter = { categoryName: { $regex: regex } };
     const videoIds = videoCategories.map(vc => vc.videoId.toString());
+    const totalItems = await this.videoModel.countDocuments(filter);
+    const totalPages = Math.ceil(totalItems / pageSize);
     const result = await this.videoModel.find(
       { _id: { $in: videoIds } }
     )
+      .populate('userId')
       .select('videoUrl totalFavorite totalReaction totalViews videoDescription videoThumbnail videoTag') // ✅ Chỉ lấy các trường cần thiết
-      .exec();
-    return result;
+      .exec()
+      
+      return {
+        meta: {
+          current,
+          pageSize,
+          totalItems,
+          totalPages,
+        },
+        result,
+      };
   }
 
-  async searchAdminVideos(
-    searchText: string,
-    current: number = 1,
-    pageSize: number = 10,
-  ) {
-    const adminUsers = await this.userModel.find({ role: 'ADMIN' }).select('_id').exec();
-    const adminUserIds = adminUsers.map(user => user._id.toString());
-    const filter: any = {};
-    filter.userId = { $in: adminUserIds };
-    if (searchText) {
-      filter.videoDescription = { $regex: new RegExp(searchText, 'i') };
+  checkFilterAction(filter: string) {
+    if (filter === "categoryName") {
+      return { categoryName: true }
+    } else if (filter === "null") {
+      return { categoryName: false }
+    } else {
+      return {}
     }
-    const totalItems = await this.videoModel.countDocuments(filter);
+  }
+
+  async handleFilterSearchVideo(query: string, current: number, pageSize: number) {
+    const { filter, sort } = aqp(query);
+
+    if (filter.current) delete filter.current;
+    if (filter.pageSize) delete filter.pageSize;
+
+    if (!current) current = 1;
+    if (!pageSize) pageSize = 10;
+
+    const totalItems = (await this.videoModel.find(filter)).length;
     const totalPages = Math.ceil(totalItems / pageSize);
-    const skip = (current - 1) * pageSize;
+
+    const skip = (+current - 1) * +pageSize;
+    const searchRegex = new RegExp(`^${filter.search}`, 'i');
+
+    const handleFilter = this.checkFilterAction(filter.filterReq)
+
+    let handleSearch = [];
+    if (filter.search.length > 0) {
+      handleSearch = [
+        { email: searchRegex },
+      ]
+    }
+
     const result = await this.videoModel
-      .find(filter)
-      .skip(skip)
+      .find({
+        ...handleFilter,
+        $or: handleSearch,
+      })
       .limit(pageSize)
-      .sort({ createdAt: -1 })
-      .select('videoUrl totalFavorite totalReaction totalViews videoDescription videoThumbnail videoTag videoType ')
-      .exec();
+      .skip(skip)
+      .select('-password')
+      .sort(sort as any)
+
     return {
       meta: {
-        current,
-        pageSize,
-        totalItems,
-        totalPages,
+        current: current, // trang hien tai
+        pageSize: pageSize, // so luong ban ghi
+        pages: totalPages, // tong so trang voi dieu kien query
+        total: totalItems, // tong so ban ghi
       },
-      result,
+      result: result,
     };
   }
-
-
-  async filterAdminVideosByCategory(categoryName: string, current: number = 1, pageSize: number = 10) {
-    const category = await this.categoriesService.findCategoryByName(categoryName);
-    if (!category) {
-      throw new BadRequestException(`Category '${categoryName}' not found in categories!`);
-    }
-    const videoCategories = await this.videoCategoriesService.findVideosByCategoryId(category._id.toString());
-    const videoIds = videoCategories.map(vc => vc.videoId.toString());
-    const adminUsers = await this.userModel.find({ role: 'admin' }).select('_id').exec();
-    const adminUserIds = adminUsers.map(user => user._id.toString());
-    const filter: any = {
-      _id: { $in: videoIds },
-      userId: { $in: adminUserIds }
-    };
-    const totalItems = await this.videoModel.countDocuments(filter);
-    const totalPages = Math.ceil(totalItems / pageSize);
-    const skip = (current - 1) * pageSize;
-    const result = await this.videoModel
-      .find(filter)
-      .skip(skip)
-      .limit(pageSize)
-      .sort({ createdAt: -1 })
-      .select('videoUrl totalFavorite totalReaction totalViews videoDescription videoThumbnail videoTag videoType ')
-      .exec();
-    return {
-      meta: {
-        current,
-        pageSize,
-        totalItems,
-        totalPages,
-      },
-      result,
-    };
-  }
-
 }
 

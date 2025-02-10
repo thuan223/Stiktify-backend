@@ -3,7 +3,7 @@
 import { Public } from '@/decorator/customize';
 import { TrendingVideoDto } from './dto/trending-video.dto';
 import { CreateWishListVideoDto } from './dto/create-wishlist-videos.dto';
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Request } from '@nestjs/common';
 import { ShortVideosService } from './short-videos.service';
 import { CreateShortVideoDto } from './dto/create-short-video.dto';
 import { UpdateShortVideoDto } from './dto/update-short-video.dto';
@@ -67,13 +67,14 @@ export class ShortVideosController {
     );
   }
 
+
   @Get('my-videos')
   getUserVideos(
-    @Query('userId') userId: string,
+    @Request() req,
     @Query('current') current: string,
     @Query('pageSize') pageSize: string,
   ) {
-    return this.shortVideosService.ViewUserVideos(userId, +current, +pageSize);
+    return this.shortVideosService.ViewVideoPosted(req.user._id, +current, +pageSize);
   }
 
   @Get('search-video')
@@ -94,27 +95,13 @@ export class ShortVideosController {
     return this.shortVideosService.findByCategory(category, +current || 1, +pageSize || 10);
   }
 
-  @Get('admin-search')
-  async searchAdminVideos(
-    @Query('searchText') searchText: string,
-    @Query('current') current?: string,
-    @Query('pageSize') pageSize?: string,
+  @Get("filter-searchCategory")
+  findAllUserByFilterAndSearch(
+    @Query() query: string,
+    @Query("current") current: string,
+    @Query("pageSize") pageSize: string,
   ) {
-    return this.shortVideosService.searchAdminVideos(
-      searchText, +current || 1, +pageSize || 10
-    );
-  }
-
-
-  @Get('admin-filter-by-category')
-  filterAdminVideosByCategory(
-    @Query('category') category: string,
-    @Query('current') current?: string,
-    @Query('pageSize') pageSize?: string,
-  ) {
-    return this.shortVideosService.filterAdminVideosByCategory(
-      category, +current || 1, +pageSize || 10
-    );
+    return this.shortVideosService.handleFilterSearchVideo(query, +current, +pageSize)
   }
 
 }
