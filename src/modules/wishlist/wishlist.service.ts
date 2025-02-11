@@ -16,7 +16,7 @@ export class WishlistService {
     @Inject(forwardRef(() => WishlistScoreService))
     private wishListScoreService: WishlistScoreService,
     private viewingHistoryService: ViewinghistoryService,
-  ) {}
+  ) { }
   async create(createWishlistDto: CreateWishlistDto) {
     let suggestByVideo;
     if (createWishlistDto.triggerAction != 'ScrollVideo') {
@@ -64,7 +64,6 @@ export class WishlistService {
   }
   async getTheBestChoiceFromListVideo(videoList: any, userId: string) {
     let filteredList = [];
-    console.log('length', videoList.length);
     for (const video of videoList) {
       if (
         !(await this.viewingHistoryService.findByVideoId(video._id, userId))
@@ -75,7 +74,6 @@ export class WishlistService {
 
     videoList = filteredList.length > 0 ? filteredList : videoList;
     filteredList = [];
-    console.log('length', videoList.length);
     for (const video of videoList) {
       if (
         !(await this.findByVideoId(video._id, userId))
@@ -84,7 +82,6 @@ export class WishlistService {
       }
     }
     videoList = filteredList.length > 0 ? filteredList : videoList;
-    console.log('length', videoList.length);
     if (videoList.length === 1) {
       return videoList[0];
     }
@@ -130,8 +127,6 @@ export class WishlistService {
         );
         if (score) currentScore += score.score;
       }
-      console.log(video._id);
-      console.log('currentScore', currentScore);
 
       if (currentScore > maxScore) {
         maxScore = currentScore;
@@ -223,9 +218,9 @@ export class WishlistService {
     }
     return wishListScores;
   }
-async findByVideoId(videoId:string,userId:string){
-return await this.wishListModel.findOne({videoId,userId})
-} 
+  async findByVideoId(videoId: string, userId: string) {
+    return await this.wishListModel.findOne({ videoId, userId })
+  }
   findAll() {
     return `This action returns all wishlist`;
   }
