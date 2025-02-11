@@ -8,8 +8,11 @@ import { UpdateAuthDto } from './dto/update-auth.dto';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '@/modules/users/users.service';
 import { comparePasswordHelper } from '@/helpers/ultil';
+import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
+
+
 export class AuthService {
   constructor(
     private usersService: UsersService,

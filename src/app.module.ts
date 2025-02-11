@@ -68,7 +68,7 @@ import { ReportModule } from './modules/report/report.module';
           },
         },
         defaults: {
-          from: '"No Reply" <no-reply@localhost>',
+          from: '"Stiktify" <no-reply@localhost>',
         },
         // preview: true,
         template: {
