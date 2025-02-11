@@ -302,9 +302,7 @@ export class ShortVideosService {
       .skip(skip)
       .limit(pageSize)
       .sort({ createdAt: -1 })
-      .select(
-        'videoThumbnail totalReaction totalViews totalComment videoDescription',
-      );
+      .select('videoThumbnail totalReaction totalViews totalComment videoDescription videoUrl')
 
     return {
       meta: {
