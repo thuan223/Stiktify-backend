@@ -63,6 +63,9 @@ export class AuthController {
     }
     return this.authService.getUser(token);
   }
+  
+
+
   @Post('mail')
   @Public()
   sendingMail() {

@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateUserDto, UserCreateByManager } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateUserDto, SendMailDto } from './dto/update-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './schemas/user.schema';
 import { Model } from 'mongoose';
@@ -460,5 +460,22 @@ export class UsersService {
     return user;
   }
   
+  async sendemail(emailDto: SendMailDto) {
+    const user = await this.userModel.findOne({ email: emailDto.email });
+    if (!user) {
+      throw new BadRequestException('Account does not exist');
+    }
+    const result = await this.mailerService.sendMail({
+      to: emailDto.email, // list of receivers
+        subject: 'From admin: @Stiktify', // Subject line
+      template:'sendEmail',
+      context: {
+        name: user.userName ?? user.email,
+        content: emailDto.content,
+      },
+    });
+    return ;
+  }
+  }
     
-}
+
