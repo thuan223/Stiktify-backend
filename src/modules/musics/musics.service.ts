@@ -82,6 +82,4 @@ async handleFilterAndSearchMusic(query: any, current: number, pageSize: number) 
       result,
   };
 }
-
-  
 }

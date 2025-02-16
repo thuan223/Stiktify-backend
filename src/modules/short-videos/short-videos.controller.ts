@@ -81,13 +81,13 @@ export class ShortVideosController {
     return this.shortVideosService.findByCategory(category, +current || 1, +pageSize || 10);
   }
 
-  @Get("filter-searchCategory")
+  @Get("filter-searchVideo")
   findAllUserByFilterAndSearch(
     @Query() query: string,
     @Query("current") current: string,
     @Query("pageSize") pageSize: string,
   ) {
-    return this.shortVideosService.handleFilterSearchVideo(query, +current, +pageSize)
+    return this.shortVideosService.handleSearchAndFilterVideo(query, +current, +pageSize)
   }
 
 // Upload a new video
