@@ -514,59 +514,5 @@ async remove(videoId: string, userId: string): Promise<{ message: string }> {
       };
   }
 
-  checkFilterAction(filter: string) {
-    if (filter === "categoryName") {
-      return { categoryName: true }
-    } else if (filter === "null") {
-      return { categoryName: false }
-    } else {
-      return {}
-    }
-  }
-
-  async handleFilterSearchVideo(query: string, current: number, pageSize: number) {
-    const { filter, sort } = aqp(query);
-
-    if (filter.current) delete filter.current;
-    if (filter.pageSize) delete filter.pageSize;
-
-    if (!current) current = 1;
-    if (!pageSize) pageSize = 10;
-
-    const totalItems = (await this.videoModel.find(filter)).length;
-    const totalPages = Math.ceil(totalItems / pageSize);
-
-    const skip = (+current - 1) * +pageSize;
-    const searchRegex = new RegExp(`^${filter.search}`, 'i');
-
-    const handleFilter = this.checkFilterAction(filter.filterReq)
-
-    let handleSearch = [];
-    if (filter.search.length > 0) {
-      handleSearch = [
-        { email: searchRegex },
-      ]
-    }
-
-    const result = await this.videoModel
-      .find({
-        ...handleFilter,
-        $or: handleSearch,
-      })
-      .limit(pageSize)
-      .skip(skip)
-      .select('-password')
-      .sort(sort as any)
-
-    return {
-      meta: {
-        current: current, // trang hien tai
-        pageSize: pageSize, // so luong ban ghi
-        pages: totalPages, // tong so trang voi dieu kien query
-        total: totalItems, // tong so ban ghi
-      },
-      result: result,
-    };
-  }
 }
 
