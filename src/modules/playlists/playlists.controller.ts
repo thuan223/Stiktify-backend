@@ -18,7 +18,7 @@ export class PlaylistsController {
     @Query("current") current: number,
     @Query("pageSize") pageSize: number,
   ) {
-    return this.playlistsService.handleListPlaylist(+current, +pageSize);
+    return this.playlistsService.handleListPlaylist(userId, +current, +pageSize);
   }
 
   @Get(':id')
