@@ -10,6 +10,6 @@ import { Music, MusicSchema } from './schemas/music.schema';
   ],
   controllers: [MusicsController],
   providers: [MusicsService],
-  exports: [MusicsService],
+  exports: [MusicsService, MongooseModule],
 })
-export class MusicsModule {}
+export class MusicsModule { }

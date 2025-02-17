@@ -7,9 +7,9 @@ import { UpdatePlaylistDto } from './dto/update-playlist.dto';
 export class PlaylistsController {
   constructor(private readonly playlistsService: PlaylistsService) { }
 
-  @Post()
-  create(@Body() createPlaylistDto: CreatePlaylistDto) {
-    return this.playlistsService.create(createPlaylistDto);
+  @Post("add-playlist")
+  addPlaylist(@Body() createPlaylistDto: CreatePlaylistDto) {
+    return this.playlistsService.handleAddPlaylist(createPlaylistDto);
   }
 
   @Get("list-playlist/:userId")
