@@ -2,12 +2,14 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestj
 import { PlaylistsService } from './playlists.service';
 import { CreatePlaylistDto } from './dto/create-playlist.dto';
 import { UpdatePlaylistDto } from './dto/update-playlist.dto';
+import { ResponseMessage } from '@/decorator/customize';
 
 @Controller('playlists')
 export class PlaylistsController {
   constructor(private readonly playlistsService: PlaylistsService) { }
 
   @Post("add-playlist")
+  @ResponseMessage('Added successfully')
   addPlaylist(@Body() createPlaylistDto: CreatePlaylistDto) {
     return this.playlistsService.handleAddPlaylist(createPlaylistDto);
   }
@@ -21,6 +23,15 @@ export class PlaylistsController {
     return this.playlistsService.handleListPlaylist(userId, +current, +pageSize);
   }
 
+  @Delete('delete-playlist/:id')
+  @ResponseMessage('Deleted successfully')
+  deletePlaylist(
+    @Param('id') id: string,
+    @Body() req: { userId: string }
+  ) {
+    return this.playlistsService.handleDeletePlaylist(id, req.userId);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.playlistsService.findOne(+id);
@@ -31,8 +42,5 @@ export class PlaylistsController {
     return this.playlistsService.update(+id, updatePlaylistDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.playlistsService.remove(+id);
-  }
+
 }

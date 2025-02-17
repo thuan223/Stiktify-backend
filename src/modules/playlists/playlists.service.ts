@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreatePlaylistDto } from './dto/create-playlist.dto';
 import { UpdatePlaylistDto } from './dto/update-playlist.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -114,7 +114,29 @@ export class PlaylistsService {
     return `This action updates a #${id} playlist`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} playlist`;
+  async checkPlaylistIsExist(id: string, userId: string) {
+    try {
+      const result = await this.playlistModel.findById(id, { userId: userId })
+      if (result) return true
+
+      return false
+    } catch (error) {
+      return false
+    }
+  }
+
+  async handleDeletePlaylist(id: string, userId: string) {
+    if (!userId) {
+      throw new BadRequestException("Missing field required!")
+    }
+
+    const check = await this.checkPlaylistIsExist(id, userId)
+
+    if (!check) {
+      throw new NotFoundException(`Not found playlist with id: ${id}`)
+    }
+
+    const result = await this.playlistModel.findByIdAndDelete(id)
+    return result
   }
 }
