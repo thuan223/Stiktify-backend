@@ -17,11 +17,24 @@ export class ReportService {
     private usersService: UsersService,
   ) { }
 
-
   create(createReportDto: CreateReportDto) {
     return 'This action adds a new report';
   }
 
+  // ThangLH - Report video
+  async report(videoId: string, userId: string, reasons: string) {
+    const videoExists = await this.shortVideosService.checkVideoById(videoId);
+    if (!videoExists) {
+      throw new NotFoundException('Video not found');
+    }
+    const userExists = await this.usersService.checkUserById(userId);
+    if (!userExists) {
+      throw new NotFoundException('User not found');
+    }
+    const newReport = new this.reportModel({ videoId, userId, reasons });
+    return newReport.save();
+  }
+  
   async findAll(query: string, current: number, pageSize: number) {
     const { filter, sort } = aqp(query);
 

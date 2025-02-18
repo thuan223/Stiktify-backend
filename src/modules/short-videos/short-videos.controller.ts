@@ -93,7 +93,7 @@ export class ShortVideosController {
 // Upload a new video
 @Post('upload')
 async uploadVideo(@Body() createShortVideoDto: CreateShortVideoDto) {
-  return this.shortVideosService.create(createShortVideoDto);
+  return this.shortVideosService.create(createShortVideoDto);   
 }
 
 // Update video
@@ -111,22 +111,6 @@ async deleteVideo(@Param('id') id: string, @Body('userId') userId: string) {
 async shareVideo(@Param('id') id: string) {
   return this.shortVideosService.shareVideo(id);
 }
-
-// // Report video
-// @Post(':id/report')
-// async reportVideo(
-//   @Param('id') id: string,
-//   @Body('reason') reason: string,
-//   @Body('userId') userId: string,
-// ) {
-//   return this.shortVideosService.reportVideo(id, reason, userId);
-// }
-// // Like or Unlike a video
-// @Patch(':id/like')
-// async likeVideo(@Param('id') videoId: string, @Body('userId') userId: string) {
-//   return this.shortVideosService.likeVideo(videoId, userId);
-// }
-
 }
 
 

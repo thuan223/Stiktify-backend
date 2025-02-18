@@ -4,14 +4,21 @@ import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
 import { ResponseMessage } from '@/decorator/customize';
 
+
 @Controller('report')
 export class ReportController {
   constructor(private readonly reportService: ReportService) { }
-
   @Post()
   create(@Body() createReportDto: CreateReportDto) {
     return this.reportService.create(createReportDto);
   }
+
+  @Post()
+  async report(@Body() createReportDto: CreateReportDto) {
+    const { videoId, userId, reasons } = createReportDto;
+    return this.reportService.report(videoId.toString(), userId.toString(), reasons);
+  }
+  
 
   @Get("list-report")
   findAll(

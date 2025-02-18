@@ -80,9 +80,10 @@ async remove(videoId: string, userId: string): Promise<{ message: string }> {
   // Set isDeleted to true
   video.isDelete = true;
   await video.save();
-
   return { message: 'Video marked as deleted successfully' };
 }
+
+
 
   // Share a video
   async shareVideo(id: string): Promise<{ videoUrl: string }> {
@@ -90,53 +91,8 @@ async remove(videoId: string, userId: string): Promise<{ message: string }> {
     if (!video) {
       throw new BadRequestException('Video not found');
     }
-  
     return { videoUrl: video.videoUrl };
   }
-  
-
-// // Report video
-// async reportVideo(videoId: string, reason: string, userId: string): Promise<Video> {
-//   const video = await this.videoModel.findById(videoId);
-
-//   if (!video) {
-//     throw new BadRequestException('Video not found');
-//   }
-//   // Kiểm tra xem người dùng đã báo cáo video chưa
-//   if (video.reports.includes(userId)) {
-//     throw new BadRequestException('You have already reported this video');
-//   }
-//   // Thêm lý do vào danh sách báo cáo
-//   video.reports.push(reason);
-//   video.totalReports += 1; // Tăng tổng số báo cáo
-//   await video.save();
-//   return video;
-// }
-
-// // Like or unlike a video
-// async likeVideo(videoId: string, userId: string): Promise<{ message: string; totalLikes: number }> {
-//   const video = await this.videoModel.findById(videoId);
-//   if (!video) {
-//     throw new BadRequestException('Video not found');
-//   }
-
-//   // Check if the user already liked the video
-//   const index = video.likedBy.indexOf(userId as any);
-//   if (index === -1) {
-//     // Add like
-//     video.likedBy.push(userId as any);
-//   } else {
-//     // Remove like (unlike)
-//     video.likedBy.splice(index, 1);
-//   }
-
-//   // Update totalFavorite
-//   video.totalFavorite = video.likedBy.length;
-//   await video.save();
-
-//   const message = index === -1 ? 'Video liked successfully' : 'Video unliked successfully';
-//   return { message, totalLikes: video.totalFavorite };
-// }
 
 
   async findAll(query: string, current: number, pageSize: number) {
