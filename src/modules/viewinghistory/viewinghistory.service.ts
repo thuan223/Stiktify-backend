@@ -46,7 +46,7 @@ export class ViewinghistoryService {
     searchValue: string,
   ) {
     const { filter, sort } = aqp(query);
-
+  
     if (filter.current) delete filter.current;
     if (filter.pageSize) delete filter.pageSize;
     if (filter.searchValue) delete filter.searchValue;
@@ -56,12 +56,12 @@ export class ViewinghistoryService {
     }
     filter.query = JSON.parse(filter.query);
 
-    if (!filter.query.createdAt || filter.query.createdAt?.length === 0) {
+    if (!filter.query.updatedAt || filter.query.updatedAt?.length === 0) {
       filter.query = { userId: filter.query.userId };
     }
 
-    if (filter.query?.createdAt && typeof filter.query.createdAt === 'string') {
-      const date = new Date(filter.query.createdAt);
+    if (filter.query?.updatedAt && typeof filter.query.updatedAt === 'string') {
+      const date = new Date(filter.query.updatedAt);
       if (!isNaN(date.getTime())) {
         const isoDateStr = date.toISOString().split('T')[0];
 
