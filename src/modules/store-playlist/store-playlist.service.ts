@@ -56,8 +56,39 @@ export class StorePlaylistService {
     return result
   }
 
-  handleFindAllByPlaylistId(id: string) {
-    return `This action returns all storePlaylist: ${id}`;
+  async handleFindAllByPlaylistId(id: string, current: number, pageSize: number) {
+    if (!current) current = 1;
+    if (!pageSize) pageSize = 10;
+
+    const filter = {
+      playlistId: id
+    }
+
+    const totalItems = (await this.storePlaylistModel.find(filter)).length;
+    const totalPages = Math.ceil(totalItems / pageSize);
+
+    const skip = (+current - 1) * +pageSize;
+
+    const result = await this.storePlaylistModel
+      .find(filter)
+      .limit(pageSize)
+      .skip(skip)
+      .populate(
+        {
+          path: "musicId",
+          select: "_id musicUrl musicThumbnail musicLyric musicDescription userId"
+        })
+      .sort({ createdAt: -1 });
+
+    return {
+      meta: {
+        current: current,
+        pageSize: pageSize,
+        pages: totalPages,
+        total: totalItems,
+      },
+      result: result,
+    };
   }
 
   findOne(id: number) {

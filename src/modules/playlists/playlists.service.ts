@@ -61,12 +61,7 @@ export class PlaylistsService {
       .skip(skip)
       .populate(
         {
-          path: "musicId",
-          match: { isBlock: false },
-          populate: {
-            path: "userId",
-            select: "_id userName fullname"
-          }
+          path: "userId",
         })
       .sort({ createdAt: -1 });
 
