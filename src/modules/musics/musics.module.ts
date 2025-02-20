@@ -12,4 +12,4 @@ import { Music, MusicSchema } from './schemas/music.schema';
   providers: [MusicsService],
   exports: [MusicsService, MongooseModule],
 })
-export class MusicsModule {}
+export class MusicsModule { }

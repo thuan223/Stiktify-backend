@@ -28,8 +28,12 @@ import { ViewinghistoryModule } from './modules/viewinghistory/viewinghistory.mo
 import { WishlistScoreModule } from './modules/wishlist-score/wishlist-score.module';
 import { ReportModule } from './modules/report/report.module';
 import { FollowModule } from './modules/follow/follow.module';
+import { PlaylistsModule } from './modules/playlists/playlists.module';
+import { StorePlaylistModule } from './modules/store-playlist/store-playlist.module';
 @Module({
   imports: [
+    StorePlaylistModule,
+    PlaylistsModule,
     FollowModule,
     AuthModule,
     UsersModule,
@@ -83,6 +87,7 @@ import { FollowModule } from './modules/follow/follow.module';
       }),
       inject: [ConfigService],
     }),
+    StorePlaylistModule,
   ],
   controllers: [AppController],
   providers: [
