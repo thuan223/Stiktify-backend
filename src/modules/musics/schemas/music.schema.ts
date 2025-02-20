@@ -30,6 +30,12 @@ export class Music {
   @Prop({ default: 0, min: 0 })
   totalListener: number;
 
+  @Prop({ default: 0, min: 0 })
+  totalComment: number;
+
+  @Prop({ default: 0, min: 0 })
+  totalReactions: number;
+
   @Prop()
   musicLyric: string;
 }

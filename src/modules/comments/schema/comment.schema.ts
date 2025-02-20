@@ -1,3 +1,4 @@
+import { Music } from '@/modules/musics/schemas/music.schema';
 import { Video } from '@/modules/short-videos/schemas/short-video.schema';
 import { User } from '@/modules/users/schemas/user.schema';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
@@ -15,6 +16,12 @@ export class Comment {
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: Comment.name })
   parentId: MongooseSchema.Types.ObjectId;
+
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: Music.name })
+  musicId: MongooseSchema.Types.ObjectId;
+
+  @Prop({ default: 0, min: 0 })
+  totalOfChildComments: number;
 
   @Prop()
   CommentDescription: string;
