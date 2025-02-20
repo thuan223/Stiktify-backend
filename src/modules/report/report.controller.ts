@@ -8,11 +8,12 @@ import { ResponseMessage } from '@/decorator/customize';
 export class ReportController {
   constructor(private readonly reportService: ReportService) { }
 
+
+  //ThangLH
   @Post()
-  create(@Body() createReportDto: CreateReportDto) {
+  async create(@Body() createReportDto: CreateReportDto) {
     return this.reportService.create(createReportDto);
   }
-
   @Get("list-report")
   findAll(
     @Query() query: string,
