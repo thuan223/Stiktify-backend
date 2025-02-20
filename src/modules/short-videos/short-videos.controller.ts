@@ -17,6 +17,7 @@ import { CreateShortVideoDto } from './dto/create-short-video.dto';
 import { UpdateShortVideoDto } from './dto/update-short-video.dto';
 import { ResponseMessage } from '@/decorator/customize';
 import { flagShortVideoDto } from './dto/flag-short-video.dto';
+import { UpdateVideoByViewingDto } from './dto/update-view-by-viewing.dto';
 
 @Controller('short-videos')
 export class ShortVideosController {
@@ -45,6 +46,11 @@ export class ShortVideosController {
   @Public()
   getTrendingVideosByGuest() {
     return this.shortVideosService.getTrendingVideosByGuest();
+  }
+  @Post('update-view-by-viewing')
+  @Public()
+  updateViewByViewing(@Body() updateVideoByViewingDto: UpdateVideoByViewingDto) {
+    return this.shortVideosService.updateViewByViewing(updateVideoByViewingDto);
   }
 
   @Post('trending-user-videos')

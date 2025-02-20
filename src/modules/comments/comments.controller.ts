@@ -11,7 +11,10 @@ import {
 } from '@nestjs/common';
 import { CommentsService } from './comments.service';
 import { JwtAuthGuard } from '@/auth/passport/jwt-auth.guard';
-import { CreateCommentDto } from './dto/create-comment.dto';
+import {
+  CreateCommentDto,
+  CreateMusicCommentDto,
+} from './dto/create-comment.dto';
 import { Types } from 'mongoose';
 
 @Controller('comments')
@@ -32,5 +35,44 @@ export class CommentsController {
     const userId = req.user._id;
 
     return this.commentsService.createComment(userId, createCommentDto);
+  }
+
+  @Get('child-comments/:parentId')
+  async getChildComments(@Param('parentId') parentId: string) {
+    return this.commentsService.getChildComments(new Types.ObjectId(parentId));
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('reply/:parentId')
+  async replyToComment(
+    @Req() req: any,
+    @Param('parentId') parentId: string,
+    @Body() createCommentDto: CreateCommentDto,
+  ) {
+    const userId = req.user._id;
+    return this.commentsService.replyToComment(
+      userId,
+      new Types.ObjectId(parentId),
+      createCommentDto,
+    );
+  }
+
+  @Get('music/:musicId')
+  async getCommentsByMusicId(@Param('musicId') musicId: Types.ObjectId) {
+    return await this.commentsService.getCommentsByMusicId(musicId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('create-music-comment')
+  async createMusicComment(
+    @Req() req: any,
+    @Body() createMusicCommentDto: CreateMusicCommentDto,
+  ) {
+    const userId = req.user._id;
+
+    return this.commentsService.createMusicComment(
+      userId,
+      createMusicCommentDto,
+    );
   }
 }

@@ -12,6 +12,6 @@ import { Category, CategorySchema } from '../categories/schemas/category.schema'
   ],
   controllers: [MusicsController],
   providers: [MusicsService],
-  exports: [MusicsService],
+  exports: [MusicsService, MongooseModule],
 })
-export class MusicsModule {}
+export class MusicsModule { }

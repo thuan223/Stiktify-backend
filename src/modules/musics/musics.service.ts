@@ -14,6 +14,21 @@ export class MusicsService {
       (Music.name) private musicModel: Model<Music>,
       @InjectModel(Category.name) private categoryModel: Model<Category>
     ) {}
+
+  async checkMusicById(id: string) {
+    try {
+      const result = await this.musicModel
+        .findById(id)
+
+      if (result) {
+        return result
+      }
+      return null
+    } catch (error) {
+      return null
+    }
+  }
+
   create(createMusicDto: CreateMusicDto) {
     return 'This action adds a new music';
   }
