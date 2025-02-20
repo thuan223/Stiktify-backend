@@ -27,13 +27,13 @@ export class ShortVideosService {
     @InjectModel(Video.name)
     private videoModel: Model<Video>,
     @InjectModel(User.name) private userModel: Model<User>,
-     @Inject(forwardRef(() => WishlistService)) 
-    private wishListService:WishlistService,
+    @Inject(forwardRef(() => WishlistService))
+    private wishListService: WishlistService,
     private videoCategoriesService: VideoCategoriesService,
     private categoriesService: CategoriesService,
     @Inject(forwardRef(() => ReportService))
     private reportService: ReportService,
-  ) {}
+  ) { }
 
   // Upload a new video
   async create(createShortVideoDto: CreateShortVideoDto): Promise<Video> {
@@ -428,7 +428,7 @@ export class ShortVideosService {
         { email: searchRegex },
       ]
     }
-    const handleFilter = filter.filterReq ? await this.checkFilterMusic(filter.filterReq) : {};
+    // const handleFilter = filter.filterReq ? await this.checkFilterMusic(filter.filterReq) : {};
     const result = await this.videoModel
       .find({
         ...handleFilter,
@@ -440,13 +440,13 @@ export class ShortVideosService {
       .sort(sort as any)
 
     return {
-        meta: {
-            current,
-            pageSize,
-            total: totalItems,
-            pages: totalPages,
-        },
-        result,
+      meta: {
+        current,
+        pageSize,
+        total: totalItems,
+        pages: totalPages,
+      },
+      result,
     };
   }
 
@@ -456,6 +456,43 @@ export class ShortVideosService {
       { $inc: { totalViews: 1 } },
       { new: true },
     );
+  }
+
+  async findVideoBySuggest(suggest: any, videoId: string) {
+    let matchQuery: any = {};
+
+    // Điều kiện tìm kiếm trực tiếp trên bảng video
+    if (suggest.musicID) matchQuery.musicId = suggest.musicID;
+    if (suggest.creatorId) matchQuery.userId = suggest.creatorId;
+    if (suggest.tags && suggest.tags.length > 0) {
+      matchQuery.videoTag = { $all: suggest.tags }; // videoTag là mảng trong bảng video
+    }
+    matchQuery._id = { $ne: new mongoose.Types.ObjectId(videoId) };
+
+    let pipeline: any[] = [
+      {
+        $lookup: {
+          // Join bảng videoCategory
+          from: 'videocategories',
+          localField: '_id',
+          foreignField: 'videoId',
+          as: 'categories',
+        },
+      },
+      { $match: matchQuery }, // Lọc điều kiện trước khi xử lý category
+    ];
+
+    // Lọc theo categoryId nếu có
+    if (suggest.categoryId && suggest.categoryId.length > 0) {
+      pipeline.push({
+        $match: {
+          'categories.categoryId': { $all: suggest.categoryId },
+        },
+      });
+    }
+    // Thực hiện query
+    let videoList = await this.videoModel.aggregate(pipeline);
+    return videoList;
   }
 }
 

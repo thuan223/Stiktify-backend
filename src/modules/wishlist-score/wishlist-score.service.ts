@@ -16,7 +16,7 @@ export class WishlistScoreService {
     @Inject(forwardRef(() => ShortVideosService))
     private videoService: ShortVideosService,
     private videoCategoriesService: VideoCategoriesService,
-  ) {}
+  ) { }
   create(createWishlistScoreDto: CreateWishlistScoreDto) {
     return 'This action adds a new wishlistScore';
   }
