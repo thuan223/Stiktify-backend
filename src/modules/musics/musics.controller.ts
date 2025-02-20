@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { MusicsService } from './musics.service';
 import { CreateMusicDto } from './dto/create-music.dto';
 import { UpdateMusicDto } from './dto/update-music.dto';
@@ -11,6 +11,15 @@ export class MusicsController {
   create(@Body() createMusicDto: CreateMusicDto) {
     return this.musicsService.create(createMusicDto);
   }
+
+  @Get("filter-search")
+  findMusicFilterAndSearch(
+    @Query() query: any,
+    @Query("current") current: string,
+    @Query("pageSize") pageSize: string,
+ ) {
+    return this.musicsService.handleFilterAndSearchMusic(query, +current, +pageSize)
+}
 
   @Get()
   findAll() {
@@ -30,5 +39,7 @@ export class MusicsController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.musicsService.remove(+id);
-  }
+  } 
+
+
 }

@@ -8,6 +8,7 @@ import { VideoCategoriesModule } from '../video-categories/video-categories.modu
 import { CategoriesModule } from '../categories/categories.module';
 import { UsersModule } from '../users/users.module';
 import { ReportModule } from '../report/report.module';
+import { Category, CategorySchema } from '../categories/schemas/category.schema';
 
 
 @Module({
@@ -15,6 +16,7 @@ import { ReportModule } from '../report/report.module';
     forwardRef(() => WishlistModule),
     VideoCategoriesModule,
     MongooseModule.forFeature([{ name: Video.name, schema: VideoSchema }]),
+    MongooseModule.forFeature([{ name: Category.name, schema: CategorySchema }]),
     CategoriesModule,
     UsersModule,
     forwardRef(() => ReportModule)

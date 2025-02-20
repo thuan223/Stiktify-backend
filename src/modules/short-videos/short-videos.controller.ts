@@ -1,18 +1,27 @@
-
-
 import { Public } from '@/decorator/customize';
 import { TrendingVideoDto } from './dto/trending-video.dto';
 import { CreateWishListVideoDto } from './dto/create-wishlist-videos.dto';
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  Request,
+} from '@nestjs/common';
 import { ShortVideosService } from './short-videos.service';
 import { CreateShortVideoDto } from './dto/create-short-video.dto';
 import { UpdateShortVideoDto } from './dto/update-short-video.dto';
 import { ResponseMessage } from '@/decorator/customize';
 import { flagShortVideoDto } from './dto/flag-short-video.dto';
+import { UpdateVideoByViewingDto } from './dto/update-view-by-viewing.dto';
 
 @Controller('short-videos')
 export class ShortVideosController {
-  constructor(private readonly shortVideosService: ShortVideosService) { }
+  constructor(private readonly shortVideosService: ShortVideosService) {}
 
   @Post()
   create(@Body() createShortVideoDto: CreateShortVideoDto) {
@@ -22,8 +31,8 @@ export class ShortVideosController {
   @Get('list-video')
   findAll(
     @Query() query: string,
-    @Query("current") current: string,
-    @Query("pageSize") pageSize: string,
+    @Query('current') current: string,
+    @Query('pageSize') pageSize: string,
   ) {
     return this.shortVideosService.findAll(query, +current, +pageSize);
   }
@@ -38,21 +47,16 @@ export class ShortVideosController {
   getTrendingVideosByGuest() {
     return this.shortVideosService.getTrendingVideosByGuest();
   }
+  @Post('update-view-by-viewing')
+  @Public()
+  updateViewByViewing(@Body() updateVideoByViewingDto: UpdateVideoByViewingDto) {
+    return this.shortVideosService.updateViewByViewing(updateVideoByViewingDto);
+  }
 
   @Post('trending-user-videos')
   getTrendingVideosByUser(@Body() trendingVideoDto: TrendingVideoDto) {
     return this.shortVideosService.getTrendingVideosByUser(trendingVideoDto);
   }
-
-  @Post('create-wishlist-videos')
-  createWishListVideos(
-    @Body() createWishlistVideosDto: CreateWishListVideoDto,
-  ) {
-    return this.shortVideosService.createWishListVideos(
-      createWishlistVideosDto,
-    );
-  }
-
 
   @Get('my-videos')
   getUserVideos(
@@ -60,7 +64,11 @@ export class ShortVideosController {
     @Query('current') current: string,
     @Query('pageSize') pageSize: string,
   ) {
-    return this.shortVideosService.ViewVideoPosted(req.user._id, +current, +pageSize);
+    return this.shortVideosService.ViewVideoPosted(
+      req.user._id,
+      +current,
+      +pageSize,
+    );
   }
 
   @Get('search-video')
@@ -69,7 +77,11 @@ export class ShortVideosController {
     @Query('current') current: string,
     @Query('pageSize') pageSize: string,
   ) {
-    return this.shortVideosService.searchVideosByDescription(searchText, +current || 1, +pageSize || 10);
+    return this.shortVideosService.searchVideosByDescription(
+      searchText,
+      +current || 1,
+      +pageSize || 10,
+    );
   }
 
   @Get('filter-by-category')
@@ -78,16 +90,25 @@ export class ShortVideosController {
     @Query('current') current?: string,
     @Query('pageSize') pageSize?: string,
   ) {
-    return this.shortVideosService.findByCategory(category, +current || 1, +pageSize || 10);
+    return this.shortVideosService.findByCategory(
+      category,
+      +current || 1,
+      +pageSize || 10,
+    );
   }
 
-  @Get("filter-searchCategory")
+  @Get("filter-searchVideo")
+  @Get('filter-searchCategory')
   findAllUserByFilterAndSearch(
     @Query() query: string,
-    @Query("current") current: string,
-    @Query("pageSize") pageSize: string,
+    @Query('current') current: string,
+    @Query('pageSize') pageSize: string,
   ) {
-    return this.shortVideosService.handleFilterSearchVideo(query, +current, +pageSize)
+    return this.shortVideosService.handleFilterSearchVideo(
+      query,
+      +current,
+      +pageSize,
+    );
   }
 
 // Upload a new video
@@ -112,5 +133,3 @@ async shareVideo(@Param('id') id: string) {
   return this.shortVideosService.shareVideo(id);
 }
 }
-
-

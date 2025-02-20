@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import {
   ChangePasswordAuthDto,
   CodeAuthDto,
@@ -30,6 +30,10 @@ export class AuthService {
     return user;
   }
   async login(user: any) {
+    if (user.isBan) {
+      throw new UnauthorizedException('Your Account is Banned or Blocked.');
+    }
+
     const payload = { username: user.email, sub: user._id };
     return {
       user: {
@@ -59,6 +63,7 @@ export class AuthService {
   };
 
   async getUser(token: string) {
+    if (!token) return;
     try {
       const decoded = this.jwtService.verify(token);
 

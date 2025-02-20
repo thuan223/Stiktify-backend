@@ -169,6 +169,16 @@ export class UsersService {
     return { _id: user._id, email: user?.email };
   }
   async changePassword(data: ChangePasswordAuthDto) {
+    if (data.password.length<6) {
+      throw new BadRequestException(
+        'Password must have at least 6 characters',
+      );
+    }
+    if (data.confirmPassword.length<6) {
+      throw new BadRequestException(
+        'ConfirmPassword must have at least 6 characters',
+      );
+    }
     if (data.confirmPassword !== data.password) {
       throw new BadRequestException(
         'Password and confirm password are not the same',

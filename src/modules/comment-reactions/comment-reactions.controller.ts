@@ -1,34 +1,39 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, UseGuards, Request, Post, Body } from '@nestjs/common';
 import { CommentReactionsService } from './comment-reactions.service';
-import { CreateCommentReactionDto } from './dto/create-comment-reaction.dto';
-import { UpdateCommentReactionDto } from './dto/update-comment-reaction.dto';
+import {
+  CreateCommentReactionDto,
+  GetReaction,
+} from './dto/create-comment-reaction.dto';
+import { JwtAuthGuard } from '@/auth/passport/jwt-auth.guard';
+import { DeleteCommentReactionDto } from './dto/delete-comment-reaction.dto';
 
 @Controller('comment-reactions')
 export class CommentReactionsController {
-  constructor(private readonly commentReactionsService: CommentReactionsService) {}
+  constructor(
+    private readonly commentReactionsService: CommentReactionsService,
+  ) {}
 
-  @Post()
-  create(@Body() createCommentReactionDto: CreateCommentReactionDto) {
-    return this.commentReactionsService.create(createCommentReactionDto);
+  @UseGuards(JwtAuthGuard)
+  @Post('react')
+  async reactToComment(@Request() req, @Body() dto: CreateCommentReactionDto) {
+    const userId = req.user._id;
+    return this.commentReactionsService.reactToComment(userId, dto);
   }
 
-  @Get()
-  findAll() {
-    return this.commentReactionsService.findAll();
+  @UseGuards(JwtAuthGuard)
+  @Post('unreact')
+  async unreactToComment(
+    @Request() req,
+    @Body() dto: DeleteCommentReactionDto,
+  ) {
+    const userId = req.user._id;
+    return this.commentReactionsService.unreactToComment(userId, dto);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.commentReactionsService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCommentReactionDto: UpdateCommentReactionDto) {
-    return this.commentReactionsService.update(+id, updateCommentReactionDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.commentReactionsService.remove(+id);
+  @UseGuards(JwtAuthGuard)
+  @Post('getReactByUser')
+  async getUserReaction(@Request() req, @Body() dto: GetReaction) {
+    const userId = req.user._id;
+    return this.commentReactionsService.getUserReaction(userId, dto);
   }
 }

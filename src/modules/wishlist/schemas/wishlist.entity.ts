@@ -8,17 +8,12 @@ export type WishListDocument = HydratedDocument<WishList>;
 
 @Schema({ timestamps: true })
 export class WishList {
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: Category.name })
-  categoryId: MongooseSchema.Types.ObjectId;
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: Video.name })
   videoId: MongooseSchema.Types.ObjectId;
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: User.name })
   userId: MongooseSchema.Types.ObjectId;
-
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: User.name })
-  creatorId: MongooseSchema.Types.ObjectId;
 
   @Prop()
   wishListType: string;

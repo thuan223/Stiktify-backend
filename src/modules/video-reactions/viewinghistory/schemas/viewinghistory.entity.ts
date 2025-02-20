@@ -12,6 +12,8 @@ export class ViewingHistory {
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: User.name })
   userId: MongooseSchema.Types.ObjectId;
+  @Prop()
+  isDelete:Boolean
 }
 
 export const ViewingHistorySchema =

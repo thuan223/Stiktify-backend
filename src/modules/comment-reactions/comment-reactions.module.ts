@@ -6,12 +6,14 @@ import {
   CommentReaction,
   CommentReactionSchema,
 } from './schema/comment-reaction.schema';
+import { CommentsModule } from '../comments/comments.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: CommentReaction.name, schema: CommentReactionSchema },
     ]),
+    CommentsModule,
   ],
   controllers: [CommentReactionsController],
   providers: [CommentReactionsService],
