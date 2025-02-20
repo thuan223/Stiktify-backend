@@ -40,6 +40,8 @@ export class ShortVideosService {
     }
   }
 
+  
+
 // Find one video by ID
 async findOne(id: string): Promise<Video> {
   try {
@@ -82,6 +84,7 @@ async remove(videoId: string, userId: string): Promise<{ message: string }> {
   await video.save();
   return { message: 'Video marked as deleted successfully' };
 }
+
 
 
 

@@ -17,24 +17,22 @@ export class ReportService {
     private usersService: UsersService,
   ) { }
 
-  create(createReportDto: CreateReportDto) {
-    return 'This action adds a new report';
-  }
+  //ThangLH
+ async create(createReportDto: CreateReportDto) {
 
-  // ThangLH - Report video
-  async report(videoId: string, userId: string, reasons: string) {
-    const videoExists = await this.shortVideosService.checkVideoById(videoId);
-    if (!videoExists) {
-      throw new NotFoundException('Video not found');
-    }
-    const userExists = await this.usersService.checkUserById(userId);
-    if (!userExists) {
-      throw new NotFoundException('User not found');
-    }
-    const newReport = new this.reportModel({ videoId, userId, reasons });
-    return newReport.save();
+  const { userId, videoId, reasons } = createReportDto;
+  const video = await this.shortVideosService.checkVideoById(videoId.toString());
+  if (!video) {
+    throw new NotFoundException('Video not found');
   }
-  
+  const newReport = new this.reportModel({
+    userId,
+    videoId,
+    reasons,
+  });
+  return await newReport.save();
+}
+
   async findAll(query: string, current: number, pageSize: number) {
     const { filter, sort } = aqp(query);
 
@@ -50,8 +48,12 @@ export class ReportService {
       match: { isDelete: false },
     })).filter(item => item.videoId !== null)
 
-    const totalItems = new Set(itemData.map((item: any) => item.videoId._id)).size;
-    const totalPages = Math.ceil(totalItems / pageSize);
+    const totalItems = new Set(
+      itemData
+        .filter((item: any) => item.videoId && item.videoId._id) 
+        .map((item: any) => item.videoId._id)
+    ).size;
+        const totalPages = Math.ceil(totalItems / pageSize);
 
     const skip = (+current - 1) * +pageSize;
 

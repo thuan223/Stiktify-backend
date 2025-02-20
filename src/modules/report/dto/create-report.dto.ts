@@ -5,7 +5,7 @@ export class CreateReportDto {
   @IsNotEmpty()
   @IsMongoId()
   videoId: Types.ObjectId;
-
+  
   @IsNotEmpty()
   @IsMongoId()
   userId: Types.ObjectId;
