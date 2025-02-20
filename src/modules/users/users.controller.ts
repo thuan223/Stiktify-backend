@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto, UserCreateByManager } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { SendMailDto, UpdateUserDto } from './dto/update-user.dto';
 import { ResponseMessage } from '@/decorator/customize';
 import { JwtAuthGuard } from '@/auth/passport/jwt-auth.guard';
 import { BanUserDto } from './dto/ban-user.dto';
@@ -100,7 +100,12 @@ export class UsersController {
     return this.usersService.getUserById(id);
   
 }
-
+// Send Email - ThangLH
+@Post("send-email")
+  @ResponseMessage('Send email successfully')
+  sendEmail(@Body() emailDto: SendMailDto) {
+    return this.usersService.sendemail(emailDto)
+  }
 
 }
  

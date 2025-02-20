@@ -74,7 +74,7 @@ import { StorePlaylistModule } from './modules/store-playlist/store-playlist.mod
           },
         },
         defaults: {
-          from: '"No Reply" <no-reply@localhost>',
+          from: '"Stiktify" <no-reply@localhost>',
         },
         // preview: true,
         template: {

@@ -34,3 +34,14 @@ export class UpdateUserDto {
     @IsOptional()
     image: string
 }
+
+export class SendMailDto {
+
+    @IsOptional()
+    @IsNotEmpty({ message: "email not empty!!!" })
+    email: string;
+
+    @IsOptional()
+    @IsNotEmpty({ message: "content not empty!!!" })
+    content: string;
+}

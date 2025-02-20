@@ -97,6 +97,7 @@ export class ShortVideosController {
     );
   }
 
+  @Get("filter-searchVideo")
   @Get('filter-searchCategory')
   findAllUserByFilterAndSearch(
     @Query() query: string,

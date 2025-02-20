@@ -20,8 +20,8 @@ import { MailerService } from '@nestjs-modules/mailer';
 
 @Controller('auth')
 export class AuthController {
-  mailerService: any;
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService, 
+    private readonly mailerService: MailerService) {}
   @Post('login')
   @Public()
   @UseGuards(LocalAuthGuard)
@@ -63,15 +63,18 @@ export class AuthController {
     }
     return this.authService.getUser(token);
   }
-  @Get('mail')
+  
+
+
+  @Post('mail')
   @Public()
-  sendingEmail() {
+  sendingMail() {
     this.mailerService
       .sendMail({
-        to: 'stiktifyapp@gmail.com',
-        subject: '🌟 Welcome to Stikify! 🌟', 
+        to: 'thanglh.dev@gmail.com',
+        subject: 'Welcome to Stikify!', 
         text: 'Welcome!', 
-        template: "sendEmail", 
+        template: "sendEmail",  
         context: { 
           emailTitle: 'Welcome to Stikify!',
           logoUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQSP4g_O7-1uIPXY2cZKYHBFu94F7gMzyIWOg&s',
@@ -83,7 +86,7 @@ export class AuthController {
             Thank you for signing up for Stikify. We are excited to provide you with the best possible experience.
             Our services are designed to make managing, connecting, and growing easier than ever.
           `,
-          highlightContent: '🌟 Your account is now active! 🌟',
+          highlightContent: '🌟 Have a good day! 🌟',
           additionalMessage: `
             Don’t forget to explore our amazing features. If you need any assistance, feel free to reach out to us anytime.
           `,

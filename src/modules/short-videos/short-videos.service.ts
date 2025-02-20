@@ -19,14 +19,16 @@ import { User } from '../users/schemas/user.schema';
 import { ReportService } from '../report/report.service';
 import { UpdateVideoByViewingDto } from './dto/update-view-by-viewing.dto';
 
+
+
 @Injectable()
 export class ShortVideosService {
   constructor(
     @InjectModel(Video.name)
     private videoModel: Model<Video>,
     @InjectModel(User.name) private userModel: Model<User>,
-    @Inject(forwardRef(() => WishlistService))
-    private wishListService: WishlistService,
+     @Inject(forwardRef(() => WishlistService)) 
+    private wishListService:WishlistService,
     private videoCategoriesService: VideoCategoriesService,
     private categoriesService: CategoriesService,
     @Inject(forwardRef(() => ReportService))
@@ -394,20 +396,16 @@ export class ShortVideosService {
   }
 
   checkFilterAction(filter: string) {
-    if (filter === 'categoryName') {
-      return { categoryName: true };
-    } else if (filter === 'null') {
-      return { categoryName: false };
+    if (filter === "categoryName") {
+      return { categoryName: true }
+    } else if (filter === "null") {
+      return { categoryName: false }
     } else {
-      return {};
+      return {}
     }
   }
 
-  async handleFilterSearchVideo(
-    query: string,
-    current: number,
-    pageSize: number,
-  ) {
+  async handleFilterSearchVideo(query: string, current: number, pageSize: number) {
     const { filter, sort } = aqp(query);
 
     if (filter.current) delete filter.current;
@@ -422,13 +420,15 @@ export class ShortVideosService {
     const skip = (+current - 1) * +pageSize;
     const searchRegex = new RegExp(`^${filter.search}`, 'i');
 
-    const handleFilter = this.checkFilterAction(filter.filterReq);
+    const handleFilter = this.checkFilterAction(filter.filterReq)
 
     let handleSearch = [];
     if (filter.search.length > 0) {
-      handleSearch = [{ email: searchRegex }];
+      handleSearch = [
+        { email: searchRegex },
+      ]
     }
-
+    const handleFilter = filter.filterReq ? await this.checkFilterMusic(filter.filterReq) : {};
     const result = await this.videoModel
       .find({
         ...handleFilter,
@@ -437,101 +437,17 @@ export class ShortVideosService {
       .limit(pageSize)
       .skip(skip)
       .select('-password')
-      .sort(sort as any);
+      .sort(sort as any)
 
     return {
-      meta: {
-        current: current, // trang hien tai
-        pageSize: pageSize, // so luong ban ghi
-        pages: totalPages, // tong so trang voi dieu kien query
-        total: totalItems, // tong so ban ghi
-      },
-      result: result,
-    };
-  }
-  async filterAdminVideosByCategory(
-    categoryName: string,
-    current: number = 1,
-    pageSize: number = 10,
-  ) {
-    const category =
-      await this.categoriesService.findCategoryByName(categoryName);
-    if (!category) {
-      throw new BadRequestException(
-        `Category '${categoryName}' not found in categories!`,
-      );
-    }
-    const videoCategories =
-      await this.videoCategoriesService.findVideosByCategoryId(
-        category._id.toString(),
-      );
-    const videoIds = videoCategories.map((vc) => vc.videoId.toString());
-    const adminUsers = await this.userModel
-      .find({ role: 'admin' })
-      .select('_id')
-      .exec();
-    const adminUserIds = adminUsers.map((user) => user._id.toString());
-    const filter: any = {
-      _id: { $in: videoIds },
-      userId: { $in: adminUserIds },
-    };
-    const totalItems = await this.videoModel.countDocuments(filter);
-    const totalPages = Math.ceil(totalItems / pageSize);
-    const skip = (current - 1) * pageSize;
-    const result = await this.videoModel
-      .find(filter)
-      .skip(skip)
-      .limit(pageSize)
-      .sort({ createdAt: -1 })
-      .select(
-        'videoUrl totalFavorite totalReaction totalViews videoDescription videoThumbnail videoTag videoType ',
-      )
-      .exec();
-    return {
-      meta: {
-        current,
-        pageSize,
-        totalItems,
-        totalPages,
-      },
-      result,
-    };
-  }
-  async findVideoBySuggest(suggest: any, videoId: string) {
-    let matchQuery: any = {};
-
-    // Điều kiện tìm kiếm trực tiếp trên bảng video
-    if (suggest.musicID) matchQuery.musicId = suggest.musicID;
-    if (suggest.creatorId) matchQuery.userId = suggest.creatorId;
-    if (suggest.tags && suggest.tags.length > 0) {
-      matchQuery.videoTag = { $all: suggest.tags }; // videoTag là mảng trong bảng video
-    }
-    matchQuery._id = { $ne: new mongoose.Types.ObjectId(videoId) };
-
-    let pipeline: any[] = [
-      {
-        $lookup: {
-          // Join bảng videoCategory
-          from: 'videocategories',
-          localField: '_id',
-          foreignField: 'videoId',
-          as: 'categories',
+        meta: {
+            current,
+            pageSize,
+            total: totalItems,
+            pages: totalPages,
         },
-      },
-      { $match: matchQuery }, // Lọc điều kiện trước khi xử lý category
-    ];
-
-    // Lọc theo categoryId nếu có
-    if (suggest.categoryId && suggest.categoryId.length > 0) {
-      pipeline.push({
-        $match: {
-          'categories.categoryId': { $all: suggest.categoryId },
-        },
-      });
-    }
-    // Thực hiện query
-    let videoList = await this.videoModel.aggregate(pipeline);
-    return videoList;
+        result,
+    };
   }
 
   async updateViewByViewing(updateVideoByViewingDto: UpdateVideoByViewingDto) {
@@ -542,3 +458,4 @@ export class ShortVideosService {
     );
   }
 }
+
