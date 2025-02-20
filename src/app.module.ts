@@ -27,9 +27,10 @@ import { ViewingHistory } from './modules/viewinghistory/schemas/viewinghistory.
 import { ViewinghistoryModule } from './modules/viewinghistory/viewinghistory.module';
 import { WishlistScoreModule } from './modules/wishlist-score/wishlist-score.module';
 import { ReportModule } from './modules/report/report.module';
-
+import { FollowModule } from './modules/follow/follow.module';
 @Module({
   imports: [
+    FollowModule,
     AuthModule,
     UsersModule,
     CategoriesModule,

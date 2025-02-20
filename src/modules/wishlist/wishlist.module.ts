@@ -4,10 +4,12 @@ import { WishlistController } from './wishlist.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { WishList, WishListSchema } from './schemas/wishlist.entity';
 import { WishlistScoreModule } from '../wishlist-score/wishlist-score.module';
+import { ViewinghistoryModule } from '../viewinghistory/viewinghistory.module';
 
 
 @Module({
   imports: [
+    ViewinghistoryModule,
    forwardRef(() => WishlistScoreModule),
     MongooseModule.forFeature([
       { name: WishList.name, schema: WishListSchema },

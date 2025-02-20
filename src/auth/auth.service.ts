@@ -60,6 +60,7 @@ export class AuthService {
 
   async getUser(token: string) {
     try {
+      if (!token) return;
       const decoded = this.jwtService.verify(token);
 
       const user = await this.usersService.findById(decoded.sub);

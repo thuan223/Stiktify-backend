@@ -34,9 +34,7 @@ export const deleteFile = async (fileURL: string): Promise<void> => {
 
     await deleteObject(fileRef);
 
-    console.log('File deleted successfully from Firebase Storage.');
   } catch (error) {
-    console.error('Error deleting file from Firebase Storage:', error);
     throw error;
   }
 };
