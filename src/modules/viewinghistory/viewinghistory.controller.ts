@@ -12,6 +12,8 @@ import { ViewinghistoryService } from './viewinghistory.service';
 import { CreateViewinghistoryDto } from './dto/create-viewinghistory.dto';
 import { UpdateViewinghistoryDto } from './dto/update-viewinghistory.dto';
 import { Public } from '@/decorator/customize';
+import { ClearOneViewingHistoryDto } from './dto/clear-one-viewing-history.dto';
+import { ClearAllViewingHistoryDto } from './dto/clear-all-viewing-history.dto';
 
 @Controller('viewinghistory')
 export class ViewinghistoryController {
@@ -21,16 +23,27 @@ export class ViewinghistoryController {
   create(@Body() createViewinghistoryDto: CreateViewinghistoryDto) {
     return this.viewinghistoryService.create(createViewinghistoryDto);
   }
+  @Post('clear-all')
+  clearAll(@Body() clearAllViewingHistoryDto: ClearAllViewingHistoryDto) {
+    return this.viewinghistoryService.clearAll(clearAllViewingHistoryDto);
+  }
+  @Post('clear')
+  clearOne(@Body() clearOneViewingHistoryDto:ClearOneViewingHistoryDto) {
+    return this.viewinghistoryService.clearOne(clearOneViewingHistoryDto);
+  }
+
   @Get('list-viewing-history')
-  findAllUser(
+  handleGetListViewingHistory(
     @Query() query: string,
     @Query('current') current: string,
     @Query('pageSize') pageSize: string,
+    @Query('searchValue') searchValue: string,
   ) {
     return this.viewinghistoryService.handleGetListViewingHistory(
       query,
       +current,
       +pageSize,
+      searchValue
     );
   }
 
