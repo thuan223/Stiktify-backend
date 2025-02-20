@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateMusicDto } from './dto/create-music.dto';
 import { UpdateMusicDto } from './dto/update-music.dto';
 import aqp from 'api-query-params';
@@ -16,8 +16,9 @@ export class MusicsService {
 
   async checkMusicById(id: string) {
     try {
-      const result = await this.musicModel
-        .findById(id)
+      const result = await this.musicModel.findById(id).where({ isBlock: false })
+
+      console.log(result);
 
       if (result) {
         return result
@@ -62,8 +63,41 @@ export class MusicsService {
     };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} music`;
+  async handleListMusic(current: number, pageSize: number) {
+    if (!current) current = 1;
+    if (!pageSize) pageSize = 10;
+
+    const filter = {
+      isBlock: false
+    }
+
+    const totalItems = (await this.musicModel.find(filter)).length;
+    const totalPages = Math.ceil(totalItems / pageSize);
+
+    const skip = (+current - 1) * +pageSize;
+
+    const result = await this.musicModel
+      .find(filter)
+      .limit(pageSize)
+      .skip(skip)
+      .populate(
+        {
+          path: "userId",
+          select: "_id userName fullname email",
+          match: { isBan: false }
+        })
+      .sort({ totalListener: -1 });
+
+    const configData = result.filter(x => x.userId !== null)
+    return {
+      meta: {
+        current: current,
+        pageSize: pageSize,
+        pages: totalPages,
+        total: totalItems,
+      },
+      result: configData,
+    };
   }
 
   update(id: number, updateMusicDto: UpdateMusicDto) {
@@ -121,5 +155,13 @@ export class MusicsService {
       },
       result,
     };
+  }
+
+  async handleDisplayMusic(id: string) {
+    const result = await this.checkMusicById(id);
+    if (!result) {
+      throw new NotFoundException(`Not found music with id: ${id}`)
+    }
+    return result
   }
 }

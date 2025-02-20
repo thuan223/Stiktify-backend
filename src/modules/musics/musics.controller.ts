@@ -29,9 +29,19 @@ export class MusicsController {
     return this.musicsService.handleListHotMusic(+current, +pageSize);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.musicsService.findOne(+id);
+  @Get('/display-music/:id')
+  displayMusic(
+    @Param("id") id: string
+  ) {
+    return this.musicsService.handleDisplayMusic(id);
+  }
+
+  @Get('/list-music')
+  listMusic(
+    @Query("current") current: string,
+    @Query("pageSize") pageSize: string,
+  ) {
+    return this.musicsService.handleListMusic(+current, +pageSize);
   }
 
   @Patch(':id')
