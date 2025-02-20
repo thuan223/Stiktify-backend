@@ -8,9 +8,15 @@ export type PlaylistDocument = HydratedDocument<Playlist>;
 @Schema({ timestamps: true })
 export class Playlist {
     @Prop({ type: MongooseSchema.Types.ObjectId, ref: User.name })
-    userId: string
+    userId: MongooseSchema.Types.ObjectId;
 
-    @Prop({ type: MongooseSchema.Types.ObjectId, ref: Music.name })
-    musicId: string
+    @Prop({ default: "" })
+    name: string;
+
+    @Prop({ default: "" })
+    description: string;
+
+    @Prop({ default: "" })
+    image: string
 }
 export const PlaylistSchema = SchemaFactory.createForClass(Playlist);
