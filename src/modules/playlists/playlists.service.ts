@@ -5,7 +5,6 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Playlist } from './schemas/playlist.schema';
 import { Model, Types } from 'mongoose';
 import { UsersService } from '../users/users.service';
-import { MusicsService } from '../musics/musics.service';
 
 @Injectable()
 export class PlaylistsService {
@@ -16,9 +15,7 @@ export class PlaylistsService {
 
   async checkPlaylistById(id: string) {
     try {
-      const result = await this.playlistModel
-        .findById(id)
-
+      const result = await this.playlistModel.findById(id)
       if (result) {
         return result
       }
