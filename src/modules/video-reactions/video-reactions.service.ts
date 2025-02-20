@@ -63,4 +63,8 @@ export class VideoReactionsService {
 
     return { message: 'Reaction removed successfully' };
   }
+
+  async getVideoReactions(videoId: string) {
+    return this.videoReactionModel.distinct('reactionTypeId', { videoId });
+  }
 }

@@ -13,3 +13,17 @@ export class CreateCommentDto {
   @IsString()
   parent?: string;
 }
+
+export class CreateMusicCommentDto {
+  @IsString()
+  @IsNotEmpty()
+  musicId: string;
+
+  @IsString()
+  @IsNotEmpty()
+  CommentDescription: string;
+
+  @IsOptional()
+  @IsString()
+  parent?: string;
+}
