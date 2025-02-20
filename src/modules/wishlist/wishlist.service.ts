@@ -16,7 +16,7 @@ export class WishlistService {
     @Inject(forwardRef(() => WishlistScoreService))
     private wishListScoreService: WishlistScoreService,
     private viewingHistoryService: ViewinghistoryService,
-  ) {}
+  ) { }
   async create(createWishlistDto: CreateWishlistDto) {
     let suggestByVideo;
     console.log(createWishlistDto.id);
@@ -42,8 +42,7 @@ export class WishlistService {
         wishListScores,
         scoreChecks,
         createWishlistDto.id,
-        -1,
-        0,
+        -1
       );
       if (videoFound.length === 1) {
         return await this.createWishListVideo(
@@ -66,7 +65,6 @@ export class WishlistService {
   }
   async getTheBestChoiceFromListVideo(videoList: any, userId: string) {
     let filteredList = [];
-    console.log('length', videoList.length);
     for (const video of videoList) {
       if (
         !(await this.viewingHistoryService.findByVideoId(video._id, userId))
@@ -77,14 +75,12 @@ export class WishlistService {
 
     videoList = filteredList.length > 0 ? filteredList : videoList;
     filteredList = [];
-    console.log('length', videoList.length);
     for (const video of videoList) {
       if (!(await this.findByVideoId(video._id, userId))) {
         filteredList.push(video);
       }
     }
     videoList = filteredList.length > 0 ? filteredList : videoList;
-    console.log('length', videoList.length);
     if (videoList.length === 1) {
       return videoList[0];
     }

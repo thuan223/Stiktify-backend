@@ -18,7 +18,7 @@ export class VideoReactionsService {
     @InjectModel(VideoReaction.name)
     private readonly videoReactionModel: Model<VideoReactionDocument>,
     @InjectModel(Video.name) private VideoModal: Model<Video>,
-  ) {}
+  ) { }
 
   async getUserReaction(userId: string, dto: GetReaction) {
     return this.videoReactionModel
@@ -31,7 +31,6 @@ export class VideoReactionsService {
       videoId: dto.videoId,
       userId,
     });
-    console.log(dto);
 
     if (existingReaction) {
       existingReaction.reactionTypeId = dto.reactionTypeId;
