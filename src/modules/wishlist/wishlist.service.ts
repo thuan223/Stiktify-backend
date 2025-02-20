@@ -42,7 +42,7 @@ export class WishlistService {
         wishListScores,
         scoreChecks,
         createWishlistDto.id,
-        -1
+        -1,0
       );
       if (videoFound.length === 1) {
         return await this.createWishListVideo(

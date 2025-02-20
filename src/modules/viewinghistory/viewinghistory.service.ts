@@ -65,7 +65,7 @@ export class ViewinghistoryService {
       if (!isNaN(date.getTime())) {
         const isoDateStr = date.toISOString().split('T')[0];
 
-        filter.query.createdAt = {
+        filter.query.updatedAt = {
           $gte: new Date(`${isoDateStr}T00:00:00.000Z`),
           $lt: new Date(`${isoDateStr}T23:59:59.999Z`),
         };
@@ -81,7 +81,7 @@ export class ViewinghistoryService {
         isDelete: { $ne: true },
       })
       .populate<{ videoId: { videoDescription: string } }>('videoId')
-      .sort({ createdAt: -1, ...sort });
+      .sort({ updatedAt: -1, ...sort });
 
     if (searchValue) {
       result = result.filter(
