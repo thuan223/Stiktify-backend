@@ -1,4 +1,3 @@
-import { Music } from '@/modules/musics/schemas/music.schema';
 import { User } from '@/modules/users/schemas/user.schema';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Schema as MongooseSchema } from 'mongoose';
@@ -10,13 +9,13 @@ export class Playlist {
     @Prop({ type: MongooseSchema.Types.ObjectId, ref: User.name })
     userId: MongooseSchema.Types.ObjectId;
 
-    @Prop({ default: "" })
+    @Prop()
     name: string;
 
-    @Prop({ default: "" })
+    @Prop()
     description: string;
 
-    @Prop({ default: "" })
+    @Prop()
     image: string
 }
 export const PlaylistSchema = SchemaFactory.createForClass(Playlist);

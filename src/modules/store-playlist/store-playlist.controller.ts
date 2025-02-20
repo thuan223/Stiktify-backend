@@ -5,16 +5,18 @@ import { UpdateStorePlaylistDto } from './dto/update-store-playlist.dto';
 
 @Controller('store-playlist')
 export class StorePlaylistController {
-  constructor(private readonly storePlaylistService: StorePlaylistService) {}
+  constructor(private readonly storePlaylistService: StorePlaylistService) { }
 
-  @Post()
-  create(@Body() createStorePlaylistDto: CreateStorePlaylistDto) {
-    return this.storePlaylistService.create(createStorePlaylistDto);
+  @Post("create-store-playlist")
+  createStoreByPlaylist(@Body() createStorePlaylistDto: CreateStorePlaylistDto) {
+    return this.storePlaylistService.handleCreateStoreByPlaylist(createStorePlaylistDto);
   }
 
-  @Get()
-  findAll() {
-    return this.storePlaylistService.findAll();
+  @Get("list-music-playlist/:id")
+  findAllByPlaylistId(
+    @Param('id') id: string
+  ) {
+    return this.storePlaylistService.handleFindAllByPlaylistId(id);
   }
 
   @Get(':id')

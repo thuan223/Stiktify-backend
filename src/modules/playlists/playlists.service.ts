@@ -12,57 +12,35 @@ export class PlaylistsService {
   constructor(
     @InjectModel(Playlist.name) private playlistModel: Model<Playlist>,
     private readonly userService: UsersService,
-    private readonly musicService: MusicsService,
   ) { }
 
-  async checkUserPlaylist(userId: string, musicId: string) {
+  async checkPlaylistById(id: string) {
     try {
       const result = await this.playlistModel
-        .findOne(
-          {
-            userId: new Types.ObjectId(userId),
-            musicId: new Types.ObjectId(musicId),
-          })
+        .findById(id)
 
-      if (result) return true
-
-      return false
+      if (result) {
+        return result
+      }
+      return null
     } catch (error) {
-      return false
+      return null
     }
   }
 
   async handleAddPlaylist(createPlaylistDto: CreatePlaylistDto) {
-    const { musicId, userId } = createPlaylistDto
+    const { userId, description, image, name } = createPlaylistDto
     const checkUser = await this.userService.checkUserById(userId)
 
     if (!checkUser) {
       throw new BadRequestException(`User not exist with user id: ${userId}`)
     }
 
-    const checkMusic = await this.musicService.checkMusicById(musicId)
-
-    if (!checkMusic) {
-      throw new BadRequestException(`Music not exist with music id: ${musicId}`)
+    if (!description || !name || !image) {
+      throw new BadRequestException(`Missing field required!`)
     }
 
-    const checkPlaylist = await this.checkUserPlaylist(userId, musicId)
-
-    if (checkPlaylist) {
-      throw new BadRequestException(`Music has been added to the playlist!`)
-    }
-
-    const countPlaylist = await this.playlistModel.countDocuments({ userId: userId })
-
-    if (countPlaylist >= 100) {
-      throw new ForbiddenException(`Music has been added to the playlist!`)
-    }
-
-    const result = await this.playlistModel
-      .create({
-        userId: userId,
-        musicId: musicId
-      })
+    const result = await this.playlistModel.create({ userId: userId, name: name, description: description, image: image })
 
     return result
   }
