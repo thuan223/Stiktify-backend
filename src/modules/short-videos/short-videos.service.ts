@@ -17,6 +17,7 @@ import aqp from 'api-query-params';
 import { CategoriesService } from '../categories/categories.service';
 import { User } from '../users/schemas/user.schema';
 import { ReportService } from '../report/report.service';
+import { UpdateVideoByViewingDto } from './dto/update-view-by-viewing.dto';
 
 @Injectable()
 export class ShortVideosService {
@@ -302,7 +303,9 @@ export class ShortVideosService {
       .skip(skip)
       .limit(pageSize)
       .sort({ createdAt: -1 })
-      .select('videoThumbnail totalReaction totalViews totalComment videoDescription videoUrl')
+      .select(
+        'videoThumbnail totalReaction totalViews totalComment videoDescription videoUrl',
+      );
 
     return {
       meta: {
@@ -529,5 +532,13 @@ export class ShortVideosService {
     // Thực hiện query
     let videoList = await this.videoModel.aggregate(pipeline);
     return videoList;
+  }
+
+  async updateViewByViewing(updateVideoByViewingDto: UpdateVideoByViewingDto) {
+    return await this.videoModel.findByIdAndUpdate(
+      updateVideoByViewingDto.videoId,
+      { $inc: { totalViews: 1 } },
+      { new: true },
+    );
   }
 }

@@ -19,6 +19,7 @@ export class WishlistService {
   ) {}
   async create(createWishlistDto: CreateWishlistDto) {
     let suggestByVideo;
+    console.log(createWishlistDto.id);
     if (createWishlistDto.triggerAction != 'ScrollVideo') {
       await this.wishListScoreService.triggerWishListScore(createWishlistDto);
     }
@@ -42,6 +43,7 @@ export class WishlistService {
         scoreChecks,
         createWishlistDto.id,
         -1,
+        0,
       );
       if (videoFound.length === 1) {
         return await this.createWishListVideo(
@@ -49,7 +51,7 @@ export class WishlistService {
           createWishlistDto.userId,
         );
       } else if (videoFound.length == 0) {
-        throw new Error('Not found any video suggest!');
+        return { message: 'Not found any video suggest!' };
       }
       const bestVideo = await this.getTheBestChoiceFromListVideo(
         videoFound,
@@ -77,9 +79,7 @@ export class WishlistService {
     filteredList = [];
     console.log('length', videoList.length);
     for (const video of videoList) {
-      if (
-        !(await this.findByVideoId(video._id, userId))
-      ) {
+      if (!(await this.findByVideoId(video._id, userId))) {
         filteredList.push(video);
       }
     }
@@ -130,8 +130,6 @@ export class WishlistService {
         );
         if (score) currentScore += score.score;
       }
-      console.log(video._id);
-      console.log('currentScore', currentScore);
 
       if (currentScore > maxScore) {
         maxScore = currentScore;
@@ -167,7 +165,7 @@ export class WishlistService {
 
       return await newWishListItem.save();
     } else {
-      throw new Error('Wishlist item already exists');
+      return { message: 'Wishlist item already exists' };
     }
   }
 
@@ -223,9 +221,9 @@ export class WishlistService {
     }
     return wishListScores;
   }
-async findByVideoId(videoId:string,userId:string){
-return await this.wishListModel.findOne({videoId,userId})
-} 
+  async findByVideoId(videoId: string, userId: string) {
+    return await this.wishListModel.findOne({ videoId, userId });
+  }
   findAll() {
     return `This action returns all wishlist`;
   }
@@ -250,61 +248,5 @@ return await this.wishListModel.findOne({videoId,userId})
       acknowledged: result.acknowledged,
       deletedCount: result.deletedCount,
     };
-  }
-
-  async addToWishList(
-    userId: string,
-    videoId: string,
-    wishListType: string,
-  ): Promise<any> {
-    const existingItem = await this.wishListModel.findOne({
-      userId,
-      videoId,
-      wishListType,
-    });
-    if (existingItem) {
-      throw new Error('Video already exists in the wish list');
-    }
-
-    const newWishListItem = new this.wishListModel({
-      userId,
-      videoId,
-      wishListType,
-    });
-
-    return await newWishListItem.save();
-  }
-  async getWishListByType(userId: string, type: string): Promise<any[]> {
-    return await this.wishListModel
-      .find({ userId, wishListType: type })
-      .populate('videoId');
-  }
-  async updateWishList(
-    userId: string,
-    videoId: string,
-    type: string,
-    newVideoId: any,
-    newType: string,
-  ): Promise<any> {
-    const wishListItem = await this.wishListModel.findOne({
-      userId,
-      videoId,
-      wishListType: type,
-    });
-    if (!wishListItem) {
-      throw new Error('Item not found in the wish list');
-    }
-    const existingItem = await this.wishListModel.findOne({
-      userId,
-      videoId: newVideoId,
-      wishListType: newType,
-    });
-    if (existingItem) {
-      throw new Error('Video already exists in the wish list');
-    }
-    wishListItem.videoId = newVideoId;
-    wishListItem.wishListType = newType;
-    Object.assign(wishListItem, newVideoId, newType);
-    return await wishListItem.save();
   }
 }
