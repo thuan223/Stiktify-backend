@@ -9,11 +9,10 @@ import { Category } from '../categories/schemas/category.schema';
 
 @Injectable()
 export class MusicsService {
-    constructor(
-      @InjectModel
-      (Music.name) private musicModel: Model<Music>,
-      @InjectModel(Category.name) private categoryModel: Model<Category>
-    ) {}
+  constructor(
+    @InjectModel(Music.name) private musicModel: Model<Music>,
+    @InjectModel(Category.name) private categoryModel: Model<Category>
+  ) { }
 
   async checkMusicById(id: string) {
     try {
@@ -33,8 +32,34 @@ export class MusicsService {
     return 'This action adds a new music';
   }
 
-  findAll() {
-    return `This action returns all musics`;
+  async handleListHotMusic(current: number, pageSize: number) {
+    const currentPage = Math.max(1, Number(current) || 1);
+    const limit = Number(pageSize) || 10;
+    const maxLimit = 20;
+    const skip = (currentPage - 1) * limit;
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+    const filter = {
+      isBlock: false,
+      updatedAt: { $gte: oneWeekAgo }
+    };
+
+    const allItems = await this.musicModel.find(filter).sort({ totalListener: -1 }).limit(maxLimit);
+    const totalItems = allItems.length;
+    const totalPages = Math.ceil(totalItems / limit);
+
+    const result = allItems.slice(skip, skip + limit).map((item) => item.toObject());
+
+    return {
+      meta: {
+        current: currentPage,
+        pageSize: limit,
+        pages: totalPages,
+        total: totalItems,
+      },
+      result,
+    };
   }
 
   findOne(id: number) {
@@ -53,48 +78,48 @@ export class MusicsService {
     if (!filter || typeof filter !== 'string') return {};
     const category = await this.categoryModel.findOne({ name: filter });
     return category ? { genre: filter } : {};
-}
-
-
-async handleFilterAndSearchMusic(query: any, current: number, pageSize: number) {
-  const { filter = {}, sort = {} } = aqp(query);
-  if (filter && filter.current) delete filter.current;
-  if (filter && filter.pageSize) delete filter.pageSize;
-  if (sort && sort.pageSize) delete sort.pageSize;
-  current = current && !isNaN(Number(current)) ? Number(current) : 1;
-  pageSize = pageSize && !isNaN(Number(pageSize)) ? Number(pageSize) : 10;
-
-  if (isNaN(current) || isNaN(pageSize)) {
-      return { statusCode: 400, message: "Invalid pagination parameters" };
   }
-  const totalItems = await this.musicModel.countDocuments(filter);
-  const totalPages = Math.ceil(totalItems / pageSize);
-  const skip = (current - 1) * pageSize;
-  let handleSearch = [];
-  if (filter.search && typeof filter.search === "string" && filter.search.trim().length > 0) {
+
+
+  async handleFilterAndSearchMusic(query: any, current: number, pageSize: number) {
+    const { filter = {}, sort = {} } = aqp(query);
+    if (filter && filter.current) delete filter.current;
+    if (filter && filter.pageSize) delete filter.pageSize;
+    if (sort && sort.pageSize) delete sort.pageSize;
+    current = current && !isNaN(Number(current)) ? Number(current) : 1;
+    pageSize = pageSize && !isNaN(Number(pageSize)) ? Number(pageSize) : 10;
+
+    if (isNaN(current) || isNaN(pageSize)) {
+      return { statusCode: 400, message: "Invalid pagination parameters" };
+    }
+    const totalItems = await this.musicModel.countDocuments(filter);
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const skip = (current - 1) * pageSize;
+    let handleSearch = [];
+    if (filter.search && typeof filter.search === "string" && filter.search.trim().length > 0) {
       const searchRegex = new RegExp(filter.search, 'i');
       handleSearch = [
-          { musicDescription: searchRegex },
-          { musicLyric: searchRegex }
+        { musicDescription: searchRegex },
+        { musicLyric: searchRegex }
       ];
-  }
-  const handleFilter = filter.filterReq ? await this.checkFilterMusic(filter.filterReq) : {};
-  const result = await this.musicModel
+    }
+    const handleFilter = filter.filterReq ? await this.checkFilterMusic(filter.filterReq) : {};
+    const result = await this.musicModel
       .find({
-          ...handleFilter,
-          ...(handleSearch.length > 0 ? { $or: handleSearch } : {})
+        ...handleFilter,
+        ...(handleSearch.length > 0 ? { $or: handleSearch } : {})
       })
       .limit(pageSize)
       .skip(skip)
       .sort(sort as any);
-  return {
+    return {
       meta: {
-          current,
-          pageSize,
-          total: totalItems,
-          pages: totalPages,
+        current,
+        pageSize,
+        total: totalItems,
+        pages: totalPages,
       },
       result,
-  };
-}
+    };
+  }
 }
