@@ -4,7 +4,7 @@ import { UpdateMusicDto } from './dto/update-music.dto';
 import aqp from 'api-query-params';
 import { InjectModel } from '@nestjs/mongoose';
 import { Music } from './schemas/music.schema';
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import { Category } from '../categories/schemas/category.schema';
 import { MusicCategory } from '../music-categories/schemas/music-category.schema';
 
@@ -103,6 +103,38 @@ export class MusicsService {
 
   remove(id: number) {
     return `This action removes a #${id} music`;
+  }
+
+  async handleMyMusic(userId: string, current: number, pageSize: number) {
+    const filter = { userId: new mongoose.Types.ObjectId(userId) };
+    const totalItems = await this.musicModel.countDocuments(filter);
+    if (totalItems === 0) {
+      return {
+        meta: {
+          current,
+          pageSize,
+          totalItems: 0,
+          totalPages: 0,
+        },
+        result: [],
+        message: 'No videos found for this user',
+      };
+    }
+    const skip = (current - 1) * pageSize;
+    const result = await this.musicModel
+      .find(filter)
+      .skip(skip)
+      .limit(pageSize)
+      .sort({ createdAt: -1 })
+    return {
+      meta: {
+        current,
+        pageSize,
+        totalItems,
+        totalPages: Math.ceil(totalItems / pageSize),
+      },
+      result,
+    };
   }
  
   async checkFilterMusic(filter: string) {
