@@ -339,9 +339,6 @@ export class ShortVideosService {
       .skip(skip)
       .limit(pageSize)
       .sort({ createdAt: -1 })
-      .select(
-        'videoUrl totalFavorite totalReaction totalViews videoDescription videoThumbnail',
-      )
       .populate('userId', 'userName');
 
     return {
@@ -379,9 +376,6 @@ export class ShortVideosService {
     const result = await this.videoModel
       .find({ _id: { $in: videoIds } })
       .populate('userId')
-      .select(
-        'videoUrl totalFavorite totalReaction totalViews videoDescription videoThumbnail videoTag',
-      ) // ✅ Chỉ lấy các trường cần thiết
       .exec();
 
     return {
@@ -390,61 +384,6 @@ export class ShortVideosService {
         pageSize,
         totalItems,
         totalPages,
-      },
-      result,
-    };
-  }
-
-  checkFilterAction(filter: string) {
-    if (filter === "categoryName") {
-      return { categoryName: true }
-    } else if (filter === "null") {
-      return { categoryName: false }
-    } else {
-      return {}
-    }
-  }
-
-  async handleFilterSearchVideo(query: string, current: number, pageSize: number) {
-    const { filter, sort } = aqp(query);
-
-    if (filter.current) delete filter.current;
-    if (filter.pageSize) delete filter.pageSize;
-
-    if (!current) current = 1;
-    if (!pageSize) pageSize = 10;
-
-    const totalItems = (await this.videoModel.find(filter)).length;
-    const totalPages = Math.ceil(totalItems / pageSize);
-
-    const skip = (+current - 1) * +pageSize;
-    const searchRegex = new RegExp(`^${filter.search}`, 'i');
-
-    const handleFilter = this.checkFilterAction(filter.filterReq)
-
-    let handleSearch = [];
-    if (filter.search.length > 0) {
-      handleSearch = [
-        { email: searchRegex },
-      ]
-    }
-    // const handleFilter = filter.filterReq ? await this.checkFilterMusic(filter.filterReq) : {};
-    const result = await this.videoModel
-      .find({
-        ...handleFilter,
-        $or: handleSearch,
-      })
-      .limit(pageSize)
-      .skip(skip)
-      .select('-password')
-      .sort(sort as any)
-
-    return {
-      meta: {
-        current,
-        pageSize,
-        total: totalItems,
-        pages: totalPages,
       },
       result,
     };

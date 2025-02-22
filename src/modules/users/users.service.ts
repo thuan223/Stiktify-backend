@@ -312,6 +312,7 @@ export class UsersService {
     );
 
     return {
+      avatar: result.avatar,
       fullname: result.fullname,
       email: result.email,
       phone: result.phone,

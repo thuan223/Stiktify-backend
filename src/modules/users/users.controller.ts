@@ -69,11 +69,11 @@ export class UsersController {
   }
 
   @Patch('update-profile')
-  @UseGuards(JwtAuthGuard)  // Đảm bảo chỉ cho phép người dùng đã đăng nhập
+  @UseGuards(JwtAuthGuard)  
   @ResponseMessage('Profile updated successfully')
   updateProfile(@Body() updateUserDto: UpdateUserDto, @Request() req) {
-    const userId = req.user._id;  // Lấy userId từ token, không cần gửi _id từ client
-    return this.usersService.handleUpdateInformation(userId, updateUserDto); // Truyền userId vào service
+    const userId = req.user._id;  
+    return this.usersService.handleUpdateInformation(userId, updateUserDto); 
   }
   
 
