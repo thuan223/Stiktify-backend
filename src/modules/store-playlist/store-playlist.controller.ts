@@ -21,6 +21,11 @@ export class StorePlaylistController {
     return this.storePlaylistService.handleFindAllByPlaylistId(id, +current, +pageSize);
   }
 
+  @Delete('delete-music-playlist/:id')
+  deleteMusicInPlaylist(@Param('id') id: string) {
+    return this.storePlaylistService.handleDeleteMusicInPlaylist(id);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.storePlaylistService.findOne(+id);
@@ -31,8 +36,5 @@ export class StorePlaylistController {
     return this.storePlaylistService.update(+id, updateStorePlaylistDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.storePlaylistService.remove(+id);
-  }
+
 }

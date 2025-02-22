@@ -99,7 +99,13 @@ export class StorePlaylistService {
     return `This action updates a #${id} storePlaylist`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} storePlaylist`;
+  async handleDeleteMusicInPlaylist(id: string) {
+    const checkMusicId = await this.musicService.checkMusicById(id)
+
+    if (!checkMusicId) {
+      throw new BadRequestException(`Not found music with id : ${id}`)
+    }
+
+    const result = await this.storePlaylistModel.deleteOne({ musicId: id })
   }
 }
