@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateMusicDto } from './dto/create-music.dto';
 import { UpdateMusicDto } from './dto/update-music.dto';
 import aqp from 'api-query-params';
@@ -29,8 +29,18 @@ export class MusicsService {
     }
   }
 
-  create(createMusicDto: CreateMusicDto) {
-    return 'This action adds a new music';
+  async handleUploadMusic(createMusicDto: CreateMusicDto) {
+    const { musicTag } = createMusicDto
+
+    for (const e of musicTag) {
+      if (typeof e !== "string") {
+        throw new BadRequestException("musicTag must be array string!")
+      }
+    }
+
+    const result = await this.musicModel.create(createMusicDto)
+
+    return result;
   }
 
   async handleListHotMusic(current: number, pageSize: number) {

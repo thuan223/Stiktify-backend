@@ -7,9 +7,9 @@ import { UpdateMusicDto } from './dto/update-music.dto';
 export class MusicsController {
   constructor(private readonly musicsService: MusicsService) { }
 
-  @Post()
-  create(@Body() createMusicDto: CreateMusicDto) {
-    return this.musicsService.create(createMusicDto);
+  @Post("upload-music")
+  uploadMusic(@Body() createMusicDto: CreateMusicDto) {
+    return this.musicsService.handleUploadMusic(createMusicDto);
   }
 
   @Get("filter-search")
