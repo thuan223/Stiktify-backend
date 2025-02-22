@@ -11,6 +11,7 @@ export class FollowService {
   constructor(
     @InjectModel(Follow.name) private followModel: Model<Follow>,
   ) { }
+  
   create(createFollowDto: CreateFollowDto) {
     return 'This action adds a new follow';
   }
@@ -19,7 +20,6 @@ export class FollowService {
     const result = await this.followModel.find({ userId: new Types.ObjectId(userId) });
     const filter = result.map(x => x.userFollowingId)
     return filter;
-
   }
 
   findOne(id: number) {

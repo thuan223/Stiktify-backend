@@ -1,15 +1,24 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateMusicFavoriteDto } from './dto/create-music-favorite.dto';
 import { UpdateMusicFavoriteDto } from './dto/update-music-favorite.dto';
+import { InjectModel } from '@nestjs/mongoose';
+import { MusicFavorite } from './schemas/music-favorite.schema';
+import { Model, Types } from 'mongoose';
 
 @Injectable()
 export class MusicFavoriteService {
+  constructor(
+    @InjectModel(MusicFavorite.name) private MusicFavoriteModel: Model<MusicFavorite>,
+  ) { }
+
   create(createMusicFavoriteDto: CreateMusicFavoriteDto) {
     return 'This action adds a new musicFavorite';
   }
 
-  findAll() {
-    return `This action returns all musicFavorite`;
+  async findAll(userId: string) {
+    const result = await this.MusicFavoriteModel.find({ userId: new Types.ObjectId(userId) });
+    const filter = result.map(x => x.musicId)
+    return filter;
   }
 
   findOne(id: number) {
@@ -23,4 +32,34 @@ export class MusicFavoriteService {
   remove(id: number) {
     return `This action removes a #${id} musicFavorite`;
   }
+
+    async checkFavorite(favoriteId: string, favoritingId: string) {
+      const exsistFollowing = await this.MusicFavoriteModel.findOne({
+        userId: new Types.ObjectId(favoriteId),
+        musicId: new Types.ObjectId(favoritingId)
+      })
+      if (exsistFollowing) {
+        return true;
+      }
+      return false;
+    }
+
+    async handleMusicFavorite(favoriteId: string, favoritingId: string) {
+        if (!favoriteId || !favoritingId) {
+          throw new BadRequestException("Missing field!!!")
+        }
+        const alreadyFavorite = await this.checkFavorite(favoriteId, favoritingId)
+        if (alreadyFavorite) {
+          const unFavorite = await this.MusicFavoriteModel.deleteOne({
+            userId: favoriteId,
+            musicId: favoritingId
+          })
+          return unFavorite;
+        }
+        const favorite = await this.MusicFavoriteModel.create({
+          userId: favoriteId,
+          musicId: favoritingId,
+        })
+        return favorite;
+      }
 }
