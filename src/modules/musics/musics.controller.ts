@@ -54,5 +54,4 @@ export class MusicsController {
     return this.musicsService.remove(+id);
   }
 
-
 }
