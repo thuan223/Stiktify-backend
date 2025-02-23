@@ -7,7 +7,7 @@ export type MusicDocument = HydratedDocument<Music>;
 @Schema({ timestamps: true })
 export class Music {
   @Prop()
-  MusicUrl: string;
+  musicUrl: string;
 
   @Prop({ default: 0, min: 0 })
   totalFavorite: number;

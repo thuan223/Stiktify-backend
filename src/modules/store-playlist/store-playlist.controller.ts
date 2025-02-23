@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { StorePlaylistService } from './store-playlist.service';
 import { CreateStorePlaylistDto } from './dto/create-store-playlist.dto';
 import { UpdateStorePlaylistDto } from './dto/update-store-playlist.dto';
@@ -14,14 +14,25 @@ export class StorePlaylistController {
 
   @Get("list-music-playlist/:id")
   findAllByPlaylistId(
-    @Param('id') id: string
+    @Param('id') id: string,
+    @Query("current") current: number,
+    @Query("pageSize") pageSize: number,
   ) {
-    return this.storePlaylistService.handleFindAllByPlaylistId(id);
+    return this.storePlaylistService.handleFindAllByPlaylistId(id, +current, +pageSize);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.storePlaylistService.findOne(+id);
+  @Delete('delete-music-playlist/:id')
+  deleteMusicInPlaylist(@Param('id') id: string) {
+    return this.storePlaylistService.handleDeleteMusicInPlaylist(id);
+  }
+
+  @Get("list-music-playlist/:id")
+  playMusicInPlaylist(
+    @Param('id') id: string,
+    @Query("current") current: number,
+    @Query("pageSize") pageSize: number,
+  ) {
+    return this.storePlaylistService.handlePlayMusicInPlaylist(id, +current, +pageSize);
   }
 
   @Patch(':id')
@@ -29,8 +40,5 @@ export class StorePlaylistController {
     return this.storePlaylistService.update(+id, updateStorePlaylistDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.storePlaylistService.remove(+id);
-  }
+
 }

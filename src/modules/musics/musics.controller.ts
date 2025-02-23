@@ -2,14 +2,15 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestj
 import { MusicsService } from './musics.service';
 import { CreateMusicDto } from './dto/create-music.dto';
 import { UpdateMusicDto } from './dto/update-music.dto';
+import { Public } from '@/decorator/customize';
 
 @Controller('musics')
 export class MusicsController {
-  constructor(private readonly musicsService: MusicsService) {}
+  constructor(private readonly musicsService: MusicsService) { }
 
-  @Post()
-  create(@Body() createMusicDto: CreateMusicDto) {
-    return this.musicsService.create(createMusicDto);
+  @Post("upload-music")
+  uploadMusic(@Body() createMusicDto: CreateMusicDto) {
+    return this.musicsService.handleUploadMusic(createMusicDto);
   }
 
   @Get("filter-search")
@@ -17,18 +18,34 @@ export class MusicsController {
     @Query() query: any,
     @Query("current") current: string,
     @Query("pageSize") pageSize: string,
- ) {
+  ) {
     return this.musicsService.handleFilterAndSearchMusic(query, +current, +pageSize)
-}
-
-  @Get()
-  findAll() {
-    return this.musicsService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.musicsService.findOne(+id);
+  @Public()
+  @Get("list-hot-music")
+  listHotMusic(
+    @Query("current") current: string,
+    @Query("pageSize") pageSize: string,
+  ) {
+    return this.musicsService.handleListHotMusic(+current, +pageSize);
+  }
+
+  @Public()
+  @Get('/display-music/:id')
+  displayMusic(
+    @Param("id") id: string
+  ) {
+    return this.musicsService.handleDisplayMusic(id);
+  }
+
+  @Public()
+  @Get('/list-music')
+  listMusic(
+    @Query("current") current: string,
+    @Query("pageSize") pageSize: string,
+  ) {
+    return this.musicsService.handleListMusic(+current, +pageSize);
   }
 
   @Patch(':id')
@@ -39,7 +56,7 @@ export class MusicsController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.musicsService.remove(+id);
-  } 
+  }
 
 
 }
