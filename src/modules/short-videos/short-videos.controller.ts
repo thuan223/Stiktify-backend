@@ -23,7 +23,11 @@ import { UpdateVideoByViewingDto } from './dto/update-view-by-viewing.dto';
 export class ShortVideosController {
   constructor(private readonly shortVideosService: ShortVideosService) {}
 
-
+  //Create a new short video - ThangLH
+  @Post('create')
+  async createPost(@Body() createShortVideoDto: CreateShortVideoDto) {
+    return this.shortVideosService.create(createShortVideoDto);
+  }
 
   @Get('list-video')
   findAll(

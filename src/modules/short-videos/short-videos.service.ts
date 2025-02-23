@@ -18,6 +18,7 @@ import { CategoriesService } from '../categories/categories.service';
 import { User } from '../users/schemas/user.schema';
 import { ReportService } from '../report/report.service';
 import { UpdateVideoByViewingDto } from './dto/update-view-by-viewing.dto';
+import { VideoCategory } from '../video-categories/schemas/video-category.schema';
 
 
 
@@ -26,6 +27,8 @@ export class ShortVideosService {
   constructor(
     @InjectModel(Video.name)
     private videoModel: Model<Video>,
+    @InjectModel(VideoCategory.name)
+    private videoCategoryModel: Model<VideoCategory>,
     @InjectModel(User.name) private userModel: Model<User>,
     @Inject(forwardRef(() => WishlistService))
     private wishListService: WishlistService,
@@ -35,21 +38,30 @@ export class ShortVideosService {
     private reportService: ReportService,
   ) { }
 
- 
-
-  // Find one video by ID
-  async findOne(id: string): Promise<Video> {
+  //Create a new short video - ThangLH
+  async create(createShortVideoDto: CreateShortVideoDto): Promise<Video> {
     try {
-      const video = await this.videoModel.findById(id).exec();
-      if (!video || video.isDelete) {
-        throw new BadRequestException('Video not found or is deleted');
+      // Tạo video mới và lưu vào bảng video
+      const createdVideo = await this.videoModel.create(createShortVideoDto);
+      // Nếu DTO có danh sách categories, tạo các bản ghi trong bảng video-categories
+      if (createShortVideoDto.categories?.length) {
+        const videoCategories = createShortVideoDto.categories.map((categoryId) => ({
+          videoId: createdVideo._id,
+          categoryId,
+        }));
+        await this.videoCategoryModel.insertMany(videoCategories);
       }
-      return video;
+      return createdVideo;
     } catch (error) {
-      throw new BadRequestException('Failed to retrieve the video');
+      throw new BadRequestException('Failed to create video post');
     }
   }
+  
+  
+  // Tạo ra những bảng ghi video categories dự trên id của video vừa tạo ra và các categoryid trong caterogies từ dto 
 
+
+ 
   // Update a video's details
   async update(
     id: string,
