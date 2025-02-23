@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Res } from '@nestjs/common';
 import { Comment } from './schema/comment.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -9,6 +9,8 @@ import {
 import { User } from '../users/schemas/user.schema';
 import { Video } from '../short-videos/schemas/short-video.schema';
 import { Music } from '../musics/schemas/music.schema';
+import { Request, Response, NextFunction } from 'express';
+import { uploadFile } from '@/helpers/uploadFileHelper';
 
 @Injectable()
 export class CommentsService {

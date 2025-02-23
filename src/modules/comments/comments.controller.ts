@@ -3,11 +3,12 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
-  Delete,
   UseGuards,
   Req,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
 import { CommentsService } from './comments.service';
 import { JwtAuthGuard } from '@/auth/passport/jwt-auth.guard';
@@ -16,6 +17,8 @@ import {
   CreateMusicCommentDto,
 } from './dto/create-comment.dto';
 import { Types } from 'mongoose';
+import { FileInterceptor } from '@nestjs/platform-express';
+import multer from 'multer';
 
 @Controller('comments')
 export class CommentsController {
