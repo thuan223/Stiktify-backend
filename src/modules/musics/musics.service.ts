@@ -106,7 +106,7 @@ export class MusicsService {
         pages: totalPages,
         total: totalItems,
       },
-      result: configData,
+      result: configData
     };
   }
 

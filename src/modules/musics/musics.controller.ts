@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestj
 import { MusicsService } from './musics.service';
 import { CreateMusicDto } from './dto/create-music.dto';
 import { UpdateMusicDto } from './dto/update-music.dto';
+import { Public } from '@/decorator/customize';
 
 @Controller('musics')
 export class MusicsController {
@@ -21,6 +22,7 @@ export class MusicsController {
     return this.musicsService.handleFilterAndSearchMusic(query, +current, +pageSize)
   }
 
+  @Public()
   @Get("list-hot-music")
   listHotMusic(
     @Query("current") current: string,
@@ -29,6 +31,7 @@ export class MusicsController {
     return this.musicsService.handleListHotMusic(+current, +pageSize);
   }
 
+  @Public()
   @Get('/display-music/:id')
   displayMusic(
     @Param("id") id: string
@@ -36,6 +39,7 @@ export class MusicsController {
     return this.musicsService.handleDisplayMusic(id);
   }
 
+  @Public()
   @Get('/list-music')
   listMusic(
     @Query("current") current: string,

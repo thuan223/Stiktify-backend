@@ -26,9 +26,13 @@ export class StorePlaylistController {
     return this.storePlaylistService.handleDeleteMusicInPlaylist(id);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.storePlaylistService.findOne(+id);
+  @Get("list-music-playlist/:id")
+  playMusicInPlaylist(
+    @Param('id') id: string,
+    @Query("current") current: number,
+    @Query("pageSize") pageSize: number,
+  ) {
+    return this.storePlaylistService.handlePlayMusicInPlaylist(id, +current, +pageSize);
   }
 
   @Patch(':id')
