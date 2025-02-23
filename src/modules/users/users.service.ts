@@ -476,8 +476,8 @@ export class UsersService {
       throw new BadRequestException('Account does not exist');
     }
     const result = await this.mailerService.sendMail({
-      to: emailDto.email, // list of receivers
-        subject: 'From admin: @Stiktify', // Subject line
+      to: emailDto.email, 
+        subject: 'From admin: @Stiktify', 
       template:'sendEmail',
       context: {
         name: user.userName ?? user.email,

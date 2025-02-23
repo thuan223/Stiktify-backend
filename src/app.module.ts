@@ -32,6 +32,7 @@ import { StorePlaylistModule } from './modules/store-playlist/store-playlist.mod
 import { UploadModule } from './modules/upload/upload.module';
 @Module({
   imports: [
+    UploadModule,
     StorePlaylistModule,
     PlaylistsModule,
     FollowModule,

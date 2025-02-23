@@ -51,5 +51,8 @@ export class CreateShortVideoDto {
   @IsInt()
   totalReports: number; 
 
-
+  @IsOptional()
+  @IsArray()
+  categories: Types.ObjectId[];
+  
 }

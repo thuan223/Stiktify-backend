@@ -9,6 +9,7 @@ import { CategoriesModule } from '../categories/categories.module';
 import { UsersModule } from '../users/users.module';
 import { ReportModule } from '../report/report.module';
 import { Category, CategorySchema } from '../categories/schemas/category.schema';
+import { VideoCategory, VideoCategorySchema } from '../video-categories/schemas/video-category.schema';
 
 
 @Module({
@@ -17,12 +18,14 @@ import { Category, CategorySchema } from '../categories/schemas/category.schema'
     VideoCategoriesModule,
     MongooseModule.forFeature([{ name: Video.name, schema: VideoSchema }]),
     MongooseModule.forFeature([{ name: Category.name, schema: CategorySchema }]),
+    // Đăng ký VideoCategoryModel
+    MongooseModule.forFeature([{ name: VideoCategory.name, schema: VideoCategorySchema }]),
     CategoriesModule,
     UsersModule,
-    forwardRef(() => ReportModule)
+    forwardRef(() => ReportModule),
   ],
   controllers: [ShortVideosController],
   providers: [ShortVideosService],
   exports: [ShortVideosService, MongooseModule],
 })
-export class ShortVideosModule { }
+export class ShortVideosModule {}

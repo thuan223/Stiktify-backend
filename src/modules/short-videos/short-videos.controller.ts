@@ -23,8 +23,9 @@ import { UpdateVideoByViewingDto } from './dto/update-view-by-viewing.dto';
 export class ShortVideosController {
   constructor(private readonly shortVideosService: ShortVideosService) {}
 
-  @Post()
-  create(@Body() createShortVideoDto: CreateShortVideoDto) {
+  //Create a new short video - ThangLH
+  @Post('create')
+  async createPost(@Body() createShortVideoDto: CreateShortVideoDto) {
     return this.shortVideosService.create(createShortVideoDto);
   }
 
@@ -111,11 +112,7 @@ export class ShortVideosController {
     );
   }
 
-  // Upload a new video
-  @Post('upload')
-  async uploadVideo(@Body() createShortVideoDto: CreateShortVideoDto) {
-    return this.shortVideosService.create(createShortVideoDto);
-  }
+
 
   // Update video
   @Patch(':id')
@@ -136,18 +133,4 @@ export class ShortVideosController {
     return this.shortVideosService.shareVideo(id);
   }
 
-  // // Report video
-  // @Post(':id/report')
-  // async reportVideo(
-  //   @Param('id') id: string,
-  //   @Body('reason') reason: string,
-  //   @Body('userId') userId: string,
-  // ) {
-  //   return this.shortVideosService.reportVideo(id, reason, userId);
-  // }
-  // // Like or Unlike a video
-  // @Patch(':id/like')
-  // async likeVideo(@Param('id') videoId: string, @Body('userId') userId: string) {
-  //   return this.shortVideosService.likeVideo(videoId, userId);
-  // }
 }

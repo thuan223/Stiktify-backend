@@ -18,9 +18,22 @@ export class ReportService {
   ) { }
 
 
-  create(createReportDto: CreateReportDto) {
-    return 'This action adds a new report';
+  //ThangLH
+  async create(createReportDto: CreateReportDto) {
+
+    const { userId, videoId, reasons } = createReportDto;
+    const video = await this.shortVideosService.checkVideoById(videoId.toString());
+    if (!video) {
+      throw new NotFoundException('Video not found');
+    }
+    const newReport = new this.reportModel({
+      userId,
+      videoId,
+      reasons,
+    });
+    return await newReport.save();
   }
+  
 
   async findAll(query: string, current: number, pageSize: number) {
     const { filter, sort } = aqp(query);

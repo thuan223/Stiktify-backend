@@ -15,6 +15,6 @@ import {
   ],
   controllers: [VideoCategoriesController],
   providers: [VideoCategoriesService],
-  exports: [VideoCategoriesService],
+  exports: [VideoCategoriesService,MongooseModule],
 })
 export class VideoCategoriesModule {}
