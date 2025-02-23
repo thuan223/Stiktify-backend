@@ -2,18 +2,15 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { FollowService } from './follow.service';
 import { CreateFollowDto } from './dto/create-follow.dto';
 import { UpdateFollowDto } from './dto/update-follow.dto';
-import { Public } from '@/decorator/customize';
 
 @Controller('follow')
 export class FollowController {
   constructor(private readonly followService: FollowService) {}
-  @Public()
   @Post('create-follow')
   followUserByBody(@Body() body: { followerId: string; followingId: string }) {
     return this.followService.followAnotherUser(body.followerId, body.followingId);
   }
 
-  @Public()
   @Get('list-following/:userId')
   findAll(
     @Param("userId") userId:string
