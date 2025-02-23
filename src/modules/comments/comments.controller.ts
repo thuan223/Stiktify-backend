@@ -78,18 +78,4 @@ export class CommentsController {
       createMusicCommentDto,
     );
   }
-
-  @Post('upload')
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: multer.memoryStorage(),
-      limits: { fileSize: 10 * 1024 * 1024 }, // Giới hạn 10MB
-    }),
-  )
-  async uploadFile(@UploadedFile() file: Express.Multer.File) {
-    if (!file) {
-      throw new BadRequestException('No file uploaded');
-    }
-    return this.commentsService.testUpload(file);
-  }
 }

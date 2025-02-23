@@ -29,6 +29,7 @@ import { ReportModule } from './modules/report/report.module';
 import { FollowModule } from './modules/follow/follow.module';
 import { PlaylistsModule } from './modules/playlists/playlists.module';
 import { StorePlaylistModule } from './modules/store-playlist/store-playlist.module';
+import { UploadModule } from './modules/upload/upload.module';
 @Module({
   imports: [
     StorePlaylistModule,
@@ -87,6 +88,7 @@ import { StorePlaylistModule } from './modules/store-playlist/store-playlist.mod
       inject: [ConfigService],
     }),
     StorePlaylistModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [

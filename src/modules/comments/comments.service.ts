@@ -119,19 +119,6 @@ export class CommentsService {
     });
     return await newComment.save();
   }
-  async testUpload(file: Express.Multer.File) {
-    try {
-      const folder = 'test-folder'; // đổi tên folder giùm he (videos, musics hoặc avatars)
-      const result = await uploadFile(file, folder);
-      return result;
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Upload failed',
-        error: error.message,
-      };
-    }
-  }
 
   // async getChildMusiComments(parentId: Types.ObjectId): Promise<any[]> {
   //   console.log(parentId);
