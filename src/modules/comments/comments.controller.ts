@@ -9,16 +9,18 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  Patch,
+  Delete,
 } from '@nestjs/common';
 import { CommentsService } from './comments.service';
 import { JwtAuthGuard } from '@/auth/passport/jwt-auth.guard';
 import {
   CreateCommentDto,
   CreateMusicCommentDto,
+  ReplyCommentDto,
 } from './dto/create-comment.dto';
 import { Types } from 'mongoose';
-import { FileInterceptor } from '@nestjs/platform-express';
-import multer from 'multer';
+import { DeleteCommentDto, UpdateCommentDto } from './dto/update-comment.dto';
 
 @Controller('comments')
 export class CommentsController {
@@ -50,14 +52,10 @@ export class CommentsController {
   async replyToComment(
     @Req() req: any,
     @Param('parentId') parentId: string,
-    @Body() createCommentDto: CreateCommentDto,
+    @Body() dto: ReplyCommentDto,
   ) {
     const userId = req.user._id;
-    return this.commentsService.replyToComment(
-      userId,
-      new Types.ObjectId(parentId),
-      createCommentDto,
-    );
+    return this.commentsService.replyToComment(userId, dto);
   }
 
   @Get('music/:musicId')
@@ -77,5 +75,19 @@ export class CommentsController {
       userId,
       createMusicCommentDto,
     );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('update')
+  async updateComment(@Req() req, @Body() updateCommentDto: UpdateCommentDto) {
+    const userId = req.user._id;
+    return this.commentsService.updateComment(userId, updateCommentDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('delete/:commentId')
+  async deleteComment(@Req() req, @Param('commentId') dto: DeleteCommentDto) {
+    const userId = req.user._id;
+    return this.commentsService.deleteComment(userId, dto);
   }
 }

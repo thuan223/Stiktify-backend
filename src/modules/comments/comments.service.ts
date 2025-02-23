@@ -5,12 +5,14 @@ import { Model, Types } from 'mongoose';
 import {
   CreateCommentDto,
   CreateMusicCommentDto,
+  ReplyCommentDto,
 } from './dto/create-comment.dto';
 import { User } from '../users/schemas/user.schema';
 import { Video } from '../short-videos/schemas/short-video.schema';
 import { Music } from '../musics/schemas/music.schema';
 import { Request, Response, NextFunction } from 'express';
 import { uploadFile } from '@/helpers/uploadFileHelper';
+import { DeleteCommentDto, UpdateCommentDto } from './dto/update-comment.dto';
 
 @Injectable()
 export class CommentsService {
@@ -21,7 +23,7 @@ export class CommentsService {
   ) {}
   async getCommentsByVideoId(videoId: Types.ObjectId): Promise<any[]> {
     const thisVideoComments = await this.commentModel
-      .find({ videoId })
+      .find({ videoId, parentId: null })
       .populate('userId', 'fullname')
       .exec();
 
@@ -34,6 +36,8 @@ export class CommentsService {
       videoId: comment.videoId,
       parentId: comment.parentId,
       CommentDescription: comment.CommentDescription,
+      totalOfChildComments: comment.totalOfChildComments,
+      user: comment.userId,
     }));
   }
   async createComment(
@@ -73,20 +77,52 @@ export class CommentsService {
 
   async replyToComment(
     userId: string,
-    parentId: Types.ObjectId,
-    createCommentDto: CreateCommentDto,
+    createCommentDto: ReplyCommentDto,
   ): Promise<Comment> {
     const newReply = new this.commentModel({
       ...createCommentDto,
       userId,
-      parentId,
     });
 
     await this.VideoModal.findByIdAndUpdate(createCommentDto.videoId, {
       $inc: { totalComment: 1 },
     });
 
+    await this.commentModel.findByIdAndUpdate(createCommentDto.parent, {
+      $inc: { totalOfChildComments: 1 },
+    });
+
     return await newReply.save();
+  }
+
+  async updateComment(userId: string, updateCommentDto: UpdateCommentDto) {
+    const { commentId, CommentDescription } = updateCommentDto;
+
+    const comment = await this.commentModel.findById(commentId);
+    if (!comment) {
+      throw new Error('Comment not found');
+    }
+    if (comment.userId.toString() !== userId) {
+      throw new Error('You are not authorized to update this comment');
+    }
+
+    comment.CommentDescription = CommentDescription;
+    return await comment.save();
+  }
+
+  async deleteComment(userId: string, deleteCommentDto: DeleteCommentDto) {
+    const { commentId } = deleteCommentDto;
+
+    const comment = await this.commentModel.findById(commentId);
+    if (!comment) {
+      throw new Error('Comment not found');
+    }
+    if (comment.userId.toString() !== userId) {
+      throw new Error('You are not authorized to delete this comment');
+    }
+
+    await this.commentModel.findByIdAndDelete(commentId);
+    return { message: 'Comment deleted successfully' };
   }
 
   async getCommentsByMusicId(musicId: Types.ObjectId): Promise<any[]> {
