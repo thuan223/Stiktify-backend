@@ -5,6 +5,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Playlist, PlaylistSchema } from './schemas/playlist.schema';
 import { MusicsModule } from '../musics/musics.module';
 import { UsersModule } from '../users/users.module';
+import { Category, CategorySchema } from '../categories/schemas/category.schema';
+import { MusicCategory, MusicCategorySchema } from '../music-categories/schemas/music-category.schema';
 
 
 @Module({
@@ -12,6 +14,8 @@ import { UsersModule } from '../users/users.module';
     MusicsModule,
     UsersModule,
     MongooseModule.forFeature([{ name: Playlist.name, schema: PlaylistSchema }]),
+    MongooseModule.forFeature([{ name: Category.name, schema: CategorySchema }]),
+    MongooseModule.forFeature([{ name: MusicCategory.name, schema: MusicCategorySchema}])
   ],
   controllers: [PlaylistsController],
   providers: [PlaylistsService],

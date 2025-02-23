@@ -14,6 +14,16 @@ export class PlaylistsController {
     return this.playlistsService.handleAddPlaylist(createPlaylistDto);
   }
 
+  @Get("filter-search")
+  findPlaylistFilterAndSearch(
+    @Query() query: any,
+    @Query("current") current: string,
+    @Query("pageSize") pageSize: string,
+  ) {
+    return this.playlistsService.handleFilterAndSearchPlaylist(query, +current, +pageSize)
+  }
+  
+
   @Get("list-playlist/:userId")
   listPlaylist(
     @Param("userId") userId: string,

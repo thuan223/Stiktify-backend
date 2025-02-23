@@ -26,6 +26,7 @@ export class MusicsController {
     );
   }
 
+  @Public()
   @Get("filter-search")
   findMusicFilterAndSearch(
     @Query() query: any,
