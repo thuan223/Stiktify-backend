@@ -30,8 +30,10 @@ import { ReportModule } from './modules/report/report.module';
 import { FollowModule } from './modules/follow/follow.module';
 import { PlaylistsModule } from './modules/playlists/playlists.module';
 import { StorePlaylistModule } from './modules/store-playlist/store-playlist.module';
+import { UploadModule } from '@/modules/uploadFile/upload.module';
 @Module({
   imports: [
+    UploadModule,
     StorePlaylistModule,
     PlaylistsModule,
     FollowModule,
@@ -102,6 +104,7 @@ import { StorePlaylistModule } from './modules/store-playlist/store-playlist.mod
     },
   ],
 })
+
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(UploadMiddleware).forRoutes('*'); // Áp dụng middleware cho tất cả các route (hoặc route cụ thể)

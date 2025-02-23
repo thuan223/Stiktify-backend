@@ -10,7 +10,7 @@ export class UploadMiddleware implements NestMiddleware {
       // Kiểm tra loại file
       const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
       if (!allowedTypes.includes(file.mimetype)) {
-        return cb(new Error('File type not allowed'), false);
+        return cb(new Error('File type not allowed') as any, false);
       }
       cb(null, true);
     },
