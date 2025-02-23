@@ -30,6 +30,7 @@ import { FollowModule } from './modules/follow/follow.module';
 import { PlaylistsModule } from './modules/playlists/playlists.module';
 import { StorePlaylistModule } from './modules/store-playlist/store-playlist.module';
 import { UploadModule } from './modules/upload/upload.module';
+import { MusicFavoriteModule } from './modules/music-favorite/music-favorite.module';
 @Module({
   imports: [
     UploadModule,
@@ -90,6 +91,7 @@ import { UploadModule } from './modules/upload/upload.module';
     }),
     StorePlaylistModule,
     UploadModule,
+    MusicFavoriteModule,
   ],
   controllers: [AppController],
   providers: [
