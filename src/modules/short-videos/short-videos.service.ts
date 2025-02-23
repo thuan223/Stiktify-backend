@@ -19,8 +19,6 @@ import { User } from '../users/schemas/user.schema';
 import { ReportService } from '../report/report.service';
 import { UpdateVideoByViewingDto } from './dto/update-view-by-viewing.dto';
 
-
-
 @Injectable()
 export class ShortVideosService {
   constructor(
@@ -33,7 +31,7 @@ export class ShortVideosService {
     private categoriesService: CategoriesService,
     @Inject(forwardRef(() => ReportService))
     private reportService: ReportService,
-  ) { }
+  ) {}
 
   // Upload a new video
   async create(createShortVideoDto: CreateShortVideoDto): Promise<Video> {
@@ -206,9 +204,17 @@ export class ShortVideosService {
     }
   }
   async getTrendingVideosByUser(data: TrendingVideoDto) {
+    let videoFound;
+    let maxvideo = 10;
     const wishList = await this.wishListService.getWishListByUserId(data);
     const wishListVideoIds = wishList.map((item) => item.videoId);
-
+    if (data.videoId && Array.isArray(data.videoId) && data.videoId.length > 0) {
+      videoFound = await this.videoModel
+        .find({ _id: { $in: data.videoId } })
+        .populate("userId");
+      maxvideo = 9;
+    }
+    
     let videos = await this.videoModel
       .find({ _id: { $in: wishListVideoIds } })
       .populate('userId');
@@ -223,7 +229,7 @@ export class ShortVideosService {
       videos.push(randomTopVideo);
     }
 
-    const remainingCount = 10 - videos.length;
+    const remainingCount = maxvideo - videos.length;
 
     if (remainingCount > 0) {
       const randomVideos = await this.videoModel.aggregate([
@@ -237,7 +243,10 @@ export class ShortVideosService {
       const populatedVideos = await this.videoModel.populate(randomVideos, [
         { path: 'userId' },
       ]);
-      videos = [...videos, ...populatedVideos];
+      if (videoFound) videos = [...videoFound, ...videos, ...populatedVideos];
+      else {
+        videos = [...videos, ...populatedVideos];
+      }
     }
 
     await this.wishListService.deleteWishListByUserId(data.userId);
@@ -396,16 +405,20 @@ export class ShortVideosService {
   }
 
   checkFilterAction(filter: string) {
-    if (filter === "categoryName") {
-      return { categoryName: true }
-    } else if (filter === "null") {
-      return { categoryName: false }
+    if (filter === 'categoryName') {
+      return { categoryName: true };
+    } else if (filter === 'null') {
+      return { categoryName: false };
     } else {
-      return {}
+      return {};
     }
   }
 
-  async handleFilterSearchVideo(query: string, current: number, pageSize: number) {
+  async handleFilterSearchVideo(
+    query: string,
+    current: number,
+    pageSize: number,
+  ) {
     const { filter, sort } = aqp(query);
 
     if (filter.current) delete filter.current;
@@ -420,13 +433,11 @@ export class ShortVideosService {
     const skip = (+current - 1) * +pageSize;
     const searchRegex = new RegExp(`^${filter.search}`, 'i');
 
-    const handleFilter = this.checkFilterAction(filter.filterReq)
+    const handleFilter = this.checkFilterAction(filter.filterReq);
 
     let handleSearch = [];
     if (filter.search.length > 0) {
-      handleSearch = [
-        { email: searchRegex },
-      ]
+      handleSearch = [{ email: searchRegex }];
     }
     // const handleFilter = filter.filterReq ? await this.checkFilterMusic(filter.filterReq) : {};
     const result = await this.videoModel
@@ -437,7 +448,7 @@ export class ShortVideosService {
       .limit(pageSize)
       .skip(skip)
       .select('-password')
-      .sort(sort as any)
+      .sort(sort as any);
 
     return {
       meta: {
@@ -495,4 +506,3 @@ export class ShortVideosService {
     return videoList;
   }
 }
-
