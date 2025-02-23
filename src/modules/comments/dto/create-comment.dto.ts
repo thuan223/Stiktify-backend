@@ -14,6 +14,24 @@ export class CreateCommentDto {
   parent?: string;
 }
 
+export class ReplyCommentDto {
+  @IsString()
+  @IsNotEmpty()
+  videoId: string;
+
+  @IsString()
+  @IsNotEmpty()
+  parentId: string;
+
+  @IsString()
+  @IsNotEmpty()
+  CommentDescription: string;
+
+  @IsOptional()
+  @IsString()
+  parent?: string;
+}
+
 export class CreateMusicCommentDto {
   @IsString()
   @IsNotEmpty()
