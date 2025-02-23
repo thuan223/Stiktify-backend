@@ -236,7 +236,7 @@ export class WishlistService {
     return `This action removes a #${id} wishlist`;
   }
   async getWishListByUserId(data: TrendingVideoDto) {
-    return await this.wishListModel.find({ userId: data.userId });
+    return await this.wishListModel.find({ userId: data.userId }).limit(8);
   }
   async deleteWishListByUserId(userId: string): Promise<any> {
     const result = await this.wishListModel.deleteMany({ userId });

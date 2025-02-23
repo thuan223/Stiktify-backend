@@ -36,7 +36,9 @@ export class WishlistScoreService {
       scoreIncrase = 1.5;
       suggest.tags = [];
       suggest.categoryId = [];
-    } else if (triggerWishlistScoreDto.triggerAction === 'ClickLinkMusic') {
+    } else if (triggerWishlistScoreDto.triggerAction === 'ClickLinkMusic'
+      || triggerWishlistScoreDto.triggerAction === 'ListenMusic'
+      || triggerWishlistScoreDto.triggerAction === 'SearchMusic') {
       suggest = {
         musicId: triggerWishlistScoreDto.id,
       };
@@ -51,7 +53,13 @@ export class WishlistScoreService {
       scoreIncrase = 2;
       suggest.tags = [];
       suggest.musicId = null;
-    }
+    }else if (triggerWishlistScoreDto.triggerAction === 'FollowCreator') {
+      suggest = await this.findSuggestByVideo(triggerWishlistScoreDto.id);
+      scoreIncrase = 2.5;
+      suggest.tags = [];
+      suggest.musicId = null;
+      suggest.categoryId = [];
+    } 
     if (suggest?.tags?.length) {
       for (const tag of suggest.tags) {
         await this.triggerWishListScoretag(
