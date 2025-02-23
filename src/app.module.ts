@@ -21,7 +21,6 @@ import { TransformInterceptor } from './auth/core/transform.interceptor';
 import { AuthModule } from './auth/auth.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
-import { UploadMiddleware } from './middlewares/upload.middleware';
 import { WishlistModule } from './modules/wishlist/wishlist.module';
 import { ViewingHistory } from './modules/viewinghistory/schemas/viewinghistory.entity';
 import { ViewinghistoryModule } from './modules/viewinghistory/viewinghistory.module';
@@ -31,6 +30,7 @@ import { FollowModule } from './modules/follow/follow.module';
 import { PlaylistsModule } from './modules/playlists/playlists.module';
 import { StorePlaylistModule } from './modules/store-playlist/store-playlist.module';
 import { MusicFavoriteModule } from './modules/music-favorite/music-favorite.module';
+import { UploadModule } from './modules/upload/upload.module';
 @Module({
   imports: [
     StorePlaylistModule,
@@ -90,6 +90,7 @@ import { MusicFavoriteModule } from './modules/music-favorite/music-favorite.mod
     }),
     StorePlaylistModule,
     MusicFavoriteModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [
@@ -104,8 +105,4 @@ import { MusicFavoriteModule } from './modules/music-favorite/music-favorite.mod
     },
   ],
 })
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(UploadMiddleware).forRoutes('*'); // Áp dụng middleware cho tất cả các route (hoặc route cụ thể)
-  }
-}
+export class AppModule {}
