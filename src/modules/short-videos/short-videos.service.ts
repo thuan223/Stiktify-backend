@@ -43,10 +43,12 @@ export class ShortVideosService {
       const createdVideo = await this.videoModel.create(createShortVideoDto);
       // Nếu DTO có danh sách categories, tạo các bản ghi trong bảng video-categories
       if (createShortVideoDto.categories?.length) {
-        const videoCategories = createShortVideoDto.categories.map((categoryId) => ({
-          videoId: createdVideo._id,
-          categoryId,
-        }));
+        const videoCategories = createShortVideoDto.categories.map(
+          (categoryId) => ({
+            videoId: createdVideo._id,
+            categoryId,
+          }),
+        );
         await this.videoCategoryModel.insertMany(videoCategories);
       }
       return createdVideo;
@@ -54,12 +56,16 @@ export class ShortVideosService {
       throw new BadRequestException('Failed to create video post');
     }
   }
-  
-  
-  // Tạo ra những bảng ghi video categories dự trên id của video vừa tạo ra và các categoryid trong caterogies từ dto 
+  // Tạo ra những bảng ghi video categories dự trên id của video vừa tạo ra và các categoryid trong caterogies từ dto
 
+  // Lấy ra video dự vào UserId - ThangLH
+  async getVideosByUserId(userId: string): Promise<Video[]> {
+    return this.videoModel
+      .find({ userId: new mongoose.Types.ObjectId(userId), isDelete: false })
+      .populate('userId', 'userName')
+      .exec();
+  }
 
- 
   // Update a video's details
   async update(
     id: string,
@@ -104,7 +110,6 @@ export class ShortVideosService {
 
     return { videoUrl: video.videoUrl };
   }
-
 
   async findAll(query: string, current: number, pageSize: number) {
     try {
@@ -170,13 +175,17 @@ export class ShortVideosService {
     let maxvideo = 10;
     const wishList = await this.wishListService.getWishListByUserId(data);
     const wishListVideoIds = wishList.map((item) => item.videoId);
-    if (data.videoId && Array.isArray(data.videoId) && data.videoId.length > 0) {
+    if (
+      data.videoId &&
+      Array.isArray(data.videoId) &&
+      data.videoId.length > 0
+    ) {
       videoFound = await this.videoModel
         .find({ _id: { $in: data.videoId } })
-        .populate("userId");
+        .populate('userId');
       maxvideo = 9;
     }
-    
+
     let videos = await this.videoModel
       .find({ _id: { $in: wishListVideoIds } })
       .populate('userId');

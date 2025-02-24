@@ -66,4 +66,23 @@ export class VideoReactionsService {
   async getVideoReactions(videoId: string) {
     return this.videoReactionModel.distinct('reactionTypeId', { videoId });
   }
+  // ThangLH
+  async getReactionsByUserId(userId: string) {
+    const reactions = await this.videoReactionModel
+      .find({ userId })
+      .populate({
+        path: 'reactionTypeId',
+        select: 'reactionTypeName',
+      })
+      .select('_id videoId reactionTypeId');
+      
+    return reactions.filter(r => {
+      const reactionType = r.reactionTypeId as unknown as { reactionTypeName?: string };
+      return reactionType?.reactionTypeName === 'Like';
+    });
+  }
+  
+  
 }
+
+

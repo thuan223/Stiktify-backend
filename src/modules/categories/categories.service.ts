@@ -16,8 +16,8 @@ export class CategoriesService {
     return 'This action adds a new category';
   }
 
-  findAll() {
-    return `This action returns all categories`;
+  async findAll(): Promise<Category[]> {
+    return this.categoryModel.find().exec();
   }
 
   findOne(id: number) {

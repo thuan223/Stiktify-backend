@@ -18,7 +18,7 @@ import { Types } from 'mongoose';
 
 @Controller('video-reactions')
 export class VideoReactionsController {
-  constructor(private readonly videoReactionsService: VideoReactionsService) {}
+  constructor(private readonly videoReactionsService: VideoReactionsService) { }
 
   @UseGuards(JwtAuthGuard)
   @Post('react')
@@ -45,4 +45,12 @@ export class VideoReactionsController {
   async getReactions(@Param('videoId') videoId: string) {
     return this.videoReactionsService.getVideoReactions(videoId);
   }
+
+  //ThangLH
+  @UseGuards(JwtAuthGuard)
+  @Get('user/:userId')
+  async getReactionsByUserId(@Param('userId') userId: string) {
+    return this.videoReactionsService.getReactionsByUserId(userId);
+  }
+
 }
