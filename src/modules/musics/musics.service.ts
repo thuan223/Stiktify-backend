@@ -16,9 +16,15 @@ export class MusicsService {
 
   async checkMusicById(id: string) {
     try {
-      const result = await this.musicModel.findById(id).where({ isBlock: false })
-
-      console.log(result);
+      const result = await this.musicModel
+        .findById(id)
+        .populate(
+          {
+            path: "userId",
+            select: "_id userName fullname email",
+            match: { isBan: false }
+          })
+        .where({ isBlock: false })
 
       if (result) {
         return result
@@ -110,8 +116,15 @@ export class MusicsService {
     };
   }
 
-  update(id: number, updateMusicDto: UpdateMusicDto) {
-    return `This action updates a #${id} music`;
+  async handleUpdateListener(id: string) {
+    const check = await this.checkMusicById(id);
+
+    if (!check) {
+      throw new NotFoundException(`Not found music with id: ${id}`)
+    }
+
+    const result = await this.musicModel.findByIdAndUpdate(id, { totalListener: check.totalListener + 1 })
+    return result
   }
 
   remove(id: number) {

@@ -36,6 +36,9 @@ export class Music {
   @Prop({ default: 0, min: 0 })
   totalReactions: number;
 
+  @Prop({ default: 0, min: 0 })
+  totalShare: number;
+
   @Prop()
   musicLyric: string;
 }

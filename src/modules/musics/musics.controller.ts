@@ -48,9 +48,10 @@ export class MusicsController {
     return this.musicsService.handleListMusic(+current, +pageSize);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateMusicDto: UpdateMusicDto) {
-    return this.musicsService.update(+id, updateMusicDto);
+  @Public()
+  @Get('update-listener/:id')
+  updateListener(@Param('id') id: string) {
+    return this.musicsService.handleUpdateListener(id);
   }
 
   @Delete(':id')
