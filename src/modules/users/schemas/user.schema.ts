@@ -18,7 +18,7 @@ export class User {
   email: string;
 
   @Prop()
-  phone: number;
+  phone: string;
 
   @Prop()
   address: string;

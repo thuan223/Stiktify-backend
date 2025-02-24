@@ -175,11 +175,8 @@ export class ShortVideosService {
     let maxvideo = 10;
     const wishList = await this.wishListService.getWishListByUserId(data);
     const wishListVideoIds = wishList.map((item) => item.videoId);
-    if (
-      data.videoId &&
-      Array.isArray(data.videoId) &&
-      data.videoId.length > 0
-    ) {
+
+    if (data.videoId && data.videoId.length > 0) {
       videoFound = await this.videoModel
         .find({ _id: { $in: data.videoId } })
         .populate('userId');
@@ -195,9 +192,8 @@ export class ShortVideosService {
       .limit(10)
       .populate('userId');
     if (topVideos.length > 0) {
-      const randomIndex = Math.floor(Math.random() * topVideos.length);
-      const randomTopVideo = topVideos[randomIndex];
-      videos.push(randomTopVideo);
+      const topVideoChoosen= await this.wishListService.getTheBestChoiceFromListVideo(topVideos,data.userId)
+      videos.push(topVideoChoosen)
     }
 
     const remainingCount = maxvideo - videos.length;

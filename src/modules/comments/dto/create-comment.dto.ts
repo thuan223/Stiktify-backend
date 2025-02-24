@@ -26,10 +26,6 @@ export class ReplyCommentDto {
   @IsString()
   @IsNotEmpty()
   CommentDescription: string;
-
-  @IsOptional()
-  @IsString()
-  parent?: string;
 }
 
 export class CreateMusicCommentDto {

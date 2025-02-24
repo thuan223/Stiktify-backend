@@ -11,8 +11,6 @@ import { comparePasswordHelper } from '@/helpers/ultil';
 import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
-
-
 export class AuthService {
   constructor(
     private usersService: UsersService,
@@ -80,7 +78,7 @@ export class AuthService {
         role: user.role,
       };
     } catch (error) {
-      throw new Error('Invalid or expired token');
+      console.log('Invalid or expired token');
     }
   }
 }

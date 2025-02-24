@@ -4,21 +4,29 @@ import { UpdateMusicDto } from './dto/update-music.dto';
 import aqp from 'api-query-params';
 import { InjectModel } from '@nestjs/mongoose';
 import { Music } from './schemas/music.schema';
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import { Category } from '../categories/schemas/category.schema';
+import { MusicCategory } from '../music-categories/schemas/music-category.schema';
 
 @Injectable()
 export class MusicsService {
   constructor(
     @InjectModel(Music.name) private musicModel: Model<Music>,
-    @InjectModel(Category.name) private categoryModel: Model<Category>
+    @InjectModel(Category.name) private categoryModel: Model<Category>,
+    @InjectModel(MusicCategory.name) private musicCategoryModel: Model<MusicCategory>
   ) { }
 
   async checkMusicById(id: string) {
     try {
-      const result = await this.musicModel.findById(id).where({ isBlock: false })
-
-      console.log(result);
+      const result = await this.musicModel
+        .findById(id)
+        .populate(
+          {
+            path: "userId",
+            select: "_id userName fullname email",
+            match: { isBan: false }
+          })
+        .where({ isBlock: false })
 
       if (result) {
         return result
@@ -110,52 +118,93 @@ export class MusicsService {
     };
   }
 
-  update(id: number, updateMusicDto: UpdateMusicDto) {
-    return `This action updates a #${id} music`;
+  async handleUpdateListener(id: string) {
+    const check = await this.checkMusicById(id);
+
+    if (!check) {
+      throw new NotFoundException(`Not found music with id: ${id}`)
+    }
+
+    const result = await this.musicModel.findByIdAndUpdate(id, { totalListener: check.totalListener + 1 })
+    return result
   }
 
   remove(id: number) {
     return `This action removes a #${id} music`;
   }
 
-  async checkFilterMusic(filter: string) {
-    if (!filter || typeof filter !== 'string') return {};
-    const category = await this.categoryModel.findOne({ name: filter });
-    return category ? { genre: filter } : {};
+  async handleMyMusic(userId: string, current: number, pageSize: number) {
+    const filter = { userId: new mongoose.Types.ObjectId(userId) };
+    const totalItems = await this.musicModel.countDocuments(filter);
+    if (totalItems === 0) {
+      return {
+        meta: {
+          current,
+          pageSize,
+          totalItems: 0,
+          totalPages: 0,
+        },
+        result: [],
+        message: 'No videos found for this user',
+      };
+    }
+    const skip = (current - 1) * pageSize;
+    const result = await this.musicModel
+      .find(filter)
+      .skip(skip)
+      .limit(pageSize)
+      .sort({ createdAt: -1 })
+    return {
+      meta: {
+        current,
+        pageSize,
+        totalItems,
+        totalPages: Math.ceil(totalItems / pageSize),
+      },
+      result,
+    };
   }
 
 
+  async checkFilterMusic(filter: string) {
+    if (!filter || typeof filter !== 'string') return {};
+    const category = await this.categoryModel.findOne({ categoryName: { $regex: filter, $options: 'i' } });
+    return category ? { categoryId: category._id } : {};  
+  }
+
   async handleFilterAndSearchMusic(query: any, current: number, pageSize: number) {
     const { filter = {}, sort = {} } = aqp(query);
-    if (filter && filter.current) delete filter.current;
-    if (filter && filter.pageSize) delete filter.pageSize;
-    if (sort && sort.pageSize) delete sort.pageSize;
     current = current && !isNaN(Number(current)) ? Number(current) : 1;
     pageSize = pageSize && !isNaN(Number(pageSize)) ? Number(pageSize) : 10;
-
     if (isNaN(current) || isNaN(pageSize)) {
       return { statusCode: 400, message: "Invalid pagination parameters" };
     }
-    const totalItems = await this.musicModel.countDocuments(filter);
-    const totalPages = Math.ceil(totalItems / pageSize);
-    const skip = (current - 1) * pageSize;
+    const handleFilter = filter.filterReq ? await this.checkFilterMusic(filter.filterReq) : {};
     let handleSearch = [];
     if (filter.search && typeof filter.search === "string" && filter.search.trim().length > 0) {
       const searchRegex = new RegExp(filter.search, 'i');
       handleSearch = [
-        { musicDescription: searchRegex },
-        { musicLyric: searchRegex }
+        { musicDescription: searchRegex },  
       ];
     }
-    const handleFilter = filter.filterReq ? await this.checkFilterMusic(filter.filterReq) : {};
+    let musicCategory = [];
+    if (handleFilter.categoryId) {
+      musicCategory = await this.musicCategoryModel.find({ categoryId: handleFilter.categoryId });
+    }
+    const musicIds = musicCategory.map(item => item.musicId);
+    const filterQuery = {
+      ...(handleSearch.length > 0 ? { $or: handleSearch } : {}),
+      ...(handleFilter.categoryId ? { _id: { $in: musicIds } } : {}),
+    };
+    const totalItems = await this.musicModel.countDocuments(filterQuery);
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const skip = (current - 1) * pageSize;
     const result = await this.musicModel
-      .find({
-        ...handleFilter,
-        ...(handleSearch.length > 0 ? { $or: handleSearch } : {})
-      })
+      .find(filterQuery)
       .limit(pageSize)
       .skip(skip)
       .sort(sort as any);
+  
     return {
       meta: {
         current,

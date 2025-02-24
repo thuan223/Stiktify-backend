@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Request } from '@nestjs/common';
 import { MusicsService } from './musics.service';
 import { CreateMusicDto } from './dto/create-music.dto';
 import { UpdateMusicDto } from './dto/update-music.dto';
@@ -13,6 +13,20 @@ export class MusicsController {
     return this.musicsService.handleUploadMusic(createMusicDto);
   }
 
+  @Get('my-musics')
+  getUserMusics(
+    @Request() req,
+    @Query('current') current: string,
+    @Query('pageSize') pageSize: string,
+  ) {
+    return this.musicsService.handleMyMusic(
+      req.user._id,
+      +current,
+      +pageSize,
+    );
+  }
+
+  @Public()
   @Get("filter-search")
   findMusicFilterAndSearch(
     @Query() query: any,
@@ -48,9 +62,10 @@ export class MusicsController {
     return this.musicsService.handleListMusic(+current, +pageSize);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateMusicDto: UpdateMusicDto) {
-    return this.musicsService.update(+id, updateMusicDto);
+  @Public()
+  @Get('update-listener/:id')
+  updateListener(@Param('id') id: string) {
+    return this.musicsService.handleUpdateListener(id);
   }
 
   @Delete(':id')
