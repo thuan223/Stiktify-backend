@@ -3,7 +3,7 @@ import { CreateWishlistDto } from './dto/create-wishlist.dto';
 import { UpdateWishlistDto } from './dto/update-wishlist.dto';
 import { TrendingVideoDto } from '../short-videos/dto/trending-video.dto';
 import { WishList } from './schemas/wishlist.entity';
-import { Model } from 'mongoose';
+import { Model, ObjectId } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { WishlistScoreService } from '../wishlist-score/wishlist-score.service';
 import { ViewinghistoryService } from '../viewinghistory/viewinghistory.service';
@@ -16,10 +16,9 @@ export class WishlistService {
     @Inject(forwardRef(() => WishlistScoreService))
     private wishListScoreService: WishlistScoreService,
     private viewingHistoryService: ViewinghistoryService,
-  ) { }
+  ) {}
   async create(createWishlistDto: CreateWishlistDto) {
     let suggestByVideo;
-    console.log(createWishlistDto.id);
     if (createWishlistDto.triggerAction != 'ScrollVideo') {
       await this.wishListScoreService.triggerWishListScore(createWishlistDto);
     }
@@ -42,7 +41,8 @@ export class WishlistService {
         wishListScores,
         scoreChecks,
         createWishlistDto.id,
-        -1,0
+        -1,
+        0,
       );
       if (videoFound.length === 1) {
         return await this.createWishListVideo(
@@ -245,4 +245,79 @@ export class WishlistService {
       deletedCount: result.deletedCount,
     };
   }
+  async getCollaboratorList(userId: string) {
+    const userWishLists = await this.wishListModel.find({ userId });
+    if (!userWishLists.length) return [];
+
+    const userVideoIds = userWishLists.map((wishlist) => wishlist.videoId);
+
+    const collaboratorList = await this.wishListModel.aggregate([
+      {
+        $match: {
+          userId: { $ne: userId },
+        },
+      },
+      {
+        $group: {
+          _id: '$userId',
+          videoIds: { $push: '$videoId' },
+        },
+      },
+      {
+        $project: {
+          userId: '$_id',
+          commonVideos: {
+            $size: {
+              $setIntersection: [userVideoIds, '$videoIds'],
+            },
+          },
+        },
+      },
+      {
+        $match: {
+          commonVideos: { $gte: 5 },
+        },
+      },
+      {
+        $sort: { commonVideos: -1 },
+      },
+      {
+        $limit: 5,
+      },
+    ]);
+
+    const filteredCollaborators = collaboratorList
+    .map((user) => user.userId)
+
+  return [userVideoIds, filteredCollaborators];
+  }
+  async getTheGeneralWishlist(userId:string){
+    const returnData = await this.getCollaboratorList(userId);
+    const collaboratorList: string[] = returnData[1] || [];
+    
+    const userVideoIds = new Set<string>((returnData[0] || []).map(id => id.toString()));
+  
+    let videoIdFound: Set<string> = new Set();
+  
+    for (const collaboratorId of collaboratorList) {
+      const collaboratorWishlists = await this.wishListModel.find({ userId: collaboratorId });
+  
+      for (const wishlist of collaboratorWishlists) {
+        const videoId = wishlist.videoId.toString(); 
+  
+        if (!userVideoIds.has(videoId)) {
+          videoIdFound.add(videoId);
+        }
+      }
+    }
+  
+    return Array.from(videoIdFound);
+  }
+  
+  async getCollaborativeVideo(userId: string) {
+    const generalWishList=await this.getTheGeneralWishlist(userId)
+    return generalWishList;
+  }
+  
+  
 }

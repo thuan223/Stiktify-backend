@@ -186,9 +186,8 @@ export class ShortVideosService {
       .limit(10)
       .populate('userId');
     if (topVideos.length > 0) {
-      const randomIndex = Math.floor(Math.random() * topVideos.length);
-      const randomTopVideo = topVideos[randomIndex];
-      videos.push(randomTopVideo);
+      const topVideoChoosen= await this.wishListService.getTheBestChoiceFromListVideo(topVideos,data.userId)
+      videos.push(topVideoChoosen)
     }
 
     const remainingCount = maxvideo - videos.length;
