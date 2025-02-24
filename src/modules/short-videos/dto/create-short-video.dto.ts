@@ -3,7 +3,6 @@ import { Types } from 'mongoose';
 
 export class CreateShortVideoDto {
   @IsNotEmpty()
-  @IsString()
   videoUrl: string;
 
   @IsOptional()
@@ -16,7 +15,6 @@ export class CreateShortVideoDto {
   videoTag: string[];
 
   @IsNotEmpty()
-  @IsMongoId()
   userId: Types.ObjectId;
 
   @IsOptional()

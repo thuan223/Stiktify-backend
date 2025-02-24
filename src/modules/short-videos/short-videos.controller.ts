@@ -28,7 +28,11 @@ export class ShortVideosController {
   async createPost(@Body() createShortVideoDto: CreateShortVideoDto) {
     return this.shortVideosService.create(createShortVideoDto);
   }
-
+  // Lấy ra video dự vào UserId - ThangLH
+  @Get('user-videos/:userId')
+  getVideosByUserId(@Param('userId') userId: string) {
+    return this.shortVideosService.getVideosByUserId(userId);
+  }
   @Get('list-video')
   findAll(
     @Query() query: string,
@@ -37,6 +41,12 @@ export class ShortVideosController {
   ) {
     return this.shortVideosService.findAll(query, +current, +pageSize);
   }
+
+  @Get(':videoId')
+async getVideoById(@Param('videoId') videoId: string) {
+  return this.shortVideosService.findVideoById(videoId);
+}
+
 
   @Post('flag-video')
   @ResponseMessage('Updated successfully')
