@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { WishlistService } from './wishlist.service';
 import { CreateWishlistDto } from './dto/create-wishlist.dto';
 import { UpdateWishlistDto } from './dto/update-wishlist.dto';
+import { Public } from '@/decorator/customize';
 
 @Controller('wishlist')
 export class WishlistController {
@@ -31,5 +32,9 @@ export class WishlistController {
   remove(@Param('id') id: string) {
     return this.wishlistService.remove(+id);
   }
-  
+  @Public()
+  @Get('col/:userId')
+  getCollaborativeVideo(@Param('userId') userId: string) {
+    return this.wishlistService.getCollaborativeVideo(userId);
+  }
 }
