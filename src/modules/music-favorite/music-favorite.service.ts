@@ -4,11 +4,13 @@ import { UpdateMusicFavoriteDto } from './dto/update-music-favorite.dto';
 import { Model, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { MusicFavorite } from './schema/music-favorite.schema';
+import { Music } from '../musics/schemas/music.schema';
 
 @Injectable()
 export class MusicFavoriteService {
   constructor(
     @InjectModel(MusicFavorite.name) private MusicFavoriteModel: Model<MusicFavorite>,
+    @InjectModel(Music.name) private MusicModel: Model<Music>,
   ) { }
 
   create(createMusicFavoriteDto: CreateMusicFavoriteDto) {
@@ -16,10 +18,12 @@ export class MusicFavoriteService {
   }
 
   async findAll(userId: string) {
-    const result = await this.MusicFavoriteModel.find({ userId: new Types.ObjectId(userId) });
-    const filter = result.map(x => x.musicId)
-    return filter;
+    const result = await this.MusicFavoriteModel.find({ userId: new Types.ObjectId(userId) })
+      .populate('musicId', 'musicDescription musicThumbnail musicUrl');  
+    return result.map(item => item.musicId);
   }
+  
+
 
   findOne(id: number) {
     return `This action returns a #${id} musicFavorite`;
