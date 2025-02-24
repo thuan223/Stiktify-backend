@@ -14,7 +14,11 @@ export class Comment {
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: Video.name })
   videoId: MongooseSchema.Types.ObjectId;
 
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: Comment.name })
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: Comment.name,
+    default: null,
+  })
   parentId: MongooseSchema.Types.ObjectId;
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: Music.name })
@@ -22,6 +26,9 @@ export class Comment {
 
   @Prop({ default: 0, min: 0 })
   totalOfChildComments: number;
+
+  @Prop({ default: 0, min: 0 })
+  totalReactions: number;
 
   @Prop()
   CommentDescription: string;
