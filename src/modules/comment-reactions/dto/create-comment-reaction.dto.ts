@@ -1,3 +1,4 @@
+import { Optional } from '@nestjs/common';
 import { IsMongoId, IsNotEmpty } from 'class-validator';
 import { Types } from 'mongoose';
 
@@ -12,7 +13,6 @@ export class CreateCommentReactionDto {
 }
 
 export class GetReaction {
-  @IsMongoId()
   @IsNotEmpty()
   commentId: Types.ObjectId;
 }

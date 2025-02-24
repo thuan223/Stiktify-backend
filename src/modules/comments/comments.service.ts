@@ -37,6 +37,7 @@ export class CommentsService {
       parentId: comment.parentId,
       CommentDescription: comment.CommentDescription,
       totalOfChildComments: comment.totalOfChildComments,
+      totalReactions: comment.totalReactions,
       user: comment.userId,
     }));
   }
@@ -88,7 +89,7 @@ export class CommentsService {
       $inc: { totalComment: 1 },
     });
 
-    await this.commentModel.findByIdAndUpdate(createCommentDto.parent, {
+    await this.commentModel.findByIdAndUpdate(createCommentDto.parentId, {
       $inc: { totalOfChildComments: 1 },
     });
 
@@ -122,6 +123,17 @@ export class CommentsService {
     }
 
     await this.commentModel.findByIdAndDelete(commentId);
+
+    if (!comment.parentId) {
+      await this.VideoModal.findByIdAndUpdate(comment.videoId, {
+        $inc: { totalComment: -1 },
+      });
+    } else {
+      await this.commentModel.findByIdAndUpdate(comment.parentId, {
+        $inc: { totalOfChildComments: -1 },
+      });
+    }
+
     return { message: 'Comment deleted successfully' };
   }
 

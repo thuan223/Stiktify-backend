@@ -78,15 +78,15 @@ export class CommentsController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Patch('update')
+  @Post('update')
   async updateComment(@Req() req, @Body() updateCommentDto: UpdateCommentDto) {
     const userId = req.user._id;
     return this.commentsService.updateComment(userId, updateCommentDto);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Delete('delete/:commentId')
-  async deleteComment(@Req() req, @Param('commentId') dto: DeleteCommentDto) {
+  @Delete('delete')
+  async deleteComment(@Req() req, @Body() dto: DeleteCommentDto) {
     const userId = req.user._id;
     return this.commentsService.deleteComment(userId, dto);
   }
