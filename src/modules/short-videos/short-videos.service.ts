@@ -471,4 +471,22 @@ export class ShortVideosService {
     let videoList = await this.videoModel.aggregate(pipeline);
     return videoList;
   }
+
+  // Delete video - ThangLH
+  async deleteVideo(videoId: string, userId: string): Promise<{ message: string }> {
+    // Tìm video theo videoId
+    const video = await this.videoModel.findById(videoId);
+    if (!video) {
+      throw new BadRequestException('Video not found');
+    }
+    // Kiểm tra quyền xóa: chỉ chủ sở hữu mới có quyền xóa
+    if (video.userId.toString() !== userId) {
+      throw new BadRequestException('Unauthorized to delete this video');
+    }
+    // Cập nhật trạng thái isDelete thành true
+    video.isDelete = true;
+    await video.save();
+
+    return { message: 'Video marked as deleted successfully' };
+  }
 }
