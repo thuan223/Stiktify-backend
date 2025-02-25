@@ -56,13 +56,10 @@ export class CommentsService {
   }
 
   async getChildComments(parentId: Types.ObjectId): Promise<any[]> {
-    console.log(parentId);
-
     const childComments = await this.commentModel
       .find({ parentId })
       .populate('userId', 'fullname')
       .exec();
-    console.log(childComments);
 
     return childComments.map((comment) => ({
       _id: comment._id,
