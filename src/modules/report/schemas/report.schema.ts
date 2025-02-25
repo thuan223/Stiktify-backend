@@ -1,3 +1,4 @@
+import { Music } from "@/modules/musics/schemas/music.schema";
 import { Video } from "@/modules/short-videos/schemas/short-video.schema";
 import { User } from "@/modules/users/schemas/user.schema";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
@@ -7,6 +8,9 @@ export type ReportDocument = HydratedDocument<Report>;
 export class Report {
     @Prop({ type: MongooseSchema.Types.ObjectId, ref: Video.name })
     videoId: MongooseSchema.Types.ObjectId;
+
+    @Prop({ type: MongooseSchema.Types.ObjectId, ref: Music.name })
+    musicId: MongooseSchema.Types.ObjectId;
 
     @Prop({ type: MongooseSchema.Types.ObjectId, ref: User.name })
     userId: MongooseSchema.Types.ObjectId;
