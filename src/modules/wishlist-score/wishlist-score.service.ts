@@ -340,7 +340,7 @@ export class WishlistScoreService {
       { _id: _id, userId: userId },
       {
         // $set: { wasCheck: true },
-        $mul: { score: 1 },
+        $mul: { score: 0.9 },
       },
     );
   }
