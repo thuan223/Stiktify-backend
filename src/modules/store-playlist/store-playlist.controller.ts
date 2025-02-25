@@ -2,13 +2,11 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestj
 import { StorePlaylistService } from './store-playlist.service';
 import { CreateStorePlaylistDto } from './dto/create-store-playlist.dto';
 import { UpdateStorePlaylistDto } from './dto/update-store-playlist.dto';
-import { ResponseMessage } from '@/decorator/customize';
 
 @Controller('store-playlist')
 export class StorePlaylistController {
   constructor(private readonly storePlaylistService: StorePlaylistService) { }
 
-  @ResponseMessage('Added Successfully')
   @Post("create-store-playlist")
   createStoreByPlaylist(@Body() createStorePlaylistDto: CreateStorePlaylistDto) {
     return this.storePlaylistService.handleCreateStoreByPlaylist(createStorePlaylistDto);

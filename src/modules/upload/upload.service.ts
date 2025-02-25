@@ -6,7 +6,11 @@ export class UploadService {
   async uploadImage(file: Express.Multer.File, folder: string) {
     try {
       const result = await uploadFile(file, folder);
-      return result
+      return {
+        success: true,
+        message: 'File uploaded successfully',
+        data: result,
+      };
     } catch (error) {
       console.error('❌ Upload failed:', error);
       throw new BadRequestException({

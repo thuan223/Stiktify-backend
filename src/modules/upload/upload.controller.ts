@@ -17,7 +17,7 @@ import { UploadImageDto } from './dto/upload-file.dto';
 
 @Controller('upload')
 export class UploadController {
-  constructor(private readonly uploadService: UploadService) { }
+  constructor(private readonly uploadService: UploadService) {}
 
   @Post('upload-image')
   @UseInterceptors(
@@ -49,7 +49,11 @@ export class UploadController {
 
     try {
       const result = await this.uploadService.uploadImage(file, dto.folder);
-      return result
+      return {
+        success: true,
+        message: 'Image uploaded successfully',
+        data: result,
+      };
     } catch (error) {
       console.error('❌ Image upload failed:', error);
       throw new BadRequestException({
