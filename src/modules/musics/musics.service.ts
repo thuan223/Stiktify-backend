@@ -223,4 +223,13 @@ export class MusicsService {
     }
     return result
   }
+
+   // Share a music
+   async shareMusic(id: string): Promise<{ musicUrl: string }> {
+    const video = await this.musicModel.findById(id).select('musicUrl');
+    if (!video) {
+      throw new BadRequestException('Video not found');
+    }
+    return { musicUrl: video.musicUrl };
+  }
 }

@@ -141,6 +141,7 @@ async getVideoById(@Param('videoId') videoId: string) {
 
   // Share Short Video
   @Get('share/:id')
+  @Public()
   async shareVideo(@Param('id') id: string) {
     return this.shortVideosService.shareVideo(id);
   }
