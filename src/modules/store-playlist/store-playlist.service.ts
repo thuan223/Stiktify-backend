@@ -69,6 +69,35 @@ export class StorePlaylistService {
 
     const skip = (+current - 1) * +pageSize;
 
+    // const result = await this.storePlaylistModel.aggregate([
+    //   {
+    //     $lookup: {
+    //       from: "musics", // Tên collection chứa music
+    //       localField: "musicId",
+    //       foreignField: "_id",
+    //       as: "music"
+    //     }
+    //   },
+    //   {
+    //     $lookup: {
+    //       from: "playlists", // Collection chứa playlist
+    //       localField: "playlistId",
+    //       foreignField: "_id",
+    //       as: "playlist"
+    //     }
+    //   },
+    //   {
+    //     $group: {
+    //       _id: "$playlistId",
+    //       playlist: { $first: { $arrayElemAt: ["$playlist", 0] } }, // Lấy playlist đầu tiên
+    //       music: { $push: { $arrayElemAt: ["$music", 0] } } // Gom tất cả music vào mảng
+    //     }
+    //   },
+    //   {
+    //     $sort: { _id: -1 } // Sắp xếp theo playlistId mới nhất
+    //   }
+    // ]);
+
     const result = await this.storePlaylistModel
       .find(filter)
       .limit(pageSize)
@@ -78,7 +107,12 @@ export class StorePlaylistService {
           path: "musicId",
           select: "_id musicUrl musicThumbnail musicLyric musicDescription userId"
         })
+      .populate(
+        {
+          path: "playlistId",
+        })
       .sort({ createdAt: -1 });
+
 
     return {
       meta: {

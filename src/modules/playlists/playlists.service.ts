@@ -38,8 +38,13 @@ export class PlaylistsService {
       throw new BadRequestException(`User not exist with user id: ${userId}`)
     }
 
-    if (!description || !name || !image) {
+    if (!name) {
       throw new BadRequestException(`Missing field required!`)
+    }
+    const count = await this.playlistModel.countDocuments({ userId: userId })
+
+    if (count >= 3) {
+      throw new BadRequestException("Please upgrade to Premium to continue using this feature.")
     }
 
     const result = await this.playlistModel.create({ userId: userId, name: name, description: description, image: image })
@@ -64,10 +69,6 @@ export class PlaylistsService {
       .find(filter)
       .limit(pageSize)
       .skip(skip)
-      .populate(
-        {
-          path: "userId",
-        })
       .sort({ createdAt: -1 });
 
     return {
@@ -84,7 +85,7 @@ export class PlaylistsService {
   async checkFilterPlaylist(filter: string) {
     if (!filter || typeof filter !== 'string') return {};
     const category = await this.categoryModel.findOne({ categoryName: { $regex: filter, $options: 'i' } });
-    return category ? { categoryId: category._id } : {};  
+    return category ? { categoryId: category._id } : {};
   }
 
   async handleFilterAndSearchPlaylist(query: any, current: number, pageSize: number) {
@@ -99,7 +100,7 @@ export class PlaylistsService {
     if (filter.search && typeof filter.search === "string" && filter.search.trim().length > 0) {
       const searchRegex = new RegExp(filter.search, 'i');
       handleSearch = [
-        { musicDescription: searchRegex },  
+        { musicDescription: searchRegex },
       ];
     }
     let musicCategory = [];
@@ -119,7 +120,7 @@ export class PlaylistsService {
       .limit(pageSize)
       .skip(skip)
       .sort(sort as any);
-  
+
     return {
       meta: {
         current,

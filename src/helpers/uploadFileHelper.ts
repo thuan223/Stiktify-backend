@@ -18,13 +18,7 @@ export const uploadFile = async (file: Express.Multer.File, folder: string) => {
     const downloadURL = await getDownloadURL(snapshot.ref);
     console.log('🔗 File URL:', downloadURL);
 
-    return {
-      status: 200,
-      data: {
-        message: 'File uploaded successfully!',
-        downloadURL: downloadURL,
-      },
-    };
+    return downloadURL
   } catch (error) {
     console.error('❌ Lỗi upload:', error);
     throw new Error('Upload failed');
