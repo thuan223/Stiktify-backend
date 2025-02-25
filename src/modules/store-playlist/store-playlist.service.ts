@@ -6,14 +6,73 @@ import { StorePlaylist } from './schemas/store-playlist.schema';
 import { Model } from 'mongoose';
 import { MusicsService } from '../musics/musics.service';
 import { PlaylistsService } from '../playlists/playlists.service';
+import aqp from 'api-query-params';
+import { MusicCategory } from '../music-categories/schemas/music-category.schema';
+import { Music } from '../musics/schemas/music.schema';
+import { Category } from '../categories/schemas/category.schema';
 
 @Injectable()
 export class StorePlaylistService {
   constructor(
     @InjectModel(StorePlaylist.name) private storePlaylistModel: Model<StorePlaylist>,
+    @InjectModel(Music.name) private musicModel: Model<Music>,
+    @InjectModel(MusicCategory.name) private musicCategoryModel: Model<MusicCategory>,
+    @InjectModel(Category.name) private categoryModel: Model<Category>,
     private readonly musicService: MusicsService,
     private readonly playlistService: PlaylistsService,
   ) { }
+
+
+  async handleFilterSearchStorePlayList(query: any, current: number, pageSize: number) {
+    const { filter = {}, sort = {} } = aqp(query);
+    current = current && !isNaN(Number(current)) ? Number(current) : 1;
+    pageSize = pageSize && !isNaN(Number(pageSize)) ? Number(pageSize) : 10;
+    if (isNaN(current) || isNaN(pageSize)) {
+      return { statusCode: 400, message: "Invalid pagination parameters" };
+    }
+    const handleFilter = filter.filterReq ? await this.checkFilterCategory(filter.filterReq) : {};
+    let handleSearch = [];
+    if (filter.search && typeof filter.search === "string" && filter.search.trim().length > 0) {
+      const searchRegex = new RegExp(filter.search, 'i');
+      handleSearch = [
+        { musicDescription: searchRegex },  
+      ];
+    }
+    let musicCategory = [];
+    if (handleFilter.categoryId) {
+      musicCategory = await this.musicCategoryModel.find({ categoryId: handleFilter.categoryId });
+    }
+    const musicIds = musicCategory.map(item => item.musicId);
+    const filterQuery = {
+      ...(handleSearch.length > 0 ? { $or: handleSearch } : {}),
+      ...(handleFilter.categoryId ? { _id: { $in: musicIds } } : {}),
+    };
+    const totalItems = await this.musicModel.countDocuments(filterQuery);
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const skip = (current - 1) * pageSize;
+    const result = await this.musicModel
+      .find(filterQuery)
+      .limit(pageSize)
+      .skip(skip)
+      .sort(sort as any);
+  
+    return {
+      meta: {
+        current,
+        pageSize,
+        total: totalItems,
+        pages: totalPages,
+      },
+      result,
+    };
+  }
+
+  async checkFilterCategory(filter: string) {
+    if (!filter || typeof filter !== 'string') return {};
+    const category = await this.categoryModel.findOne({ categoryName: { $regex: filter, $options: 'i' } });
+    return category ? { categoryId: category._id } : {};  
+  }
+
 
   async checkMusicInPlaylistIsExist(musicId: string, playlistId: string) {
     try {

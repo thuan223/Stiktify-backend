@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestj
 import { StorePlaylistService } from './store-playlist.service';
 import { CreateStorePlaylistDto } from './dto/create-store-playlist.dto';
 import { UpdateStorePlaylistDto } from './dto/update-store-playlist.dto';
+import { Public } from '@/decorator/customize';
 
 @Controller('store-playlist')
 export class StorePlaylistController {
@@ -40,5 +41,14 @@ export class StorePlaylistController {
     return this.storePlaylistService.update(+id, updateStorePlaylistDto);
   }
 
+    @Public()
+    @Get("filter-search")
+    findStorePlayListFilterAndSearch(
+      @Query() query: any,
+      @Query("current") current: string,
+      @Query("pageSize") pageSize: string,
+    ) {
+      return this.storePlaylistService.handleFilterSearchStorePlayList(query, +current, +pageSize)
+    }
 
 }
