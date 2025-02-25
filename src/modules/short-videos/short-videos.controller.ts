@@ -69,14 +69,14 @@ async getVideoById(@Param('videoId') videoId: string) {
     return this.shortVideosService.getTrendingVideosByUser(trendingVideoDto);
   }
 
-  @Get('my-videos')
+  @Get('my-videos/:userId')
   getUserVideos(
-    @Request() req,
+    @Param('userId') userId: string,
     @Query('current') current: string,
     @Query('pageSize') pageSize: string,
   ) {
     return this.shortVideosService.ViewVideoPosted(
-      req.user._id,
+      userId,
       +current,
       +pageSize,
     );

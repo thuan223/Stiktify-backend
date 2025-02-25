@@ -262,8 +262,14 @@ export class ShortVideosService {
 
   async ViewVideoPosted(userId: string, current: number, pageSize: number) {
     const filter = { userId: new mongoose.Types.ObjectId(userId) };
-    const totalItems = await this.videoModel.countDocuments(filter);
-    if (totalItems === 0) {
+    const result = await this.videoModel
+      .find(filter)
+      .skip((current - 1) * pageSize)
+      .limit(pageSize)
+      .sort({ createdAt: -1 })
+      .select('videoThumbnail totalReaction totalViews totalComment videoDescription videoUrl')
+      .populate('userId'); 
+    if (result.length === 0) {
       return {
         meta: {
           current,
@@ -275,27 +281,20 @@ export class ShortVideosService {
         message: 'No videos found for this user',
       };
     }
-    const skip = (current - 1) * pageSize;
-    const result = await this.videoModel
-      .find(filter)
-      .skip(skip)
-      .limit(pageSize)
-      .sort({ createdAt: -1 })
-      .select(
-        'videoThumbnail totalReaction totalViews totalComment videoDescription videoUrl',
-      );
-
+  
+    // Trả về kết quả video mà không cần tính count
     return {
       meta: {
         current,
         pageSize,
-        totalItems,
-        totalPages: Math.ceil(totalItems / pageSize),
+        totalItems: result.length,  // Lấy số lượng từ kết quả video
+        totalPages: Math.ceil(result.length / pageSize),
       },
       result,
     };
   }
-
+  
+  
   async findVideoById(videoId: string) {
     return await this.videoModel.findById(videoId);
   }
