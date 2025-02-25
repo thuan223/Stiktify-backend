@@ -286,38 +286,139 @@ export class WishlistService {
       },
     ]);
 
-    const filteredCollaborators = collaboratorList
-    .map((user) => user.userId)
+    const filteredCollaborators = collaboratorList.map((user) => user.userId);
 
-  return [userVideoIds, filteredCollaborators];
+    return [userVideoIds, filteredCollaborators];
   }
-  async getTheGeneralWishlist(userId:string){
+  async getTheGeneralWishlist(userId: string) {
     const returnData = await this.getCollaboratorList(userId);
     const collaboratorList: string[] = returnData[1] || [];
-    
-    const userVideoIds = new Set<string>((returnData[0] || []).map(id => id.toString()));
-  
+
+    // const userVideoIds = new Set<string>(
+    //   (returnData[0] || []).map((id) => id.toString()),
+    // );
+
     let videoIdFound: Set<string> = new Set();
-  
+
     for (const collaboratorId of collaboratorList) {
-      const collaboratorWishlists = await this.wishListModel.find({ userId: collaboratorId });
-  
+      const collaboratorWishlists = await this.wishListModel.find({
+        userId: collaboratorId,
+      });
+
       for (const wishlist of collaboratorWishlists) {
-        const videoId = wishlist.videoId.toString(); 
-  
-        if (!userVideoIds.has(videoId)) {
+        const videoId = wishlist.videoId.toString();
+
+        // if (!userVideoIds.has(videoId)) {
           videoIdFound.add(videoId);
-        }
+        // }
       }
     }
-  
-    return Array.from(videoIdFound);
+
+    return [Array.from(videoIdFound), collaboratorList];
   }
-  
-  async getCollaborativeVideo(userId: string) {
-    const generalWishList=await this.getTheGeneralWishlist(userId)
-    return generalWishList;
+  async getPredictedScores(userId: string) {
+    const returnData = await this.getTheGeneralWishlist(userId);
+    const generalWishList = returnData[0];
+    const collaboratorList = returnData[1];
+    const userWishListScores = new Map<string, number>();
+
+    await Promise.all(
+      generalWishList.map(async (item) => {
+        const suggestVideo =
+          await this.wishListScoreService.findSuggestByVideo(item);
+        const scores = await this.getScoreBySuggestIDAndType(
+          suggestVideo,
+          userId,
+        );
+        const totalScore = scores.reduce((sum, s) => sum + (s.score || 0), 0);
+        userWishListScores.set(item, totalScore);
+      }),
+    );
+
+    const validCollaborators = collaboratorList.filter(
+      (collaboratorId) => collaboratorId + '' !== userId,
+    );
+
+    const collaboratorScores = await Promise.all(
+      validCollaborators.map(async (collaboratorId) => {
+        const wishListScores = new Map<string, number>();
+
+        await Promise.all(
+          generalWishList.map(async (item) => {
+            const suggestVideo =
+              await this.wishListScoreService.findSuggestByVideo(item);
+            const scores = await this.getScoreBySuggestIDAndType(
+              suggestVideo,
+              collaboratorId,
+            );
+            const totalScore = scores.reduce(
+              (sum, s) => sum + (s.score || 0),
+              0,
+            );
+            wishListScores.set(item, totalScore);
+          }),
+        );
+
+        return { collaboratorId, wishListScores };
+      }),
+    );
+
+    function cosineSimilarity(
+      mapA: Map<string, number>,
+      mapB: Map<string, number>,
+    ): number {
+      let dotProduct = 0,
+        normA = 0,
+        normB = 0;
+
+      for (const [key, scoreA] of mapA.entries()) {
+        const scoreB = mapB.get(key) || 0;
+        dotProduct += scoreA * scoreB;
+        normA += scoreA ** 2;
+        normB += scoreB ** 2;
+      }
+
+      return normA && normB
+        ? dotProduct / (Math.sqrt(normA) * Math.sqrt(normB))
+        : 0;
+    }
+
+    const collaboratorSimilarities = collaboratorScores.map(
+      ({ collaboratorId, wishListScores }) => ({
+        collaboratorId,
+        similarity: cosineSimilarity(userWishListScores, wishListScores),
+        wishListScores,
+      }),
+    );
+
+    const predictedScores = new Map<string, number>();
+
+    for (const video of generalWishList) {
+      let numerator = 0;
+      let denominator = 0;
+
+      for (const { similarity, wishListScores } of collaboratorSimilarities) {
+        const collaboratorScore = wishListScores.get(video) || 0;
+        numerator += similarity * collaboratorScore;
+        denominator += Math.abs(similarity);
+      }
+
+      predictedScores.set(video, denominator ? numerator / denominator : 0);
+    }
+
+    return Object.fromEntries(predictedScores);
   }
-  
-  
+  async getCollaborativeVideo(userId: string, numberChooseVideo: number = 1) {
+    const userWishListData = await this.wishListModel.find({ userId });
+    const userWishList = new Set(userWishListData.map((item) => item.videoId+""));
+
+    const predictedScores = await this.getPredictedScores(userId);
+    const filteredVideos = Object.entries(predictedScores) 
+      .filter(([videoId]) => !userWishList.has(videoId))
+      .sort((a, b) => b[1] - a[1]) 
+      .slice(0, numberChooseVideo)
+      .map(([videoId]) => videoId); 
+
+    return filteredVideos;
+  }
 }
