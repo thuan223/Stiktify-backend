@@ -102,15 +102,21 @@ export class ShortVideosService {
   }
 
   // Share a video
-  async shareVideo(id: string): Promise<{ videoUrl: string }> {
-    const video = await this.videoModel.findById(id).select('videoUrl');
+  async shareVideo(id: string): Promise<{ videoUrl: string; videoThumbnail: string; videoDescription: string }> {
+    const video = await this.videoModel
+      .findById(id)
+      .select('videoUrl videoThumbnail videoDescription');
+  
     if (!video) {
       throw new BadRequestException('Video not found');
     }
-
-    return { videoUrl: video.videoUrl };
+  
+    return { 
+      videoUrl: video.videoUrl, 
+      videoThumbnail: video.videoThumbnail, 
+      videoDescription: video.videoDescription 
+    };
   }
-
   async findAll(query: string, current: number, pageSize: number) {
     try {
       const { filter, sort } = aqp(query);
