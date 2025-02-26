@@ -76,9 +76,11 @@ export class AuthService {
         email: user.email,
         name: user.fullname,
         role: user.role,
+        image: user.image,
       };
     } catch (error) {
       console.log('Invalid or expired token');
+      return null;
     }
   }
 }

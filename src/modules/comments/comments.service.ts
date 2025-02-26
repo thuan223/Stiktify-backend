@@ -24,7 +24,7 @@ export class CommentsService {
   async getCommentsByVideoId(videoId: Types.ObjectId): Promise<any[]> {
     const thisVideoComments = await this.commentModel
       .find({ videoId, parentId: null })
-      .populate('userId', 'fullname')
+      .populate('userId', 'fullname image')
       .exec();
 
     return thisVideoComments.map((comment) => ({
@@ -33,6 +33,10 @@ export class CommentsService {
         comment.userId && 'fullname' in comment.userId
           ? comment.userId.fullname
           : 'Unknown',
+      userImage:
+        comment.userId && 'fullname' in comment.userId
+          ? comment.userId.image
+          : 'https://firebasestorage.googleapis.com/v0/b/stiktify-bachend.firebasestorage.app/o/avatars%2Fdefault_avatar.png?alt=media&token=93109c9b-d284-41ea-95e7-4786e3c69328',
       videoId: comment.videoId,
       parentId: comment.parentId,
       CommentDescription: comment.CommentDescription,
@@ -67,6 +71,10 @@ export class CommentsService {
         comment.userId && 'fullname' in comment.userId
           ? comment.userId.fullname
           : 'Unknown',
+      userImage:
+        comment.userId && 'image' in comment.userId
+          ? comment.userId.image
+          : 'https://firebasestorage.googleapis.com/v0/b/stiktify-bachend.firebasestorage.app/o/avatars%2Fdefault_avatar.png?alt=media&token=93109c9b-d284-41ea-95e7-4786e3c69328',
       videoId: comment.videoId,
       parentId: comment.parentId,
       CommentDescription: comment.CommentDescription,
