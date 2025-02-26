@@ -122,8 +122,6 @@ async getVideoById(@Param('videoId') videoId: string) {
     );
   }
 
-
-
   // Update video
   @Patch(':id')
   async update(
@@ -132,13 +130,18 @@ async getVideoById(@Param('videoId') videoId: string) {
   ) {
     return this.shortVideosService.update(id, updateShortVideoDto);
   }
-  // Delete Short Video cho trạng thái isDeleted thành True
-  @Delete(':id')
-  async deleteVideo(@Param('id') id: string, @Body('userId') userId: string) {
-    return this.shortVideosService.remove(id, userId);
+  // Delete video - ThangLH
+  @Post(':videoId')
+  async deleteVideo(
+    @Param('videoId') videoId: string,
+    @Body('userId') userId: string,
+  ) {
+    return this.shortVideosService.deleteVideo(videoId, userId);
   }
-  // Share Short Video
+
+  // Share a Video - ThangLH
   @Get('share/:id')
+  @Public()
   async shareVideo(@Param('id') id: string) {
     return this.shortVideosService.shareVideo(id);
   }
