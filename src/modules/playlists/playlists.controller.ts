@@ -22,7 +22,16 @@ export class PlaylistsController {
   ) {
     return this.playlistsService.handleFilterAndSearchPlaylist(query, +current, +pageSize)
   }
-  
+
+  @Get("detail-playlist/:id")
+  listPlaylistDetail(
+    @Param("id") userId: string,
+    @Query("current") current: number,
+    @Query("pageSize") pageSize: number,
+  ) {
+    return this.playlistsService.handleGetDetailPlaylist(userId, +current, +pageSize);
+  }
+
 
   @Get("list-playlist/:userId")
   listPlaylist(

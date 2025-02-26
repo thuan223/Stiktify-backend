@@ -38,15 +38,19 @@ export class PlaylistsService {
       throw new BadRequestException(`User not exist with user id: ${userId}`)
     }
 
-    if (!description || !name || !image) {
+    if (!name) {
       throw new BadRequestException(`Missing field required!`)
+    }
+    const count = await this.playlistModel.countDocuments({ userId: userId })
+
+    if (count >= 3) {
+      throw new BadRequestException("Please upgrade to Premium to continue using this feature.")
     }
 
     const result = await this.playlistModel.create({ userId: userId, name: name, description: description, image: image })
 
     return result
   }
-
   async handleListPlaylist(userId: string, current: number, pageSize: number) {
     if (!current) current = 1;
     if (!pageSize) pageSize = 10;
@@ -81,10 +85,40 @@ export class PlaylistsService {
     };
   }
 
+  async handleGetDetailPlaylist(id: string, current: number, pageSize: number) {
+    if (!current) current = 1;
+    if (!pageSize) pageSize = 10;
+
+    const filter = {
+      _id: id
+    }
+
+    const totalItems = (await this.playlistModel.find(filter)).length;
+    const totalPages = Math.ceil(totalItems / pageSize);
+
+    const skip = (+current - 1) * +pageSize;
+
+    const result = await this.playlistModel
+      .find(filter)
+      .limit(pageSize)
+      .skip(skip)
+      .sort({ createdAt: -1 });
+
+    return {
+      meta: {
+        current: current,
+        pageSize: pageSize,
+        pages: totalPages,
+        total: totalItems,
+      },
+      result: result,
+    };
+  }
+
   async checkFilterPlaylist(filter: string) {
     if (!filter || typeof filter !== 'string') return {};
     const category = await this.categoryModel.findOne({ categoryName: { $regex: filter, $options: 'i' } });
-    return category ? { categoryId: category._id } : {};  
+    return category ? { categoryId: category._id } : {};
   }
 
   async handleFilterAndSearchPlaylist(query: any, current: number, pageSize: number) {
@@ -99,7 +133,7 @@ export class PlaylistsService {
     if (filter.search && typeof filter.search === "string" && filter.search.trim().length > 0) {
       const searchRegex = new RegExp(filter.search, 'i');
       handleSearch = [
-        { musicDescription: searchRegex },  
+        { musicDescription: searchRegex },
       ];
     }
     let musicCategory = [];
@@ -119,7 +153,7 @@ export class PlaylistsService {
       .limit(pageSize)
       .skip(skip)
       .sort(sort as any);
-  
+
     return {
       meta: {
         current,

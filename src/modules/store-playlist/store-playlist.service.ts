@@ -35,7 +35,7 @@ export class StorePlaylistService {
     if (filter.search && typeof filter.search === "string" && filter.search.trim().length > 0) {
       const searchRegex = new RegExp(filter.search, 'i');
       handleSearch = [
-        { musicDescription: searchRegex },  
+        { musicDescription: searchRegex },
       ];
     }
     let musicCategory = [];
@@ -55,7 +55,7 @@ export class StorePlaylistService {
       .limit(pageSize)
       .skip(skip)
       .sort(sort as any);
-  
+
     return {
       meta: {
         current,
@@ -70,7 +70,7 @@ export class StorePlaylistService {
   async checkFilterCategory(filter: string) {
     if (!filter || typeof filter !== 'string') return {};
     const category = await this.categoryModel.findOne({ categoryName: { $regex: filter, $options: 'i' } });
-    return category ? { categoryId: category._id } : {};  
+    return category ? { categoryId: category._id } : {};
   }
 
 
@@ -128,16 +128,50 @@ export class StorePlaylistService {
 
     const skip = (+current - 1) * +pageSize;
 
+    // const result = await this.storePlaylistModel.aggregate([
+    //   {
+    //     $lookup: {
+    //       from: "musics", // Tên collection chứa music
+    //       localField: "musicId",
+    //       foreignField: "_id",
+    //       as: "music"
+    //     }
+    //   },
+    //   {
+    //     $lookup: {
+    //       from: "playlists", // Collection chứa playlist
+    //       localField: "playlistId",
+    //       foreignField: "_id",
+    //       as: "playlist"
+    //     }
+    //   },
+    //   {
+    //     $group: {
+    //       _id: "$playlistId",
+    //       playlist: { $first: { $arrayElemAt: ["$playlist", 0] } }, // Lấy playlist đầu tiên
+    //       music: { $push: { $arrayElemAt: ["$music", 0] } } // Gom tất cả music vào mảng
+    //     }
+    //   },
+    //   {
+    //     $sort: { _id: -1 } // Sắp xếp theo playlistId mới nhất
+    //   }
+    // ]);
+
     const result = await this.storePlaylistModel
       .find(filter)
       .limit(pageSize)
       .skip(skip)
       .populate(
         {
+          path: "playlistId",
+        })
+      .populate(
+        {
           path: "musicId",
           select: "_id musicUrl musicThumbnail musicLyric musicDescription userId"
         })
       .sort({ createdAt: -1 });
+
 
     return {
       meta: {
