@@ -34,16 +34,14 @@ export class UsersService {
 
   async checkUserById(id: string) {
     try {
-      const result = await this.userModel
-        .findById(id)
-        .select("userName image")
+      const result = await this.userModel.findById(id).select('userName image');
 
       if (result) {
-        return result
+        return result;
       }
-      return null
+      return null;
     } catch (error) {
-      return null
+      return null;
     }
   }
 
@@ -69,6 +67,8 @@ export class UsersService {
       isActive: false,
       activeCode: codeId,
       codeExpired: dayjs().add(5, 'minutes'),
+      image:
+        'https://firebasestorage.googleapis.com/v0/b/stiktify-bachend.firebasestorage.app/o/avatars%2Fdefault_avatar.png?alt=media&token=93109c9b-d284-41ea-95e7-4786e3c69328',
     });
     // send email
     this.mailerService.sendMail({
@@ -169,12 +169,10 @@ export class UsersService {
     return { _id: user._id, email: user?.email };
   }
   async changePassword(data: ChangePasswordAuthDto) {
-    if (data.password.length<6) {
-      throw new BadRequestException(
-        'Password must have at least 6 characters',
-      );
+    if (data.password.length < 6) {
+      throw new BadRequestException('Password must have at least 6 characters');
     }
-    if (data.confirmPassword.length<6) {
+    if (data.confirmPassword.length < 6) {
       throw new BadRequestException(
         'ConfirmPassword must have at least 6 characters',
       );
@@ -462,7 +460,7 @@ export class UsersService {
       result,
     };
   }
-    // Detail user - ThangLH
+  // Detail user - ThangLH
   async getUserById(id: string) {
     const user = await this.userModel.findById(id).select('-password');
     if (!user) {
@@ -470,23 +468,21 @@ export class UsersService {
     }
     return user;
   }
-  
+
   async sendemail(emailDto: SendMailDto) {
     const user = await this.userModel.findOne({ email: emailDto.email });
     if (!user) {
       throw new BadRequestException('Account does not exist');
     }
     const result = await this.mailerService.sendMail({
-      to: emailDto.email, 
-        subject: 'From admin: @Stiktify', 
-      template:'sendEmail',
+      to: emailDto.email,
+      subject: 'From admin: @Stiktify',
+      template: 'sendEmail',
       context: {
         name: user.userName ?? user.email,
         content: emailDto.content,
       },
     });
-    return ;
+    return;
   }
-  }
-    
-
+}

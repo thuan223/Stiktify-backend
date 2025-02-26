@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateMusicDto } from './dto/create-music.dto';
 import { UpdateMusicDto } from './dto/update-music.dto';
 import aqp from 'api-query-params';
@@ -13,40 +17,40 @@ export class MusicsService {
   constructor(
     @InjectModel(Music.name) private musicModel: Model<Music>,
     @InjectModel(Category.name) private categoryModel: Model<Category>,
-    @InjectModel(MusicCategory.name) private musicCategoryModel: Model<MusicCategory>
-  ) { }
+    @InjectModel(MusicCategory.name)
+    private musicCategoryModel: Model<MusicCategory>,
+  ) {}
 
   async checkMusicById(id: string) {
     try {
       const result = await this.musicModel
         .findById(id)
-        .populate(
-          {
-            path: "userId",
-            select: "_id userName fullname email",
-            match: { isBan: false }
-          })
-        .where({ isBlock: false })
+        .populate({
+          path: 'userId',
+          select: '_id userName fullname email',
+          match: { isBan: false },
+        })
+        .where({ isBlock: false });
 
       if (result) {
-        return result
+        return result;
       }
-      return null
+      return null;
     } catch (error) {
-      return null
+      return null;
     }
   }
 
   async handleUploadMusic(createMusicDto: CreateMusicDto) {
-    const { musicTag } = createMusicDto
+    const { musicTag } = createMusicDto;
 
     for (const e of musicTag) {
-      if (typeof e !== "string") {
-        throw new BadRequestException("musicTag must be array string!")
+      if (typeof e !== 'string') {
+        throw new BadRequestException('musicTag must be array string!');
       }
     }
 
-    const result = await this.musicModel.create(createMusicDto)
+    const result = await this.musicModel.create(createMusicDto);
 
     return result;
   }
@@ -61,14 +65,19 @@ export class MusicsService {
 
     const filter = {
       isBlock: false,
-      updatedAt: { $gte: oneWeekAgo }
+      updatedAt: { $gte: oneWeekAgo },
     };
 
-    const allItems = await this.musicModel.find(filter).sort({ totalListener: -1 }).limit(maxLimit);
+    const allItems = await this.musicModel
+      .find(filter)
+      .sort({ totalListener: -1 })
+      .limit(maxLimit);
     const totalItems = allItems.length;
     const totalPages = Math.ceil(totalItems / limit);
 
-    const result = allItems.slice(skip, skip + limit).map((item) => item.toObject());
+    const result = allItems
+      .slice(skip, skip + limit)
+      .map((item) => item.toObject());
 
     return {
       meta: {
@@ -86,8 +95,8 @@ export class MusicsService {
     if (!pageSize) pageSize = 10;
 
     const filter = {
-      isBlock: false
-    }
+      isBlock: false,
+    };
 
     const totalItems = (await this.musicModel.find(filter)).length;
     const totalPages = Math.ceil(totalItems / pageSize);
@@ -98,15 +107,14 @@ export class MusicsService {
       .find(filter)
       .limit(pageSize)
       .skip(skip)
-      .populate(
-        {
-          path: "userId",
-          select: "_id userName fullname email",
-          match: { isBan: false }
-        })
+      .populate({
+        path: 'userId',
+        select: '_id userName fullname email',
+        match: { isBan: false },
+      })
       .sort({ totalListener: -1 });
 
-    const configData = result.filter(x => x.userId !== null)
+    const configData = result.filter((x) => x.userId !== null);
     return {
       meta: {
         current: current,
@@ -114,7 +122,7 @@ export class MusicsService {
         pages: totalPages,
         total: totalItems,
       },
-      result: configData
+      result: configData,
     };
   }
 
@@ -122,11 +130,13 @@ export class MusicsService {
     const check = await this.checkMusicById(id);
 
     if (!check) {
-      throw new NotFoundException(`Not found music with id: ${id}`)
+      throw new NotFoundException(`Not found music with id: ${id}`);
     }
 
-    const result = await this.musicModel.findByIdAndUpdate(id, { totalListener: check.totalListener + 1 })
-    return result
+    const result = await this.musicModel.findByIdAndUpdate(id, {
+      totalListener: check.totalListener + 1,
+    });
+    return result;
   }
 
   remove(id: number) {
@@ -153,7 +163,7 @@ export class MusicsService {
       .find(filter)
       .skip(skip)
       .limit(pageSize)
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: -1 });
     return {
       meta: {
         current,
@@ -165,33 +175,44 @@ export class MusicsService {
     };
   }
 
-
   async checkFilterMusic(filter: string) {
     if (!filter || typeof filter !== 'string') return {};
-    const category = await this.categoryModel.findOne({ categoryName: { $regex: filter, $options: 'i' } });
-    return category ? { categoryId: category._id } : {};  
+    const category = await this.categoryModel.findOne({
+      categoryName: { $regex: filter, $options: 'i' },
+    });
+    return category ? { categoryId: category._id } : {};
   }
 
-  async handleFilterAndSearchMusic(query: any, current: number, pageSize: number) {
+  async handleFilterAndSearchMusic(
+    query: any,
+    current: number,
+    pageSize: number,
+  ) {
     const { filter = {}, sort = {} } = aqp(query);
     current = current && !isNaN(Number(current)) ? Number(current) : 1;
     pageSize = pageSize && !isNaN(Number(pageSize)) ? Number(pageSize) : 10;
     if (isNaN(current) || isNaN(pageSize)) {
-      return { statusCode: 400, message: "Invalid pagination parameters" };
+      return { statusCode: 400, message: 'Invalid pagination parameters' };
     }
-    const handleFilter = filter.filterReq ? await this.checkFilterMusic(filter.filterReq) : {};
+    const handleFilter = filter.filterReq
+      ? await this.checkFilterMusic(filter.filterReq)
+      : {};
     let handleSearch = [];
-    if (filter.search && typeof filter.search === "string" && filter.search.trim().length > 0) {
+    if (
+      filter.search &&
+      typeof filter.search === 'string' &&
+      filter.search.trim().length > 0
+    ) {
       const searchRegex = new RegExp(filter.search, 'i');
-      handleSearch = [
-        { musicDescription: searchRegex },  
-      ];
+      handleSearch = [{ musicDescription: searchRegex }];
     }
     let musicCategory = [];
     if (handleFilter.categoryId) {
-      musicCategory = await this.musicCategoryModel.find({ categoryId: handleFilter.categoryId });
+      musicCategory = await this.musicCategoryModel.find({
+        categoryId: handleFilter.categoryId,
+      });
     }
-    const musicIds = musicCategory.map(item => item.musicId);
+    const musicIds = musicCategory.map((item) => item.musicId);
     const filterQuery = {
       ...(handleSearch.length > 0 ? { $or: handleSearch } : {}),
       ...(handleFilter.categoryId ? { _id: { $in: musicIds } } : {}),
@@ -204,7 +225,7 @@ export class MusicsService {
       .limit(pageSize)
       .skip(skip)
       .sort(sort as any);
-  
+
     return {
       meta: {
         current,
@@ -217,12 +238,16 @@ export class MusicsService {
   }
 
   async handleDisplayMusic(id: string) {
+    console.log(id);
+
     const result = await this.checkMusicById(id);
     if (!result) {
-      throw new NotFoundException(`Not found music with id: ${id}`)
+      throw new NotFoundException(`Not found music with id: ${id}`);
     }
-    return result
+
+    return result;
   }
+
 
    // Share a music - ThangLH
    async shareMusic(id: string): Promise<{ 
@@ -250,3 +275,4 @@ export class MusicsService {
   }
   
 }
+
