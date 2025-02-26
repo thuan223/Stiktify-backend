@@ -223,4 +223,30 @@ export class MusicsService {
     }
     return result
   }
+
+   // Share a music - ThangLH
+   async shareMusic(id: string): Promise<{ 
+    musicUrl: string;
+    musicDescription: string;
+    musicThumbnail: string;
+    totalListener: number;
+    totalReactions: number;
+  }> {
+    const music = await this.musicModel.findById(id).select(
+      'musicUrl musicDescription musicThumbnail totalListener totalReactions'
+    );
+  
+    if (!music) {
+      throw new BadRequestException('Music not found');
+    }
+  
+    return {
+      musicUrl: music.musicUrl,
+      musicDescription: music.musicDescription,
+      musicThumbnail: music.musicThumbnail,
+      totalListener: music.totalListener,
+      totalReactions: music.totalReactions,
+    };
+  }
+  
 }

@@ -73,5 +73,11 @@ export class MusicsController {
     return this.musicsService.remove(+id);
   }
 
+   // Share a music - ThangLH
+   @Get('share/:id')
+   @Public()
+  async shareMusic(@Param('id') id: string) {
+    return this.musicsService.shareMusic(id);
+  }
 
 }
