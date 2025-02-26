@@ -5,11 +5,11 @@ import { UpdateMusicCategoryDto } from './dto/update-music-category.dto';
 
 @Controller('music-categories')
 export class MusicCategoriesController {
-  constructor(private readonly musicCategoriesService: MusicCategoriesService) {}
+  constructor(private readonly musicCategoriesService: MusicCategoriesService) { }
 
-  @Post()
-  create(@Body() createMusicCategoryDto: CreateMusicCategoryDto) {
-    return this.musicCategoriesService.create(createMusicCategoryDto);
+  @Post("create-category")
+  createCategoryMusic(@Body() createMusicCategoryDto: CreateMusicCategoryDto) {
+    return this.musicCategoriesService.handleCreateCategoryMusic(createMusicCategoryDto.categoryId, createMusicCategoryDto.musicId);
   }
 
   @Get()

@@ -1,11 +1,23 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateMusicCategoryDto } from './dto/create-music-category.dto';
 import { UpdateMusicCategoryDto } from './dto/update-music-category.dto';
+import { InjectModel } from '@nestjs/mongoose';
+import { MusicCategory } from './schemas/music-category.schema';
+import { Model } from 'mongoose';
+import { MusicsService } from '../musics/musics.service';
+import { CategoriesService } from '../categories/categories.service';
 
 @Injectable()
 export class MusicCategoriesService {
-  create(createMusicCategoryDto: CreateMusicCategoryDto) {
-    return 'This action adds a new musicCategory';
+  constructor(
+    @InjectModel(MusicCategory.name) private musicCategoryModel: Model<MusicCategory>,
+  ) { }
+
+  async handleCreateCategoryMusic(categoryId: string[], musicId: string) {
+    for (const e of categoryId) {
+      await this.musicCategoryModel.create({ categoryId: e, musicId: musicId });
+    }
+    return;
   }
 
   findAll() {
