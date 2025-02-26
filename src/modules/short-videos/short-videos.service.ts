@@ -47,6 +47,7 @@ export class ShortVideosService {
           (categoryId) => ({
             videoId: createdVideo._id,
             categoryId,
+             
           }),
         );
         await this.videoCategoryModel.insertMany(videoCategories);
