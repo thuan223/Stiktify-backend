@@ -19,4 +19,7 @@ export class CreateMusicDto {
 
     @IsNotEmpty({ message: 'musicLyric must not be empty' })
     musicLyric: string;
+
+    @IsNotEmpty({ message: 'musicLyric must not be empty' })
+    categoryId: string[];
 }

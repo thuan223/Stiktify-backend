@@ -16,6 +16,19 @@ export class CategoriesService {
     return 'This action adds a new category';
   }
 
+  async checkCategoryById(id: string) {
+    try {
+      const result = await this.categoryModel.findById(id)
+
+      if (result) {
+        return result;
+      }
+      return null;
+    } catch (error) {
+      return null;
+    }
+  }
+
   async findAll(): Promise<Category[]> {
     return this.categoryModel.find().exec();
   }

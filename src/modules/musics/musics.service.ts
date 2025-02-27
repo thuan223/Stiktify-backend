@@ -11,6 +11,8 @@ import { Music } from './schemas/music.schema';
 import mongoose, { Model } from 'mongoose';
 import { Category } from '../categories/schemas/category.schema';
 import { MusicCategory } from '../music-categories/schemas/music-category.schema';
+import { MusicCategoriesService } from '../music-categories/music-categories.service';
+import { CategoriesService } from '../categories/categories.service';
 
 @Injectable()
 export class MusicsService {
@@ -19,7 +21,10 @@ export class MusicsService {
     @InjectModel(Category.name) private categoryModel: Model<Category>,
     @InjectModel(MusicCategory.name)
     private musicCategoryModel: Model<MusicCategory>,
-  ) {}
+    private musicCategoryService: MusicCategoriesService,
+    private categoryService: CategoriesService,
+
+  ) { }
 
   async checkMusicById(id: string) {
     try {
@@ -42,7 +47,7 @@ export class MusicsService {
   }
 
   async handleUploadMusic(createMusicDto: CreateMusicDto) {
-    const { musicTag } = createMusicDto;
+    const { musicTag, categoryId, musicDescription, musicLyric, musicThumbnail, musicUrl, userId } = createMusicDto;
 
     for (const e of musicTag) {
       if (typeof e !== 'string') {
@@ -50,8 +55,26 @@ export class MusicsService {
       }
     }
 
-    const result = await this.musicModel.create(createMusicDto);
+    for (const e of categoryId) {
+      if (typeof e !== 'string') {
+        throw new BadRequestException('categoryId must be array string!');
+      } else {
+        const checkCategoryId = await this.categoryService.checkCategoryById(e);
+        if (!checkCategoryId) {
+          throw new NotFoundException(`Not found categoryId with id ${e}`)
+        }
+      }
+    }
 
+    const result = await this.musicModel.create({
+      userId: userId,
+      musicDescription: musicDescription,
+      musicLyric: musicLyric,
+      musicThumbnail: musicThumbnail,
+      musicUrl: musicUrl
+    });
+
+    await this.musicCategoryService.handleCreateCategoryMusic(categoryId, result._id + "")
     return result;
   }
 
@@ -249,8 +272,8 @@ export class MusicsService {
   }
 
 
-   // Share a music - ThangLH
-   async shareMusic(id: string): Promise<{ 
+  // Share a music - ThangLH
+  async shareMusic(id: string): Promise<{
     musicUrl: string;
     musicDescription: string;
     musicThumbnail: string;
@@ -260,11 +283,11 @@ export class MusicsService {
     const music = await this.musicModel.findById(id).select(
       'musicUrl musicDescription musicThumbnail totalListener totalReactions'
     );
-  
+
     if (!music) {
       throw new BadRequestException('Music not found');
     }
-  
+
     return {
       musicUrl: music.musicUrl,
       musicDescription: music.musicDescription,
@@ -273,6 +296,6 @@ export class MusicsService {
       totalReactions: music.totalReactions,
     };
   }
-  
+
 }
 

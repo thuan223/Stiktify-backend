@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { MusicCategoriesService } from './music-categories.service';
 import { MusicCategoriesController } from './music-categories.controller';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -17,4 +17,4 @@ import {
   providers: [MusicCategoriesService],
   exports: [MusicCategoriesService],
 })
-export class MusicCategoriesModule {}
+export class MusicCategoriesModule { }
