@@ -8,10 +8,12 @@ import {
 } from './schemas/wishlist-score.entity';
 import { ShortVideosModule } from '../short-videos/short-videos.module';
 import { VideoCategoriesModule } from '../video-categories/video-categories.module';
+import { SettingsModule } from '../settings/settings.module';
 
 @Module({
   imports: [
    forwardRef(() => ShortVideosModule),
+   forwardRef(() => SettingsModule),
     VideoCategoriesModule,
     MongooseModule.forFeature([
       { name: WishlistScore.name, schema: WishlistScoreSchema },

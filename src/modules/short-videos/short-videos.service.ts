@@ -19,6 +19,7 @@ import { User } from '../users/schemas/user.schema';
 import { ReportService } from '../report/report.service';
 import { UpdateVideoByViewingDto } from './dto/update-view-by-viewing.dto';
 import { VideoCategory } from '../video-categories/schemas/video-category.schema';
+import { SettingsService } from '../settings/settings.service';
 
 @Injectable()
 export class ShortVideosService {
@@ -32,6 +33,8 @@ export class ShortVideosService {
     private wishListService: WishlistService,
     private videoCategoriesService: VideoCategoriesService,
     private categoriesService: CategoriesService,
+    // @Inject(forwardRef(() => SettingsService))
+    private settingsService: SettingsService,
     @Inject(forwardRef(() => ReportService))
     private reportService: ReportService,
   ) {}
@@ -102,19 +105,23 @@ export class ShortVideosService {
   }
 
   // Share a video
-  async shareVideo(id: string): Promise<{ videoUrl: string; videoThumbnail: string; videoDescription: string }> {
+  async shareVideo(id: string): Promise<{
+    videoUrl: string;
+    videoThumbnail: string;
+    videoDescription: string;
+  }> {
     const video = await this.videoModel
       .findById(id)
       .select('videoUrl videoThumbnail videoDescription');
-  
+
     if (!video) {
       throw new BadRequestException('Video not found');
     }
-  
-    return { 
-      videoUrl: video.videoUrl, 
-      videoThumbnail: video.videoThumbnail, 
-      videoDescription: video.videoDescription 
+
+    return {
+      videoUrl: video.videoUrl,
+      videoThumbnail: video.videoThumbnail,
+      videoDescription: video.videoDescription,
     };
   }
   async findAll(query: string, current: number, pageSize: number) {
@@ -178,52 +185,77 @@ export class ShortVideosService {
   }
   async getTrendingVideosByUser(data: TrendingVideoDto) {
     let videoFound;
-    let maxvideo = 10;
-    const wishList = await this.wishListService.getWishListByUserId(data);
+
+    const setting = await this.settingsService.findAll();
+    const resetScore = setting.algorithmConfig.numberVideoSuggest;
+
+    const wishList = await this.wishListService.getWishListByUserId(data,resetScore.triggerAction);
     const wishListVideoIds = wishList.map((item) => item.videoId);
 
     if (data.videoId && data.videoId.length > 0) {
       videoFound = await this.videoModel
         .find({ _id: { $in: data.videoId } })
         .populate('userId');
-      maxvideo = 9;
     }
-
+    const collaboratorVideoIdList = await this.wishListService.getCollaborativeVideo(
+      data.userId,
+      resetScore.collaboration,
+    );
+    let collaboratorVideoFound = [];
+    if (collaboratorVideoIdList && collaboratorVideoIdList.length > 0) {
+      for (const collaboratorVideoId of collaboratorVideoIdList) {
+        const collaboratorVideo=await this.videoModel
+        .findOne({ _id: { $in: collaboratorVideoId } })
+        .populate('userId')
+        collaboratorVideoFound.push(collaboratorVideo);
+      }
+    }
     let videos = await this.videoModel
-      .find({ _id: { $in: wishListVideoIds } })
-      .populate('userId');
-    const topVideos = await this.videoModel
-      .find({ _id: { $nin: wishListVideoIds } })
+    .find({ _id: { $in: wishListVideoIds, $nin: collaboratorVideoIdList } })
+    .populate('userId');
+    const trendingVideos = await this.videoModel
+      .find({ _id: { $nin: [...wishListVideoIds, ...collaboratorVideoIdList] } })
       .sort({ totalViews: -1 })
       .limit(10)
       .populate('userId');
-    if (topVideos.length > 0) {
-      const topVideoChoosen= await this.wishListService.getTheBestChoiceFromListVideo(topVideos,data.userId)
-      videos.push(topVideoChoosen)
+
+    if (trendingVideos.length > 0 && resetScore.trending > 0) {
+      for (let i = 1; i <= resetScore.trending; i++) {
+        if (trendingVideos.length === 0) break;
+
+        const trendingVideoChoose =
+          await this.wishListService.getTheBestChoiceFromListVideo(
+            trendingVideos,
+            data.userId,
+          );
+        videos.push(trendingVideoChoose);
+        const index = trendingVideos.findIndex((video) =>
+          video._id.equals(trendingVideoChoose._id),
+        );
+        if (index !== -1) trendingVideos.splice(index, 1);
+      }
     }
-
-    const remainingCount = maxvideo - videos.length;
-
-    if (remainingCount > 0) {
+    if (resetScore.random > 0) {
       const randomVideos = await this.videoModel.aggregate([
         {
           $match: {
-            _id: { $nin: videos.map((v) => v._id) },
+            _id: { $nin:[... videos.map((v) => v._id), ...collaboratorVideoIdList] },
           },
         },
-        { $sample: { size: remainingCount } },
+        { $sample: { size: resetScore.random } },
       ]);
       const populatedVideos = await this.videoModel.populate(randomVideos, [
         { path: 'userId' },
       ]);
-      if (videoFound) videos = [...videoFound, ...videos, ...populatedVideos];
+      if (videoFound) videos = [...videoFound, ...videos,...collaboratorVideoFound, ...populatedVideos];
       else {
-        videos = [...videos, ...populatedVideos];
+        videos = [...videos,...collaboratorVideoFound, ...populatedVideos];
       }
     }
 
-    await this.wishListService.deleteWishListByUserId(data.userId);
-    // return videos.map((video) => video.videoDescription);
+    // await this.wishListService.deleteWishListByUserId(data.userId);
+    // console.log(videos.map((video) => video.videoDescription));
+    // console.log(videos.length)
     return videos;
   }
   async getTrendingVideosByGuest() {
@@ -273,8 +305,10 @@ export class ShortVideosService {
       .skip((current - 1) * pageSize)
       .limit(pageSize)
       .sort({ createdAt: -1 })
-      .select('videoThumbnail totalReaction totalViews totalComment videoDescription videoUrl')
-      .populate('userId'); 
+      .select(
+        'videoThumbnail totalReaction totalViews totalComment videoDescription videoUrl',
+      )
+      .populate('userId');
     if (result.length === 0) {
       return {
         meta: {
@@ -287,20 +321,19 @@ export class ShortVideosService {
         message: 'No videos found for this user',
       };
     }
-  
+
     // Trả về kết quả video mà không cần tính count
     return {
       meta: {
         current,
         pageSize,
-        totalItems: result.length,  // Lấy số lượng từ kết quả video
+        totalItems: result.length, // Lấy số lượng từ kết quả video
         totalPages: Math.ceil(result.length / pageSize),
       },
       result,
     };
   }
-  
-  
+
   async findVideoById(videoId: string) {
     return await this.videoModel.findById(videoId);
   }
@@ -479,7 +512,10 @@ export class ShortVideosService {
   }
 
   // Delete video - ThangLH
-  async deleteVideo(videoId: string, userId: string): Promise<{ message: string }> {
+  async deleteVideo(
+    videoId: string,
+    userId: string,
+  ): Promise<{ message: string }> {
     // Tìm video theo videoId
     const video = await this.videoModel.findById(videoId);
     if (!video) {

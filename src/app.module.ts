@@ -31,6 +31,7 @@ import { PlaylistsModule } from './modules/playlists/playlists.module';
 import { StorePlaylistModule } from './modules/store-playlist/store-playlist.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { MusicFavoriteModule } from './modules/music-favorite/music-favorite.module';
+import { SettingsModule } from './modules/settings/settings.module';
 @Module({
   imports: [
     UploadModule,
@@ -54,6 +55,7 @@ import { MusicFavoriteModule } from './modules/music-favorite/music-favorite.mod
     ViewinghistoryModule,
     WishlistScoreModule,
     ReportModule,
+    SettingsModule,
     ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],

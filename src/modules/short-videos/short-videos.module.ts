@@ -10,11 +10,13 @@ import { UsersModule } from '../users/users.module';
 import { ReportModule } from '../report/report.module';
 import { Category, CategorySchema } from '../categories/schemas/category.schema';
 import { VideoCategory, VideoCategorySchema } from '../video-categories/schemas/video-category.schema';
+import { SettingsModule } from '../settings/settings.module';
 
 
 @Module({
   imports: [
     forwardRef(() => WishlistModule),
+   SettingsModule,
     VideoCategoriesModule,
     MongooseModule.forFeature([{ name: Video.name, schema: VideoSchema }]),
     MongooseModule.forFeature([{ name: Category.name, schema: CategorySchema }]),
