@@ -185,41 +185,50 @@ export class ShortVideosService {
   }
   async getTrendingVideosByUser(data: TrendingVideoDto) {
     let videoFound;
-
+    let countVideo = 0;
     const setting = await this.settingsService.findAll();
     const resetScore = setting.algorithmConfig.numberVideoSuggest;
 
-    const wishList = await this.wishListService.getWishListByUserId(data,resetScore.triggerAction);
+    const wishList = await this.wishListService.getWishListByUserId(
+      data,
+      resetScore.triggerAction,
+    );
     const wishListVideoIds = wishList.map((item) => item.videoId);
-
+    countVideo += wishListVideoIds.length;
     if (data.videoId && data.videoId.length > 0) {
+      countVideo += 1;
       videoFound = await this.videoModel
         .find({ _id: { $in: data.videoId } })
         .populate('userId');
     }
-    const collaboratorVideoIdList = await this.wishListService.getCollaborativeVideo(
-      data.userId,
-      resetScore.collaboration,
-    );
+    const collaboratorVideoIdList =
+      await this.wishListService.getCollaborativeVideo(
+        data.userId,
+        resetScore.collaboration,
+      );
     let collaboratorVideoFound = [];
     if (collaboratorVideoIdList && collaboratorVideoIdList.length > 0) {
+      countVideo += collaboratorVideoIdList.length;
       for (const collaboratorVideoId of collaboratorVideoIdList) {
-        const collaboratorVideo=await this.videoModel
-        .findOne({ _id: { $in: collaboratorVideoId } })
-        .populate('userId')
+        const collaboratorVideo = await this.videoModel
+          .findOne({ _id: { $in: collaboratorVideoId } })
+          .populate('userId');
         collaboratorVideoFound.push(collaboratorVideo);
       }
     }
     let videos = await this.videoModel
-    .find({ _id: { $in: wishListVideoIds, $nin: collaboratorVideoIdList } })
-    .populate('userId');
+      .find({ _id: { $in: wishListVideoIds, $nin: collaboratorVideoIdList } })
+      .populate('userId');
     const trendingVideos = await this.videoModel
-      .find({ _id: { $nin: [...wishListVideoIds, ...collaboratorVideoIdList] } })
+      .find({
+        _id: { $nin: [...wishListVideoIds, ...collaboratorVideoIdList] },
+      })
       .sort({ totalViews: -1 })
       .limit(10)
       .populate('userId');
 
     if (trendingVideos.length > 0 && resetScore.trending > 0) {
+      countVideo += resetScore.trending;
       for (let i = 1; i <= resetScore.trending; i++) {
         if (trendingVideos.length === 0) break;
 
@@ -235,25 +244,33 @@ export class ShortVideosService {
         if (index !== -1) trendingVideos.splice(index, 1);
       }
     }
-    if (resetScore.random > 0) {
+    if (resetScore.random > 0 || countVideo < 10) {
       const randomVideos = await this.videoModel.aggregate([
         {
           $match: {
-            _id: { $nin:[... videos.map((v) => v._id), ...collaboratorVideoIdList] },
+            _id: {
+              $nin: [...videos.map((v) => v._id), ...collaboratorVideoIdList],
+            },
           },
         },
-        { $sample: { size: resetScore.random } },
+        { $sample: { size: Math.max(resetScore.random, 10 - countVideo) } },
       ]);
       const populatedVideos = await this.videoModel.populate(randomVideos, [
         { path: 'userId' },
       ]);
-      if (videoFound) videos = [...videoFound, ...videos,...collaboratorVideoFound, ...populatedVideos];
+      if (videoFound)
+        videos = [
+          ...videoFound,
+          ...videos,
+          ...collaboratorVideoFound,
+          ...populatedVideos,
+        ];
       else {
-        videos = [...videos,...collaboratorVideoFound, ...populatedVideos];
+        videos = [...videos, ...collaboratorVideoFound, ...populatedVideos];
       }
     }
 
-    // await this.wishListService.deleteWishListByUserId(data.userId);
+    await this.wishListService.deleteWishListByUserId(data.userId);
     // console.log(videos.map((video) => video.videoDescription));
     // console.log(videos.length)
     return videos;

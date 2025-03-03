@@ -38,7 +38,6 @@ export class SettingsService {
   }
 
   async update(updateSettingDto: UpdateSettingDto) {
-    console.log(updateSettingDto);
     return this.settingModel.findOneAndUpdate({}, updateSettingDto, {
       new: true,
       upsert: true,
