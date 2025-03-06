@@ -358,6 +358,10 @@ export class UsersService {
       return { isBan: true };
     } else if (filter === 'unlock') {
       return { isBan: false };
+    } else if (filter === 'USERS') {
+      return { role: filter };
+    } else if (filter === 'ADMIN') {
+      return { role: filter };
     } else {
       return {};
     }

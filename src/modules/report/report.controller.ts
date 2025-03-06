@@ -16,19 +16,19 @@ import { ResponseMessage } from '@/decorator/customize';
 
 @Controller('report')
 export class ReportController {
-  constructor(private readonly reportService: ReportService) {}
+  constructor(private readonly reportService: ReportService) { }
 
   //ThangLH - report video
   @Post('report-video')
   async createReportVideo(@Body() createReportDto: CreateReportVideoDto) {
     return this.reportService.createReportVideo(createReportDto);
   }
-    //ThangLH - report music
+  //ThangLH - report music
   @Post('report-music')
   async createReportMusic(@Body() createReportDto: CreateReportMusicDto) {
     return this.reportService.createReportMusic(createReportDto);
   }
-  
+
   @Get('list-report')
   findAll(
     @Query() query: string,
@@ -36,6 +36,15 @@ export class ReportController {
     @Query('pageSize') pageSize: string,
   ) {
     return this.reportService.findAll(query, +current, +pageSize);
+  }
+
+  @Get('list-report-music')
+  getListMusicReport(
+    @Query() query: string,
+    @Query('current') current: string,
+    @Query('pageSize') pageSize: string,
+  ) {
+    return this.reportService.handleListMusicReport(query, +current, +pageSize);
   }
 
   @Delete('delete-report/:_id')
