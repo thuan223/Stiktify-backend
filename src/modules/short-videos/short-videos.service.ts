@@ -9,7 +9,7 @@ import { UpdateShortVideoDto } from './dto/update-short-video.dto';
 import { TrendingVideoDto } from './dto/trending-video.dto';
 import { Video } from './schemas/short-video.schema';
 import { InjectModel } from '@nestjs/mongoose';
-import mongoose, { Model } from 'mongoose';
+import mongoose, { Model, Types } from 'mongoose';
 import { WishlistService } from '../wishlist/wishlist.service';
 import { CreateWishListVideoDto } from './dto/create-wishlist-videos.dto';
 import { VideoCategoriesService } from '../video-categories/video-categories.service';
@@ -34,7 +34,7 @@ export class ShortVideosService {
     private categoriesService: CategoriesService,
     @Inject(forwardRef(() => ReportService))
     private reportService: ReportService,
-  ) {}
+  ) { }
 
   //Create a new short video - ThangLH
   async create(createShortVideoDto: CreateShortVideoDto): Promise<Video> {
@@ -106,15 +106,15 @@ export class ShortVideosService {
     const video = await this.videoModel
       .findById(id)
       .select('videoUrl videoThumbnail videoDescription');
-  
+
     if (!video) {
       throw new BadRequestException('Video not found');
     }
-  
-    return { 
-      videoUrl: video.videoUrl, 
-      videoThumbnail: video.videoThumbnail, 
-      videoDescription: video.videoDescription 
+
+    return {
+      videoUrl: video.videoUrl,
+      videoThumbnail: video.videoThumbnail,
+      videoDescription: video.videoDescription
     };
   }
   async findAll(query: string, current: number, pageSize: number) {
@@ -198,7 +198,7 @@ export class ShortVideosService {
       .limit(10)
       .populate('userId');
     if (topVideos.length > 0) {
-      const topVideoChoosen= await this.wishListService.getTheBestChoiceFromListVideo(topVideos,data.userId)
+      const topVideoChoosen = await this.wishListService.getTheBestChoiceFromListVideo(topVideos, data.userId)
       videos.push(topVideoChoosen)
     }
 
@@ -274,7 +274,7 @@ export class ShortVideosService {
       .limit(pageSize)
       .sort({ createdAt: -1 })
       .select('videoThumbnail totalReaction totalViews totalComment videoDescription videoUrl')
-      .populate('userId'); 
+      .populate('userId');
     if (result.length === 0) {
       return {
         meta: {
@@ -287,7 +287,7 @@ export class ShortVideosService {
         message: 'No videos found for this user',
       };
     }
-  
+
     // Trả về kết quả video mà không cần tính count
     return {
       meta: {
@@ -299,8 +299,8 @@ export class ShortVideosService {
       result,
     };
   }
-  
-  
+
+
   async findVideoById(videoId: string) {
     return await this.videoModel.findById(videoId);
   }
@@ -494,5 +494,37 @@ export class ShortVideosService {
     await video.save();
 
     return { message: 'Video marked as deleted successfully' };
+  }
+
+  async getVideoNearestByUserId(userIds: string[], pageSize: number, current: number) {
+    const filter = {
+      userId: { $in: userIds },
+      isDelete: false,
+      isBlock: false,
+    }
+    const totalItems = (await this.videoModel.find(filter)).length;
+    const totalPages = Math.ceil(totalItems / pageSize);
+
+    const skip = (+current - 1) * +pageSize;
+
+    const result = await this.videoModel
+      .find(filter)
+      .limit(pageSize)
+      .skip(skip)
+      .populate({
+        path: 'userId',
+        select: "_id userName fullname email image totalFollow",
+      })
+      .sort({ createAt: -1 });
+
+    return {
+      meta: {
+        current: current, // trang hien tai
+        pageSize: pageSize, // so luong ban ghi
+        pages: totalPages, // tong so trang voi dieu kien query
+        total: totalItems, // tong so ban ghi
+      },
+      result: result,
+    };
   }
 }

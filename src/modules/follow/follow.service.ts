@@ -4,12 +4,15 @@ import { UpdateFollowDto } from './dto/update-follow.dto';
 import { Model, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { Follow } from './schemas/follow.schema';
+import { ShortVideosService } from '../short-videos/short-videos.service';
 
 
 @Injectable()
 export class FollowService {
   constructor(
     @InjectModel(Follow.name) private followModel: Model<Follow>,
+    private videoService: ShortVideosService,
+
   ) { }
   create(createFollowDto: CreateFollowDto) {
     return 'This action adds a new follow';
@@ -64,5 +67,22 @@ export class FollowService {
     return follow;
   }
 
+  async handleGetListVideoFollow(userId: string, current: number, pageSize: number) {
+    if (!current) current = 1;
+    if (!pageSize) pageSize = 10;
+
+    const filter = {
+      userId: userId
+    };
+
+    const result = await this.followModel
+      .find(filter)
+      .sort({ createAt: -1 });
+    const arrIdFollow = result.map(item => item.userFollowingId);
+    console.log(arrIdFollow);
+
+    const listVideo = await this.videoService.getVideoNearestByUserId(arrIdFollow, pageSize, current)
+    return listVideo
+  }
 }
 

@@ -3,13 +3,15 @@ import { FollowService } from './follow.service';
 import { FollowController } from './follow.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Follow, FollowSchema } from './schemas/follow.schema';
+import { ShortVideosModule } from '../short-videos/short-videos.module';
 
 @Module({
   imports: [
-      MongooseModule.forFeature([{ name: Follow.name, schema: FollowSchema }
-      ])],
+    ShortVideosModule,
+    MongooseModule.forFeature([{ name: Follow.name, schema: FollowSchema }
+    ])],
   controllers: [FollowController],
   providers: [FollowService],
   exports: [MongooseModule]
 })
-export class FollowModule {}
+export class FollowModule { }
