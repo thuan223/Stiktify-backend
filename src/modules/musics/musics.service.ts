@@ -119,7 +119,8 @@ export class MusicsService {
 
     const filter = {
       isBlock: false,
-      isDelete: false
+      isDelete: false,
+      flag: false
     };
 
     const totalItems = (await this.musicModel.find(filter)).length;
@@ -331,7 +332,7 @@ export class MusicsService {
       throw new BadRequestException(`Music not found with ID: ${_id}`);
     } else {
       const result = await this.musicModel.findByIdAndUpdate(_id, {
-        isBlock: flag,
+        flag: flag,
       });
       // await this.reportService.remove(_id)
       return result._id;
