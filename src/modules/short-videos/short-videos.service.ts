@@ -98,7 +98,6 @@ export class ShortVideosService {
     // Set isDeleted to true
     video.isDelete = true;
     await video.save();
-
     return { message: 'Video marked as deleted successfully' };
   }
 

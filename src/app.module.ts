@@ -31,9 +31,16 @@ import { PlaylistsModule } from './modules/playlists/playlists.module';
 import { StorePlaylistModule } from './modules/store-playlist/store-playlist.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { MusicFavoriteModule } from './modules/music-favorite/music-favorite.module';
+import { ProductsModule } from './modules/products/products.module';
+import { ProductCategoriesModule } from './modules/product-categories/product-categories.module';
+import { CategoryProductsModule } from './modules/categories-products/category-products.module';
+
 @Module({
   imports: [
     UploadModule,
+    ProductsModule,
+    ProductCategoriesModule,
+    CategoryProductsModule,
     StorePlaylistModule,
     PlaylistsModule,
     FollowModule,
