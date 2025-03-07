@@ -87,4 +87,13 @@ export class MusicsController {
     return this.musicsService.shareMusic(id);
   }
 
+  @Public()
+  @Get('list-music-admin')
+  findAll(
+    @Query() query: string,
+    @Query('current') current: string,
+    @Query('pageSize') pageSize: string,
+  ) {
+    return this.musicsService.handleListAllMusicAdmin(query, +current, +pageSize);
+  }
 }
