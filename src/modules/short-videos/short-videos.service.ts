@@ -235,7 +235,7 @@ export class ShortVideosService {
         { $sample: { size: remainingCount } },
       ]);
       const populatedVideos = await this.videoModel.populate(randomVideos, [
-        { path: 'userId' },
+        { path: 'userId' }, { path: "musicId" }
       ]);
       videos = [...videos, ...populatedVideos];
     }
@@ -513,7 +513,7 @@ export class ShortVideosService {
       .skip(skip)
       .populate({
         path: 'userId',
-        select: "_id userName fullname email image totalFollow",
+        select: "_id userName fullname email image totalFollowers totalFollowings",
       })
       .sort({ createAt: -1 });
 
