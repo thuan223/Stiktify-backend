@@ -7,6 +7,7 @@ import { Public } from '@/decorator/customize';
 @Controller('follow')
 export class FollowController {
   constructor(private readonly followService: FollowService) { }
+
   @Post('create-follow')
   followUserByBody(@Body() body: { followerId: string; followingId: string }) {
     return this.followService.followAnotherUser(body.followerId, body.followingId);

@@ -5,12 +5,14 @@ import { Model, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { Follow } from './schemas/follow.schema';
 import { ShortVideosService } from '../short-videos/short-videos.service';
+import { User } from '../users/schemas/user.schema';
 
 
 @Injectable()
 export class FollowService {
   constructor(
     @InjectModel(Follow.name) private followModel: Model<Follow>,
+    @InjectModel(User.name) private userModel: Model<User>,
     private videoService: ShortVideosService,
 
   ) { }
@@ -50,22 +52,37 @@ export class FollowService {
 
   async followAnotherUser(followerId: string, followingId: string) {
     if (!followerId || !followingId) {
-      throw new BadRequestException("Missing field!!!")
+        throw new BadRequestException("Missing field!!!");
     }
-    const alreadyFollow = await this.checkFollow(followerId, followingId)
+    const alreadyFollow = await this.checkFollow(followerId, followingId);
     if (alreadyFollow) {
-      const unfollow = await this.followModel.deleteOne({
-        userId: followerId,
-        userFollowingId: followingId
-      })
-      return unfollow;
+        await this.followModel.deleteOne({
+            userId: followerId,
+            userFollowingId: followingId
+        });
+        await this.userModel.findByIdAndUpdate(followerId, {
+            $inc: { totalFollowings: -1 }
+        });
+        await this.userModel.findByIdAndUpdate(followingId, {
+            $inc: { totalFollowers: -1 }
+        });
+
+        return { message: "Unfollowed successfully" };
     }
-    const follow = await this.followModel.create({
-      userId: followerId,
-      userFollowingId: followingId,
-    })
-    return follow;
-  }
+    await this.followModel.create({
+        userId: followerId,
+        userFollowingId: followingId,
+    });
+    await this.userModel.findByIdAndUpdate(followerId, {
+        $inc: { totalFollowings: 1 }
+    });
+
+    await this.userModel.findByIdAndUpdate(followingId, {
+        $inc: { totalFollowers: 1 }
+    });
+    return { message: "Followed successfully" };
+}
+
 
   async handleGetListVideoFollow(userId: string, current: number, pageSize: number) {
     if (!current) current = 1;
