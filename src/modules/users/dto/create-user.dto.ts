@@ -30,8 +30,24 @@ export class UserCreateByManager {
   password: string;
 }
 
+
+
 export class GetUserDetailDto{
   @IsNotEmpty({ message: 'Id is required!' })
   _id: string;
 
+}
+
+export class BussinessAccountDto {
+  @IsNotEmpty({ message: 'Shop name must not be empty' })
+  shopName: string;
+
+  @IsNotEmpty({ message: 'Tax code must not be empty' })
+  taxCode: string;
+
+  @IsNotEmpty({ message: "Shop's brands address must not be empty" })
+  shopBrandsAddress: string;
+
+  @IsNotEmpty({ message: 'Description must not be empty' })
+  shopDescription: string;
 }

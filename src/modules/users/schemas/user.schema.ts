@@ -1,60 +1,71 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+  import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+  import { HydratedDocument } from 'mongoose';
 
-export type UserDocument = HydratedDocument<User>;
+  export type UserDocument = HydratedDocument<User>;
 
-@Schema({ timestamps: true })
-export class User {
-  @Prop()
-  userName: string;
+  @Schema({ timestamps: true })
+  export class User {
+    @Prop()
+    userName: string;
 
-  @Prop()
-  password: string;
+    @Prop()
+    password: string;
 
-  @Prop()
-  fullname: string;
+    @Prop()
+    fullname: string;
 
-  @Prop()
-  email: string;
+    @Prop()
+    email: string;
 
-  @Prop()
-  phone: string;
+    @Prop()
+    phone: string;
 
-  @Prop()
-  address: string;
+    @Prop()
+    address: string;
 
-  @Prop()
-  dob: Date;
+    @Prop()
+    dob: Date;
 
-  @Prop()
-  isBan: boolean;
+    @Prop()
+    isBan: boolean;
 
-  @Prop({ default: 'Offline' })
-  status: string;
+    @Prop({ default: 'Offline' })
+    status: string;
 
-  @Prop({ default: 'USERS' })
-  role: string;
+    @Prop({ default: 'USERS' })
+    role: string;
 
-  @Prop({ default: 'LOCAL' })
-  accountType: string;
+    @Prop({ default: 'LOCAL' })
+    accountType: string;
 
-  @Prop({ default: false })
-  isActive: boolean;
+    @Prop({ default: false })
+    isActive: boolean;
 
-  @Prop()
-  activeCode: string;
+    @Prop()
+    activeCode: string;
 
-  @Prop()
-  codeExpired: Date;
+    @Prop()
+    codeExpired: Date;
 
-  @Prop()
-  image: string
+    @Prop()
+    image: string;
 
-  @Prop()
-  totalFollowers:  number
+    @Prop()
+    totalFollowers: number;
 
-  @Prop()
-  totalFollowings: number
-}
+    @Prop()
+    totalFollowings: number;
 
-export const UserSchema = SchemaFactory.createForClass(User);
+    @Prop()
+    isShop: boolean;
+
+    @Prop({ type: Object })
+    shopOwnerDetail: {
+      shopName: string;
+      taxCode: string;
+      shopBrandsAddress: string;
+      shopDescription: string;
+    };
+  }
+
+  export const UserSchema = SchemaFactory.createForClass(User);
