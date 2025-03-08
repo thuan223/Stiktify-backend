@@ -7,6 +7,7 @@ import { Public } from '@/decorator/customize';
 @Controller('follow')
 export class FollowController {
   constructor(private readonly followService: FollowService) { }
+
   @Post('create-follow')
   followUserByBody(@Body() body: { followerId: string; followingId: string }) {
     return this.followService.followAnotherUser(body.followerId, body.followingId);
@@ -18,6 +19,19 @@ export class FollowController {
   ) {
     return this.followService.findAll(userId);
   }
+
+  @Public()
+  @Get('following/:userId')
+  getFollowing(@Param('userId') userId: string) {
+    return this.followService.getFollowingList(userId);
+  }
+
+  @Public()
+  @Get('followers/:userId')
+  getFollowers(@Param('userId') userId: string) {
+    return this.followService.getFollowersList(userId);
+  }
+
 
   @Get('list-video-following/:userId')
   getListVideoFollow(
