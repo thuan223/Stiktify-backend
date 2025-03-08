@@ -86,4 +86,13 @@ export class MusicsController {
   async shareMusic(@Param('id') id: string) {
     return this.musicsService.shareMusic(id);
   }
+
+  @Get('list-music-admin')
+  findAll(
+    @Query() query: string,
+    @Query('current') current: string,
+    @Query('pageSize') pageSize: string,
+  ) {
+    return this.musicsService.handleListAllMusicAdmin(query, +current, +pageSize);
+  }
 }
