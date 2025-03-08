@@ -101,5 +101,18 @@ export class FollowService {
     const listVideo = await this.videoService.getVideoNearestByUserId(arrIdFollow, pageSize, current)
     return listVideo
   }
+
+  async getFollowingList(userId: string) {
+    const followingList = await this.followModel.find({ userId: new Types.ObjectId(userId) })
+        .populate('userFollowingId', 'userName email image'); 
+    return followingList.map(follow => follow.userFollowingId);
+}
+
+async getFollowersList(userId: string) {
+    const followersList = await this.followModel.find({ userFollowingId: new Types.ObjectId(userId) })
+        .populate('userId', 'userName email image'); 
+    return followersList.map(follow => follow.userId);
+}
+
 }
 

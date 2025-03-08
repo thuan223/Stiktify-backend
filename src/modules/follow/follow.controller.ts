@@ -20,6 +20,19 @@ export class FollowController {
     return this.followService.findAll(userId);
   }
 
+  @Public()
+  @Get('following/:userId')
+  getFollowing(@Param('userId') userId: string) {
+    return this.followService.getFollowingList(userId);
+  }
+
+  @Public()
+  @Get('followers/:userId')
+  getFollowers(@Param('userId') userId: string) {
+    return this.followService.getFollowersList(userId);
+  }
+
+
   @Get('list-video-following/:userId')
   getListVideoFollow(
     @Param("userId") userId: string,
