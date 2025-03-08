@@ -13,7 +13,6 @@ export class MusicCategoriesService {
   constructor(
     @InjectModel(MusicCategory.name) private musicCategoryModel: Model<MusicCategory>,
     private categoryService: CategoriesService,
-
   ) { }
 
   async handleCreateCategoryMusic(categoryId: string[], musicId: string) {

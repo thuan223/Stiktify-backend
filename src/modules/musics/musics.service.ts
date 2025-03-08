@@ -73,7 +73,6 @@ export class MusicsService {
       musicThumbnail: musicThumbnail,
       musicUrl: musicUrl
     });
-
     await this.musicCategoryService.handleCreateCategoryMusic(categoryId, result._id + "")
     return result;
   }
