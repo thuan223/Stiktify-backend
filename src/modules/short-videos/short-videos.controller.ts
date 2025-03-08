@@ -11,6 +11,8 @@ import {
   Delete,
   Query,
   Request,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { ShortVideosService } from './short-videos.service';
 import { CreateShortVideoDto } from './dto/create-short-video.dto';
@@ -18,6 +20,10 @@ import { UpdateShortVideoDto } from './dto/update-short-video.dto';
 import { ResponseMessage } from '@/decorator/customize';
 import { flagShortVideoDto } from './dto/flag-short-video.dto';
 import { UpdateVideoByViewingDto } from './dto/update-view-by-viewing.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
+
 
 @Controller('short-videos')
 export class ShortVideosController {
@@ -25,7 +31,24 @@ export class ShortVideosController {
 
   //Create a new short video - ThangLH
   @Post('create')
-  async createPost(@Body() createShortVideoDto: CreateShortVideoDto) {
+  @UseInterceptors(
+    FileInterceptor('videoThumbnail', {
+      storage: diskStorage({
+        destination: './uploads/thumbnails', // Thư mục lưu ảnh thumbnail
+        filename: (req, file, callback) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          callback(null, uniqueSuffix + extname(file.originalname));
+        },
+      }),
+    }),
+  )
+  async createPost(
+    @Body() createShortVideoDto: CreateShortVideoDto,
+    @UploadedFile() videoThumbnail: Express.Multer.File,
+  ) {
+    if (videoThumbnail) {
+      createShortVideoDto.videoThumbnail = `/uploads/thumbnails/${videoThumbnail.filename}`;
+    }
     return this.shortVideosService.create(createShortVideoDto);
   }
   // Lấy ra video dự vào UserId - ThangLH
