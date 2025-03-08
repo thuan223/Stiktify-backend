@@ -41,6 +41,9 @@ export class MusicCategoriesService {
 
   async checkFilterAction(filter: string) {
     try {
+      if (!filter) {
+        return {}
+      }
       const result = await this.categoryService.checkCategoryById(filter);
       if (result) {
         return {
@@ -67,6 +70,7 @@ export class MusicCategoriesService {
     if (!pageSize) pageSize = 10;
 
     const handleFilter = await this.checkFilterAction(filter.filterReq);
+
     const searchRegex = new RegExp(`^${filter.search}`, 'i');
 
     let handleSearch = [];
@@ -77,22 +81,22 @@ export class MusicCategoriesService {
       ];
     }
 
-    const totalItems = (await this.musicCategoryModel
+    const totalItem = (await this.musicCategoryModel
       .find({ ...handleFilter })
       .populate({
         path: "musicId",
         match: { $or: handleSearch }
       })
-    ).filter(x => x.musicId !== null).length
+    ).filter(x => x.musicId !== null)
+    const totalItems = new Set(totalItem.map((item: any) => item.musicId._id)).size
 
     const totalPages = Math.ceil(totalItems / pageSize);
 
     const skip = (+current - 1) * +pageSize;
 
-
     const result = await this.musicCategoryModel
       .find({
-        ...handleFilter,
+        ...handleFilter
       })
       .populate({
         path: "musicId",
@@ -103,7 +107,7 @@ export class MusicCategoriesService {
       .sort(sort as any);
 
     const configData = result.map(item => item.musicId).filter(music => music);
-
+    const uniqueData = Array.from(new Map(configData.map((item: any) => [item._id, item])).values());
     return {
       meta: {
         current: current, // trang hien tai
@@ -111,7 +115,7 @@ export class MusicCategoriesService {
         pages: totalPages, // tong so trang voi dieu kien query
         total: totalItems, // tong so ban ghi
       },
-      result: configData,
+      result: uniqueData,
     };
   }
 }
