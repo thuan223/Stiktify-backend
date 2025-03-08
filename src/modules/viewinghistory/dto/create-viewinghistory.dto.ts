@@ -7,6 +7,5 @@ export class CreateViewinghistoryDto {
 
   @IsNotEmpty({ message: 'Email must not be empty' })
   videoId: string;
-
 }
 

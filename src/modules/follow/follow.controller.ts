@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { FollowService } from './follow.service';
 import { CreateFollowDto } from './dto/create-follow.dto';
 import { UpdateFollowDto } from './dto/update-follow.dto';
@@ -6,7 +6,8 @@ import { Public } from '@/decorator/customize';
 
 @Controller('follow')
 export class FollowController {
-  constructor(private readonly followService: FollowService) {}
+  constructor(private readonly followService: FollowService) { }
+
   @Post('create-follow')
   followUserByBody(@Body() body: { followerId: string; followingId: string }) {
     return this.followService.followAnotherUser(body.followerId, body.followingId);
@@ -14,14 +15,31 @@ export class FollowController {
 
   @Get('list-following/:userId')
   findAll(
-    @Param("userId") userId:string
+    @Param("userId") userId: string
   ) {
     return this.followService.findAll(userId);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.followService.findOne(+id);
+  @Public()
+  @Get('following/:userId')
+  getFollowing(@Param('userId') userId: string) {
+    return this.followService.getFollowingList(userId);
+  }
+
+  @Public()
+  @Get('followers/:userId')
+  getFollowers(@Param('userId') userId: string) {
+    return this.followService.getFollowersList(userId);
+  }
+
+
+  @Get('list-video-following/:userId')
+  getListVideoFollow(
+    @Param("userId") userId: string,
+    @Query("current") current: string,
+    @Query("pageSize") pageSize: string,
+  ) {
+    return this.followService.handleGetListVideoFollow(userId, +current, +pageSize);
   }
 
   @Patch(':id')

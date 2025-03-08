@@ -34,6 +34,8 @@ import { MusicFavoriteModule } from './modules/music-favorite/music-favorite.mod
 import { ProductsModule } from './modules/products/products.module';
 import { ProductCategoriesModule } from './modules/product-categories/product-categories.module';
 import { CategoryProductsModule } from './modules/categories-products/category-products.module';
+import { ListeninghistoryModule } from './modules/listeninghistory/listeninghistory.module';
+import { SettingsModule } from './modules/settings/settings.module';
 
 @Module({
   imports: [
@@ -61,6 +63,7 @@ import { CategoryProductsModule } from './modules/categories-products/category-p
     ViewinghistoryModule,
     WishlistScoreModule,
     ReportModule,
+    SettingsModule,
     ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
@@ -99,6 +102,7 @@ import { CategoryProductsModule } from './modules/categories-products/category-p
     StorePlaylistModule,
     UploadModule,
     MusicFavoriteModule,
+    ListeninghistoryModule,
   ],
   controllers: [AppController],
   providers: [
