@@ -31,6 +31,7 @@ import { PlaylistsModule } from './modules/playlists/playlists.module';
 import { StorePlaylistModule } from './modules/store-playlist/store-playlist.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { MusicFavoriteModule } from './modules/music-favorite/music-favorite.module';
+import { ListeninghistoryModule } from './modules/listeninghistory/listeninghistory.module';
 @Module({
   imports: [
     UploadModule,
@@ -92,6 +93,7 @@ import { MusicFavoriteModule } from './modules/music-favorite/music-favorite.mod
     StorePlaylistModule,
     UploadModule,
     MusicFavoriteModule,
+    ListeninghistoryModule,
   ],
   controllers: [AppController],
   providers: [
