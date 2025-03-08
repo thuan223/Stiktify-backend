@@ -16,7 +16,7 @@ export class WishlistScoreService {
     @Inject(forwardRef(() => ShortVideosService))
     private videoService: ShortVideosService,
     private videoCategoriesService: VideoCategoriesService,
-  ) { }
+  ) {}
   create(createWishlistScoreDto: CreateWishlistScoreDto) {
     return 'This action adds a new wishlistScore';
   }
@@ -36,9 +36,11 @@ export class WishlistScoreService {
       scoreIncrase = 1.5;
       suggest.tags = [];
       suggest.categoryId = [];
-    } else if (triggerWishlistScoreDto.triggerAction === 'ClickLinkMusic'
-      || triggerWishlistScoreDto.triggerAction === 'ListenMusic'
-      || triggerWishlistScoreDto.triggerAction === 'SearchMusic') {
+    } else if (
+      triggerWishlistScoreDto.triggerAction === 'ClickLinkMusic' ||
+      triggerWishlistScoreDto.triggerAction === 'ListenMusic' ||
+      triggerWishlistScoreDto.triggerAction === 'SearchMusic'
+    ) {
       suggest = {
         musicId: triggerWishlistScoreDto.id,
       };
@@ -53,13 +55,13 @@ export class WishlistScoreService {
       scoreIncrase = 2;
       suggest.tags = [];
       suggest.musicId = null;
-    }else if (triggerWishlistScoreDto.triggerAction === 'FollowCreator') {
+    } else if (triggerWishlistScoreDto.triggerAction === 'FollowCreator') {
       suggest = await this.findSuggestByVideo(triggerWishlistScoreDto.id);
       scoreIncrase = 2.5;
       suggest.tags = [];
       suggest.musicId = null;
       suggest.categoryId = [];
-    } 
+    }
     if (suggest?.tags?.length) {
       for (const tag of suggest.tags) {
         await this.triggerWishListScoretag(
@@ -269,7 +271,7 @@ export class WishlistScoreService {
     if (videoListFound.length > 0) return videoListFound;
     if (scoreChecks.every((check) => check)) {
       scoreChecks[0] = false;
-      console.log(scoreChecks);
+      // console.log(scoreChecks);
       return this.findBestVideo(wishlistScores, scoreChecks, videoId, 0, 1);
     } else {
       const indexLargeFalse = scoreChecks.lastIndexOf(false);
@@ -278,7 +280,7 @@ export class WishlistScoreService {
       ) {
         scoreChecks[current] = true;
         scoreChecks[current + 1] = false;
-        console.log(scoreChecks);
+        // console.log(scoreChecks);
         return this.findBestVideo(
           wishlistScores,
           scoreChecks,
@@ -297,7 +299,7 @@ export class WishlistScoreService {
           for (let i = 0; i <= current; i++) {
             scoreChecks[i] = false;
           }
-          console.log(scoreChecks);
+          // console.log(scoreChecks);
           return this.findBestVideo(
             wishlistScores,
             scoreChecks,
@@ -313,7 +315,7 @@ export class WishlistScoreService {
           for (let i = 1; i <= currentGrop; i++) {
             scoreChecks[smallFalseIndex + i] = false;
           }
-          console.log(scoreChecks);
+          // console.log(scoreChecks);
           return this.findBestVideo(
             wishlistScores,
             scoreChecks,

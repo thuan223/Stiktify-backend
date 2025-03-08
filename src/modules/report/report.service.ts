@@ -4,7 +4,10 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateReportMusicDto, CreateReportVideoDto } from './dto/create-report.dto';
+import {
+  CreateReportMusicDto,
+  CreateReportVideoDto,
+} from './dto/create-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
 import aqp from 'api-query-params';
 import { InjectModel } from '@nestjs/mongoose';
@@ -27,11 +30,13 @@ export class ReportService {
   // ThangLH - report video
   async createReportVideo(createReportDto: CreateReportVideoDto) {
     const { userId, videoId, reasons } = createReportDto;
-    const video = await this.shortVideosService.checkVideoById(videoId.toString());
+    const video = await this.shortVideosService.checkVideoById(
+      videoId.toString(),
+    );
     if (!video) {
       throw new NotFoundException('Video not found');
     }
-    
+
     const newReport = new this.reportModel({
       userId: new Types.ObjectId(userId),
       videoId: new Types.ObjectId(videoId),
@@ -39,7 +44,6 @@ export class ReportService {
     });
     return await newReport.save();
   }
-  
 
   // ThangLH - report music
   async createReportMusic(createReportDto: CreateReportMusicDto) {
@@ -171,7 +175,7 @@ export class ReportService {
     }
   }
 
-  async remove(id: string) {
+  async remove(id: string): Promise<any> {
     const check = await this.checkReportVideoId(id);
     if (!check) {
       return '';

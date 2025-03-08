@@ -16,3 +16,8 @@ export class GetReaction {
   @IsNotEmpty()
   commentId: Types.ObjectId;
 }
+
+export class LikeMusicCommentDto {
+  @IsNotEmpty()
+  commentId: Types.ObjectId;
+}

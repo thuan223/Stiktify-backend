@@ -10,7 +10,10 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { ReportService } from './report.service';
-import { CreateReportMusicDto, CreateReportVideoDto } from './dto/create-report.dto';
+import {
+  CreateReportMusicDto,
+  CreateReportVideoDto,
+} from './dto/create-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
 import { ResponseMessage } from '@/decorator/customize';
 
@@ -23,12 +26,12 @@ export class ReportController {
   async createReportVideo(@Body() createReportDto: CreateReportVideoDto) {
     return this.reportService.createReportVideo(createReportDto);
   }
-    //ThangLH - report music
+  //ThangLH - report music
   @Post('report-music')
   async createReportMusic(@Body() createReportDto: CreateReportMusicDto) {
     return this.reportService.createReportMusic(createReportDto);
   }
-  
+
   @Get('list-report')
   findAll(
     @Query() query: string,
@@ -40,7 +43,7 @@ export class ReportController {
 
   @Delete('delete-report/:_id')
   @ResponseMessage('Deleted successfully')
-  remove(@Param('_id') _id: string) {
+  remove(@Param('_id') _id: string): Promise<any> {
     if (!_id) throw new BadRequestException('id must not be empty');
     return this.reportService.remove(_id);
   }
