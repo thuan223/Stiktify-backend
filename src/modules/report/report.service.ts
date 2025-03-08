@@ -25,7 +25,7 @@ export class ReportService {
     private shortVideosService: ShortVideosService,
     private usersService: UsersService,
     private musicsService: MusicsService,
-  ) {}
+  ) { }
 
   // ThangLH - report video
   async createReportVideo(createReportDto: CreateReportVideoDto) {
@@ -75,10 +75,10 @@ export class ReportService {
         select: 'isDelete',
         match: { isDelete: false },
       })
-    ).filter((item) => item.videoId !== null);
+    ).filter((item) => item.musicId === null);
 
-    const totalItems = new Set(itemData.map((item: any) => item.videoId._id))
-      .size;
+    const totalItems = new Set(itemData.map((item: any) => item.videoId._id)).size;
+
     const totalPages = Math.ceil(totalItems / pageSize);
 
     const skip = (+current - 1) * +pageSize;
@@ -185,5 +185,98 @@ export class ReportService {
       videoId: new Types.ObjectId(id),
     });
     return result;
+  }
+
+
+  async handleListMusicReport(query: string, current: number, pageSize: number) {
+    const { filter, sort } = aqp(query);
+
+    if (filter.current) delete filter.current;
+    if (filter.pageSize) delete filter.pageSize;
+
+    if (!current) current = 1;
+    if (!pageSize) pageSize = 10;
+
+    const itemData = (
+      await this.reportModel.find({ ...filter, videoId: null }).populate({
+        path: 'musicId',
+        select: 'isDelete',
+        match: { isDelete: false },
+      })
+    )
+    console.log(itemData);
+
+    const totalItems = new Set(itemData.map((item: any) => item.musicId._id)).size
+    const totalPages = Math.ceil(totalItems / pageSize);
+
+    const skip = (+current - 1) * +pageSize;
+
+    const resultReport = (await this.reportModel.aggregate([
+      {
+        $group: {
+          _id: '$musicId',
+          report: {
+            $push: {
+              _id: '$_id',
+              userId: '$userId',
+              reasons: '$reasons',
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          musicId: '$_id',
+          report: 1,
+        },
+      },
+      { $skip: skip },
+      { $limit: pageSize },
+    ])) as IReportResult[];
+
+    const result = [];
+    for (const element of resultReport) {
+      const item = await this.musicsService.checkMusicRById(
+        element.musicId,
+      );
+      const report = element.report;
+
+      if (item) {
+        const dataReport = [];
+        for (const element of report) {
+          const item = await this.usersService.checkUserById(element.userId);
+
+          if (item) {
+            const data = {
+              ...item.toObject(),
+              reasons: element.reasons,
+            };
+            dataReport.push(data);
+          }
+          continue;
+        }
+
+        const data = {
+          dataMusic: item,
+          dataReport: dataReport,
+          total: element.report.length,
+        };
+        result.push(data);
+      }
+      continue;
+    }
+
+    result.sort((a, b) => b.total - a.total);
+
+    return {
+      meta: {
+        current: current,
+        pageSize: pageSize,
+        pages: totalPages,
+        total: totalItems,
+      },
+      result: result,
+    }
   }
 }

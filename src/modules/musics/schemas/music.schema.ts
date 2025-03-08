@@ -41,6 +41,12 @@ export class Music {
 
   @Prop()
   musicLyric: string;
+
+  @Prop({ default: false })
+  flag: boolean;
+
+  @Prop({ default: false })
+  isDelete: boolean;
 }
 
 export const MusicSchema = SchemaFactory.createForClass(Music);

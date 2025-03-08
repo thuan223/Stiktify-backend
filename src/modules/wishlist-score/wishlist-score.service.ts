@@ -7,6 +7,7 @@ import { WishlistScore } from './schemas/wishlist-score.entity';
 import { InjectModel } from '@nestjs/mongoose';
 import { ShortVideosService } from '../short-videos/short-videos.service';
 import { VideoCategoriesService } from '../video-categories/video-categories.service';
+import { SettingsService } from '../settings/settings.service';
 
 @Injectable()
 export class WishlistScoreService {
@@ -15,6 +16,8 @@ export class WishlistScoreService {
     private wishListScoreModel: Model<WishlistScore>,
     @Inject(forwardRef(() => ShortVideosService))
     private videoService: ShortVideosService,
+    @Inject(forwardRef(() => SettingsService))
+    private settingsService: SettingsService,
     private videoCategoriesService: VideoCategoriesService,
   ) {}
   create(createWishlistScoreDto: CreateWishlistScoreDto) {
@@ -22,42 +25,51 @@ export class WishlistScoreService {
   }
   async triggerWishListScore(triggerWishlistScoreDto: TriggerWishlistScoreDto) {
     let suggest;
-    let scoreIncrase = 0;
+    let scoreIncrease = 0;
+    const setting = await this.settingsService.findAll();
+    const scoreIncreaseSetting = setting.algorithmConfig.scoreIncrease;
     if (triggerWishlistScoreDto.triggerAction === 'WatchVideo') {
       suggest = await this.findSuggestByVideo(triggerWishlistScoreDto.id);
-      scoreIncrase = 1;
+      scoreIncrease = scoreIncreaseSetting.watchVideo;
     } else if (triggerWishlistScoreDto.triggerAction === 'ReactionAboutVideo') {
       suggest = await this.findSuggestByVideo(triggerWishlistScoreDto.id);
-      scoreIncrase = 1.5;
+      scoreIncrease = scoreIncreaseSetting.reactionAboutVideo;
       suggest.tags = [];
       suggest.musicId = null;
     } else if (triggerWishlistScoreDto.triggerAction === 'ReactionAboutMusic') {
       suggest = await this.findSuggestByVideo(triggerWishlistScoreDto.id);
-      scoreIncrase = 1.5;
+      scoreIncrease = scoreIncreaseSetting.reactionAboutMusic;
       suggest.tags = [];
       suggest.categoryId = [];
-    } else if (
-      triggerWishlistScoreDto.triggerAction === 'ClickLinkMusic' ||
-      triggerWishlistScoreDto.triggerAction === 'ListenMusic' ||
-      triggerWishlistScoreDto.triggerAction === 'SearchMusic'
-    ) {
+
+    } else if (triggerWishlistScoreDto.triggerAction === 'ClickLinkMusic') {
       suggest = {
         musicId: triggerWishlistScoreDto.id,
       };
-      scoreIncrase = 2.5;
+      scoreIncrease = scoreIncreaseSetting.clickLinkMusic;
+    } else if (triggerWishlistScoreDto.triggerAction === 'ListenMusic') {
+      suggest = {
+        musicId: triggerWishlistScoreDto.id,
+      };
+      scoreIncrease = scoreIncreaseSetting.listenMusic;
+    } else if (triggerWishlistScoreDto.triggerAction === 'SearchMusic') {
+      suggest = {
+        musicId: triggerWishlistScoreDto.id,
+      };
+      scoreIncrease = scoreIncreaseSetting.searchMusic;
     } else if (triggerWishlistScoreDto.triggerAction === 'CommentVideo') {
       suggest = await this.findSuggestByVideo(triggerWishlistScoreDto.id);
-      scoreIncrase = 1.5;
+      scoreIncrease = scoreIncreaseSetting.commentVideo;
       suggest.tags = [];
       suggest.musicId = null;
     } else if (triggerWishlistScoreDto.triggerAction === 'ShareVideo') {
       suggest = await this.findSuggestByVideo(triggerWishlistScoreDto.id);
-      scoreIncrase = 2;
+      scoreIncrease = scoreIncreaseSetting.shareVideo;
       suggest.tags = [];
       suggest.musicId = null;
     } else if (triggerWishlistScoreDto.triggerAction === 'FollowCreator') {
       suggest = await this.findSuggestByVideo(triggerWishlistScoreDto.id);
-      scoreIncrase = 2.5;
+      scoreIncrease = scoreIncreaseSetting.followCreator;
       suggest.tags = [];
       suggest.musicId = null;
       suggest.categoryId = [];
@@ -67,7 +79,7 @@ export class WishlistScoreService {
         await this.triggerWishListScoretag(
           tag,
           triggerWishlistScoreDto.userId,
-          scoreIncrase,
+          scoreIncrease,
         );
       }
     }
@@ -75,14 +87,14 @@ export class WishlistScoreService {
       await this.triggerWishListScoreMusic(
         suggest.musicId,
         triggerWishlistScoreDto.userId,
-        scoreIncrase,
+        scoreIncrease,
       );
     }
     if (suggest?.creatorId) {
       await this.triggerWishListScoreCreator(
         suggest.creatorId,
         triggerWishlistScoreDto.userId,
-        scoreIncrase,
+        scoreIncrease,
       );
     }
     if (suggest?.categoryId?.length) {
@@ -90,93 +102,156 @@ export class WishlistScoreService {
         await this.triggerWishListScoreCategory(
           category,
           triggerWishlistScoreDto.userId,
-          scoreIncrase,
+          scoreIncrease,
         );
       }
     }
     return suggest;
   }
   async triggerWishListScoretag(tag: string, userId: string, scoreBonus) {
+    const setting = await this.settingsService.findAll();
+    const wishListScoreCount =
+      setting.algorithmConfig.numberOfCount.wishListScoreCount;
+
     const existingTag = await this.wishListScoreModel.findOne({ tag, userId });
+
     if (existingTag) {
       await this.wishListScoreModel.updateOne(
         { tag, userId },
-        { $inc: { score: scoreBonus } },
+        { $inc: { score: scoreBonus }, $set: { updatedAt: new Date() } },
       );
     } else {
+      const existingWishList = await this.wishListScoreModel
+        .find({ userId })
+        .sort({ updatedAt: 1 });
+      if (existingWishList.length >= wishListScoreCount) {
+        const oldestItem = existingWishList[0];
+        await this.wishListScoreModel.deleteOne({ _id: oldestItem._id });
+      }
+
       await this.wishListScoreModel.create({
         tag,
         score: scoreBonus,
-        userId: userId,
+        userId,
         wishlistType: 'Tag',
+        updatedAt: new Date(),
       });
     }
   }
+
   async triggerWishListScoreMusic(musicId: string, userId: string, scoreBonus) {
-    const existingTag = await this.wishListScoreModel.findOne({
+    const setting = await this.settingsService.findAll();
+    const wishListScoreCount =
+      setting.algorithmConfig.numberOfCount.wishListScoreCount;
+
+    const existingMusic = await this.wishListScoreModel.findOne({
       musicId,
       userId,
     });
-    if (existingTag) {
+
+    if (existingMusic) {
       await this.wishListScoreModel.updateOne(
         { musicId, userId },
-        { $inc: { score: scoreBonus } },
+        { $inc: { score: scoreBonus }, $set: { updatedAt: new Date() } },
       );
     } else {
+      const existingWishList = await this.wishListScoreModel
+        .find({ userId })
+        .sort({ updatedAt: 1 });
+
+      if (existingWishList.length >= wishListScoreCount) {
+        const oldestItem = existingWishList[0];
+        await this.wishListScoreModel.deleteOne({ _id: oldestItem._id });
+      }
+
       await this.wishListScoreModel.create({
         musicId,
         score: scoreBonus,
-        userId: userId,
+        userId,
         wishlistType: 'Music',
+        updatedAt: new Date(),
       });
     }
   }
+
   async triggerWishListScoreCreator(
     creatorId: string,
     userId: string,
     scoreBonus,
   ) {
-    const existingTag = await this.wishListScoreModel.findOne({
+    const setting = await this.settingsService.findAll();
+    const wishListScoreCount =
+      setting.algorithmConfig.numberOfCount.wishListScoreCount;
+
+    const existingCreator = await this.wishListScoreModel.findOne({
       creatorId,
       userId,
     });
-    if (existingTag) {
+
+    if (existingCreator) {
       await this.wishListScoreModel.updateOne(
         { creatorId, userId },
-        { $inc: { score: scoreBonus } },
+        { $inc: { score: scoreBonus }, $set: { updatedAt: new Date() } },
       );
     } else {
+      const existingWishList = await this.wishListScoreModel
+        .find({ userId })
+        .sort({ updatedAt: 1 });
+
+      if (existingWishList.length >= wishListScoreCount) {
+        const oldestItem = existingWishList[0];
+        await this.wishListScoreModel.deleteOne({ _id: oldestItem._id });
+      }
+
       await this.wishListScoreModel.create({
         creatorId,
         score: scoreBonus,
-        userId: userId,
+        userId,
         wishlistType: 'Creator',
+        updatedAt: new Date(),
       });
     }
   }
+
   async triggerWishListScoreCategory(
     categoryId: string,
     userId: string,
     scoreBonus,
   ) {
-    const existingTag = await this.wishListScoreModel.findOne({
+    const setting = await this.settingsService.findAll();
+    const wishListScoreCount =
+      setting.algorithmConfig.numberOfCount.wishListScoreCount;
+
+    const existingCategory = await this.wishListScoreModel.findOne({
       categoryId,
       userId,
     });
-    if (existingTag) {
+
+    if (existingCategory) {
       await this.wishListScoreModel.updateOne(
         { categoryId, userId },
-        { $inc: { score: scoreBonus } },
+        { $inc: { score: scoreBonus }, $set: { updatedAt: new Date() } },
       );
     } else {
+      const existingWishList = await this.wishListScoreModel
+        .find({ userId })
+        .sort({ updatedAt: 1 });
+
+      if (existingWishList.length >= wishListScoreCount) {
+        const oldestItem = existingWishList[0];
+        await this.wishListScoreModel.deleteOne({ _id: oldestItem._id });
+      }
+
       await this.wishListScoreModel.create({
         categoryId,
         score: scoreBonus,
-        userId: userId,
+        userId,
         wishlistType: 'Category',
+        updatedAt: new Date(),
       });
     }
   }
+
   async findSuggestByVideo(videoId: string) {
     let suggest = { tags: [], musicId: null, creatorId: null, categoryId: [] };
     const video = await this.videoService.findVideoById(videoId);
@@ -338,13 +413,40 @@ export class WishlistScoreService {
   }
 
   async updateWasCheckByUserId(_id: string, userId: string) {
+    const setting = await this.settingsService.findAll();
+    const resetScore = setting.algorithmConfig.resetScore;
     return await this.wishListScoreModel.updateMany(
       { _id: _id, userId: userId },
       {
-        // $set: { wasCheck: true },
-        $mul: { score: 0.9 },
+        $set: { wasCheck: resetScore.wasCheckScore },
+        $mul: { score: 1 - resetScore.discountScore / 100 },
       },
     );
+  }
+  async getAverageCount() {
+    const result = await this.wishListScoreModel.aggregate([
+      {
+        $group: {
+          _id: '$userId',
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalCount: { $sum: '$count' },
+          totalUsers: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          averageCount: { $divide: ['$totalCount', '$totalUsers'] },
+        },
+      },
+    ]);
+
+    return result.length > 0 ? result[0].averageCount : 0;
   }
 
   findAll() {

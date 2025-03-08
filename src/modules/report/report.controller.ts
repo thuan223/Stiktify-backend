@@ -19,7 +19,7 @@ import { ResponseMessage } from '@/decorator/customize';
 
 @Controller('report')
 export class ReportController {
-  constructor(private readonly reportService: ReportService) {}
+  constructor(private readonly reportService: ReportService) { }
 
   //ThangLH - report video
   @Post('report-video')
@@ -39,6 +39,15 @@ export class ReportController {
     @Query('pageSize') pageSize: string,
   ) {
     return this.reportService.findAll(query, +current, +pageSize);
+  }
+
+  @Get('list-report-music')
+  getListMusicReport(
+    @Query() query: string,
+    @Query('current') current: string,
+    @Query('pageSize') pageSize: string,
+  ) {
+    return this.reportService.handleListMusicReport(query, +current, +pageSize);
   }
 
   @Delete('delete-report/:_id')

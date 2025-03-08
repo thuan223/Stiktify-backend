@@ -73,7 +73,6 @@ export class MusicsService {
       musicThumbnail: musicThumbnail,
       musicUrl: musicUrl
     });
-
     await this.musicCategoryService.handleCreateCategoryMusic(categoryId, result._id + "")
     return result;
   }
@@ -119,6 +118,8 @@ export class MusicsService {
 
     const filter = {
       isBlock: false,
+      isDelete: false,
+      flag: false
     };
 
     const totalItems = (await this.musicModel.find(filter)).length;
@@ -297,5 +298,78 @@ export class MusicsService {
     };
   }
 
+  async isIdExist(id: string) {
+    try {
+      const result = await this.musicModel.exists({ _id: id });
+      if (result) return true;
+      return false;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  async checkMusicRById(id: string) {
+    try {
+      const result = await this.musicModel
+        .findById(id)
+        .populate('userId', 'userName')
+        .select('-totalComment -totalReaction')
+        .where({ isDelete: false });
+
+      if (result) {
+        return result;
+      }
+      return null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async handleFlagVideo(_id: string, flag: boolean) {
+    const checkId = await this.isIdExist(_id);
+    if (checkId === false) {
+      throw new BadRequestException(`Music not found with ID: ${_id}`);
+    } else {
+      const result = await this.musicModel.findByIdAndUpdate(_id, {
+        flag: flag,
+      });
+      // await this.reportService.remove(_id)
+      return result._id;
+    }
+  }
+
+
+  async handleListAllMusicAdmin(query: string, current: number, pageSize: number) {
+    try {
+      const { filter, sort } = aqp(query);
+      if (filter.current) delete filter.current;
+      if (filter.pageSize) delete filter.pageSize;
+      if (!current) current = 1;
+      if (!pageSize) pageSize = 10;
+      const totalItems = (
+        await this.musicModel.find(filter)
+      ).length;
+      const totalPages = Math.ceil(totalItems / pageSize);
+      const skip = (+current - 1) * +pageSize;
+      const result = await this.musicModel
+        .find(filter)
+        .limit(pageSize)
+        .skip(skip)
+        .sort(sort as any)
+        .populate('userId')
+      return {
+        meta: {
+          current: current, // trang hien tai
+          pageSize: pageSize, // so luong ban ghi
+          pages: totalPages, // tong so trang voi dieu kien query
+          total: totalItems, // tong so ban ghi
+        },
+        result: result,
+      };
+    } catch (error) {
+      console.log(error);
+      return null;
+    } 
+  }
 }
 

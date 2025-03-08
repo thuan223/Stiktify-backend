@@ -27,6 +27,7 @@ export class ViewinghistoryController {
   clearAll(@Body() clearAllViewingHistoryDto: ClearAllViewingHistoryDto) {
     return this.viewinghistoryService.clearAll(clearAllViewingHistoryDto);
   }
+  
   @Post('clear')
   clearOne(@Body() clearOneViewingHistoryDto:ClearOneViewingHistoryDto) {
     return this.viewinghistoryService.clearOne(clearOneViewingHistoryDto);

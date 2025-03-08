@@ -49,6 +49,12 @@ export class User {
 
   @Prop()
   image: string
+
+  @Prop()
+  totalFollowers:  number
+
+  @Prop()
+  totalFollowings: number
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
