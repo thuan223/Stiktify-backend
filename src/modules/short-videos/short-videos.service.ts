@@ -50,7 +50,7 @@ export class ShortVideosService {
           (categoryId) => ({
             videoId: createdVideo._id,
             categoryId,
-             
+
           }),
         );
         await this.videoCategoryModel.insertMany(videoCategories);
@@ -199,7 +199,8 @@ export class ShortVideosService {
       countVideo += 1;
       videoFound = await this.videoModel
         .find({ _id: { $in: data.videoId } })
-        .populate('userId');
+        .populate('userId')
+        .populate("musicId")
     }
     const collaboratorVideoIdList =
       await this.wishListService.getCollaborativeVideo(
@@ -212,20 +213,23 @@ export class ShortVideosService {
       for (const collaboratorVideoId of collaboratorVideoIdList) {
         const collaboratorVideo = await this.videoModel
           .findOne({ _id: { $in: collaboratorVideoId } })
-          .populate('userId');
+          .populate('userId')
+          .populate("musicId")
         collaboratorVideoFound.push(collaboratorVideo);
       }
     }
     let videos = await this.videoModel
       .find({ _id: { $in: wishListVideoIds, $nin: collaboratorVideoIdList } })
-      .populate('userId');
+      .populate('userId')
+      .populate("musicId")
     const trendingVideos = await this.videoModel
       .find({
         _id: { $nin: [...wishListVideoIds, ...collaboratorVideoIdList] },
       })
       .sort({ totalViews: -1 })
       .limit(10)
-      .populate('userId');
+      .populate('userId')
+      .populate("musicId")
 
     if (trendingVideos.length > 0 && resetScore.trending > 0) {
       countVideo += resetScore.trending;
@@ -256,7 +260,7 @@ export class ShortVideosService {
         { $sample: { size: Math.max(resetScore.random, 10 - countVideo) } },
       ]);
       const populatedVideos = await this.videoModel.populate(randomVideos, [
-        { path: 'userId' },
+        { path: 'userId' }, { path: "musicId" }
       ]);
       if (videoFound)
         videos = [
