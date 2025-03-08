@@ -10,7 +10,10 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { ReportService } from './report.service';
-import { CreateReportMusicDto, CreateReportVideoDto } from './dto/create-report.dto';
+import {
+  CreateReportMusicDto,
+  CreateReportVideoDto,
+} from './dto/create-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
 import { ResponseMessage } from '@/decorator/customize';
 
@@ -49,7 +52,7 @@ export class ReportController {
 
   @Delete('delete-report/:_id')
   @ResponseMessage('Deleted successfully')
-  remove(@Param('_id') _id: string) {
+  remove(@Param('_id') _id: string): Promise<any> {
     if (!_id) throw new BadRequestException('id must not be empty');
     return this.reportService.remove(_id);
   }

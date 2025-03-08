@@ -2,10 +2,11 @@ import { Injectable } from '@nestjs/common';
 import {
   CreateCommentReactionDto,
   GetReaction,
+  LikeMusicCommentDto,
 } from './dto/create-comment-reaction.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { CommentReaction } from './schema/comment-reaction.schema';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Comment } from '../comments/schema/comment.schema';
 import { DeleteCommentReactionDto } from './dto/delete-comment-reaction.dto';
 
@@ -60,5 +61,34 @@ export class CommentReactionsService {
     }
 
     return { message: 'Reaction removed successfully' };
+  }
+
+  async likeMusicComment(userId: string, dto: LikeMusicCommentDto) {
+    const existingReaction = await this.commentReactionModel.findOne({
+      commentId: dto.commentId,
+    });
+
+    if (existingReaction) {
+      await this.commentReactionModel.findOneAndDelete({
+        commentId: dto.commentId,
+      });
+
+      await this.CommentModal.findByIdAndUpdate(dto.commentId, {
+        $inc: { totalReactions: -1 },
+      });
+
+      return;
+    } else {
+      const newReaction = new this.commentReactionModel({
+        commentId: dto.commentId,
+        userId,
+        reactionTypeId: '6741b8a5342097607f012a76',
+      });
+      await this.CommentModal.findByIdAndUpdate(dto.commentId, {
+        $inc: { totalReactions: 1 },
+      });
+
+      return newReaction.save();
+    }
   }
 }

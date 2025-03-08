@@ -41,6 +41,7 @@ export class WishlistScoreService {
       scoreIncrease = scoreIncreaseSetting.reactionAboutMusic;
       suggest.tags = [];
       suggest.categoryId = [];
+
     } else if (triggerWishlistScoreDto.triggerAction === 'ClickLinkMusic') {
       suggest = {
         musicId: triggerWishlistScoreDto.id,
@@ -345,7 +346,7 @@ export class WishlistScoreService {
     if (videoListFound.length > 0) return videoListFound;
     if (scoreChecks.every((check) => check)) {
       scoreChecks[0] = false;
-      console.log(scoreChecks);
+      // console.log(scoreChecks);
       return this.findBestVideo(wishlistScores, scoreChecks, videoId, 0, 1);
     } else {
       const indexLargeFalse = scoreChecks.lastIndexOf(false);
@@ -354,7 +355,7 @@ export class WishlistScoreService {
       ) {
         scoreChecks[current] = true;
         scoreChecks[current + 1] = false;
-        console.log(scoreChecks);
+        // console.log(scoreChecks);
         return this.findBestVideo(
           wishlistScores,
           scoreChecks,
@@ -373,7 +374,7 @@ export class WishlistScoreService {
           for (let i = 0; i <= current; i++) {
             scoreChecks[i] = false;
           }
-          console.log(scoreChecks);
+          // console.log(scoreChecks);
           return this.findBestVideo(
             wishlistScores,
             scoreChecks,
@@ -389,7 +390,7 @@ export class WishlistScoreService {
           for (let i = 1; i <= currentGrop; i++) {
             scoreChecks[smallFalseIndex + i] = false;
           }
-          console.log(scoreChecks);
+          // console.log(scoreChecks);
           return this.findBestVideo(
             wishlistScores,
             scoreChecks,

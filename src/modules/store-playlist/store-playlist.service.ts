@@ -14,35 +14,46 @@ import { Category } from '../categories/schemas/category.schema';
 @Injectable()
 export class StorePlaylistService {
   constructor(
-    @InjectModel(StorePlaylist.name) private storePlaylistModel: Model<StorePlaylist>,
+    @InjectModel(StorePlaylist.name)
+    private storePlaylistModel: Model<StorePlaylist>,
     @InjectModel(Music.name) private musicModel: Model<Music>,
-    @InjectModel(MusicCategory.name) private musicCategoryModel: Model<MusicCategory>,
+    @InjectModel(MusicCategory.name)
+    private musicCategoryModel: Model<MusicCategory>,
     @InjectModel(Category.name) private categoryModel: Model<Category>,
     private readonly musicService: MusicsService,
     private readonly playlistService: PlaylistsService,
-  ) { }
+  ) {}
 
-
-  async handleFilterSearchStorePlayList(query: any, current: number, pageSize: number) {
+  async handleFilterSearchStorePlayList(
+    query: any,
+    current: number,
+    pageSize: number,
+  ) {
     const { filter = {}, sort = {} } = aqp(query);
     current = current && !isNaN(Number(current)) ? Number(current) : 1;
     pageSize = pageSize && !isNaN(Number(pageSize)) ? Number(pageSize) : 10;
     if (isNaN(current) || isNaN(pageSize)) {
-      return { statusCode: 400, message: "Invalid pagination parameters" };
+      return { statusCode: 400, message: 'Invalid pagination parameters' };
     }
-    const handleFilter = filter.filterReq ? await this.checkFilterCategory(filter.filterReq) : {};
+    const handleFilter = filter.filterReq
+      ? await this.checkFilterCategory(filter.filterReq)
+      : {};
     let handleSearch = [];
-    if (filter.search && typeof filter.search === "string" && filter.search.trim().length > 0) {
+    if (
+      filter.search &&
+      typeof filter.search === 'string' &&
+      filter.search.trim().length > 0
+    ) {
       const searchRegex = new RegExp(filter.search, 'i');
-      handleSearch = [
-        { musicDescription: searchRegex },
-      ];
+      handleSearch = [{ musicDescription: searchRegex }];
     }
     let musicCategory = [];
     if (handleFilter.categoryId) {
-      musicCategory = await this.musicCategoryModel.find({ categoryId: handleFilter.categoryId });
+      musicCategory = await this.musicCategoryModel.find({
+        categoryId: handleFilter.categoryId,
+      });
     }
-    const musicIds = musicCategory.map(item => item.musicId);
+    const musicIds = musicCategory.map((item) => item.musicId);
     const filterQuery = {
       ...(handleSearch.length > 0 ? { $or: handleSearch } : {}),
       ...(handleFilter.categoryId ? { _id: { $in: musicIds } } : {}),
@@ -69,59 +80,77 @@ export class StorePlaylistService {
 
   async checkFilterCategory(filter: string) {
     if (!filter || typeof filter !== 'string') return {};
-    const category = await this.categoryModel.findOne({ categoryName: { $regex: filter, $options: 'i' } });
+    const category = await this.categoryModel.findOne({
+      categoryName: { $regex: filter, $options: 'i' },
+    });
     return category ? { categoryId: category._id } : {};
   }
 
-
   async checkMusicInPlaylistIsExist(musicId: string, playlistId: string) {
     try {
-      const result = await this.storePlaylistModel.findOne({ musicId: musicId, playlistId: playlistId })
+      const result = await this.storePlaylistModel.findOne({
+        musicId: musicId,
+        playlistId: playlistId,
+      });
 
-      if (result) return result
+      if (result) return result;
 
-      return null
+      return null;
     } catch (error) {
-      return null
+      return null;
     }
   }
 
-  async handleCreateStoreByPlaylist(createStorePlaylistDto: CreateStorePlaylistDto) {
-    const { musicId, playlistId } = createStorePlaylistDto
+  async handleCreateStoreByPlaylist(
+    createStorePlaylistDto: CreateStorePlaylistDto,
+  ) {
+    const { musicId, playlistId } = createStorePlaylistDto;
 
-    const checkMusicId = await this.musicService.checkMusicById(musicId)
+    const checkMusicId = await this.musicService.checkMusicById(musicId);
 
     if (!checkMusicId) {
-      throw new BadRequestException(`Not found music with id : ${musicId}`)
+      throw new BadRequestException(`Not found music with id : ${musicId}`);
     }
 
-    const checkPlaylistId = await this.playlistService.checkPlaylistById(playlistId)
+    const checkPlaylistId =
+      await this.playlistService.checkPlaylistById(playlistId);
 
     if (!checkPlaylistId) {
-      throw new BadRequestException(`Not found playlist with id : ${playlistId}`)
+      throw new BadRequestException(
+        `Not found playlist with id : ${playlistId}`,
+      );
     }
 
-    const checkStorePlaylist = await this.checkMusicInPlaylistIsExist(musicId, playlistId)
+    const checkStorePlaylist = await this.checkMusicInPlaylistIsExist(
+      musicId,
+      playlistId,
+    );
 
     if (checkStorePlaylist) {
-      throw new BadRequestException(`This song has been added to the playlist!`)
+      throw new BadRequestException(
+        `This song has been added to the playlist!`,
+      );
     }
 
     const result = await this.storePlaylistModel.create({
       musicId: musicId,
-      playlistId: playlistId
-    })
+      playlistId: playlistId,
+    });
 
-    return result
+    return result;
   }
 
-  async handleFindAllByPlaylistId(id: string, current: number, pageSize: number) {
+  async handleFindAllByPlaylistId(
+    id: string,
+    current: number,
+    pageSize: number,
+  ) {
     if (!current) current = 1;
     if (!pageSize) pageSize = 10;
 
     const filter = {
-      playlistId: id
-    }
+      playlistId: id,
+    };
 
     const totalItems = (await this.storePlaylistModel.find(filter)).length;
     const totalPages = Math.ceil(totalItems / pageSize);
@@ -161,17 +190,15 @@ export class StorePlaylistService {
       .find(filter)
       .limit(pageSize)
       .skip(skip)
-      .populate(
-        {
-          path: "playlistId",
-        })
-      .populate(
-        {
-          path: "musicId",
-          select: "_id musicUrl musicThumbnail musicLyric musicDescription userId"
-        })
+      .populate({
+        path: 'playlistId',
+      })
+      .populate({
+        path: 'musicId',
+        select:
+          '_id musicUrl musicThumbnail musicLyric musicDescription userId',
+      })
       .sort({ createdAt: -1 });
-
 
     return {
       meta: {
@@ -184,13 +211,17 @@ export class StorePlaylistService {
     };
   }
 
-  async handlePlayMusicInPlaylist(id: string, current: number, pageSize: number) {
+  async handlePlayMusicInPlaylist(
+    id: string,
+    current: number,
+    pageSize: number,
+  ) {
     if (!current) current = 1;
     if (!pageSize) pageSize = 10;
 
     const filter = {
-      playlistId: id
-    }
+      playlistId: id,
+    };
 
     const totalItems = (await this.storePlaylistModel.find(filter)).length;
     const totalPages = Math.ceil(totalItems / pageSize);
@@ -201,11 +232,11 @@ export class StorePlaylistService {
       .find(filter)
       .limit(pageSize)
       .skip(skip)
-      .populate(
-        {
-          path: "musicId",
-          select: "_id musicUrl musicThumbnail musicLyric musicDescription userId"
-        })
+      .populate({
+        path: 'musicId',
+        select:
+          '_id musicUrl musicThumbnail musicLyric musicDescription userId',
+      })
       .sort({ createdAt: -1 });
 
     return {
@@ -223,14 +254,14 @@ export class StorePlaylistService {
     return `This action updates a #${id} storePlaylist`;
   }
 
-  async handleDeleteMusicInPlaylist(id: string) {
-    const checkMusicId = await this.musicService.checkMusicById(id)
+  async handleDeleteMusicInPlaylist(id: string): Promise<any> {
+    const checkMusicId = await this.musicService.checkMusicById(id);
 
     if (!checkMusicId) {
-      throw new BadRequestException(`Not found music with id : ${id}`)
+      throw new BadRequestException(`Not found music with id : ${id}`);
     }
 
-    const result = await this.storePlaylistModel.deleteOne({ musicId: id })
-    return result
+    const result = await this.storePlaylistModel.deleteOne({ musicId: id });
+    return result;
   }
 }

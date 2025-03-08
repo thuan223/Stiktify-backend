@@ -31,6 +31,8 @@ import { PlaylistsModule } from './modules/playlists/playlists.module';
 import { StorePlaylistModule } from './modules/store-playlist/store-playlist.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { MusicFavoriteModule } from './modules/music-favorite/music-favorite.module';
+import { FriendRequestModule } from './modules/friend-request/friend-request.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ProductsModule } from './modules/products/products.module';
 import { ProductCategoriesModule } from './modules/product-categories/product-categories.module';
 import { CategoryProductsModule } from './modules/categories-products/category-products.module';
@@ -63,6 +65,8 @@ import { SettingsModule } from './modules/settings/settings.module';
     ViewinghistoryModule,
     WishlistScoreModule,
     ReportModule,
+    FriendRequestModule,
+    NotificationsModule,
     SettingsModule,
     ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRootAsync({

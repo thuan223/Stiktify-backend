@@ -3,9 +3,11 @@ import { CommentReactionsService } from './comment-reactions.service';
 import {
   CreateCommentReactionDto,
   GetReaction,
+  LikeMusicCommentDto,
 } from './dto/create-comment-reaction.dto';
 import { JwtAuthGuard } from '@/auth/passport/jwt-auth.guard';
 import { DeleteCommentReactionDto } from './dto/delete-comment-reaction.dto';
+import { Types } from 'mongoose';
 
 @Controller('comment-reactions')
 export class CommentReactionsController {
@@ -35,5 +37,12 @@ export class CommentReactionsController {
   async getUserReaction(@Request() req, @Body() dto: GetReaction) {
     const userId = req.user._id;
     return this.commentReactionsService.getUserReaction(userId, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('like-music-comment')
+  async likeMusicComment(@Request() req, @Body() dto: LikeMusicCommentDto) {
+    const userId = req.user._id;
+    return this.commentReactionsService.likeMusicComment(userId, dto);
   }
 }

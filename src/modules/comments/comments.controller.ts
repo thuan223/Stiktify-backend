@@ -90,4 +90,11 @@ export class CommentsController {
     const userId = req.user._id;
     return this.commentsService.deleteComment(userId, dto);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('deleteMusicComment')
+  async deleteMusicComment(@Req() req, @Body() dto: DeleteCommentDto) {
+    const userId = req.user._id;
+    return this.commentsService.deleteMusicComment(userId, dto);
+  }
 }

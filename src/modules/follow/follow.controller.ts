@@ -9,11 +9,17 @@ export class FollowController {
   constructor(private readonly followService: FollowService) { }
 
   @Post('create-follow')
-  followUserByBody(@Body() body: { followerId: string; followingId: string }) {
-    return this.followService.followAnotherUser(body.followerId, body.followingId);
+  async followUserByBody(
+    @Body() body: { followerId: string; followingId: string },
+  ): Promise<any> {
+    return this.followService.followAnotherUser(
+      body.followerId,
+      body.followingId,
+    );
   }
 
   @Get('list-following/:userId')
+
   findAll(
     @Param("userId") userId: string
   ) {
@@ -51,5 +57,4 @@ export class FollowController {
   remove(@Param('id') id: string) {
     return this.followService.remove(+id);
   }
-
-} 
+}

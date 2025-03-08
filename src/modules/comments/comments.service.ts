@@ -62,7 +62,7 @@ export class CommentsService {
   async getChildComments(parentId: Types.ObjectId): Promise<any[]> {
     const childComments = await this.commentModel
       .find({ parentId })
-      .populate('userId', 'fullname')
+      .populate('userId', 'fullname image')
       .exec();
 
     return childComments.map((comment) => ({
@@ -145,17 +145,23 @@ export class CommentsService {
   async getCommentsByMusicId(musicId: Types.ObjectId): Promise<any[]> {
     const thisMusicComments = await this.commentModel
       .find({ musicId })
-      .populate('userId', 'fullname')
+      .populate('userId', 'fullname image')
       .exec();
 
     return thisMusicComments.map((comment) => ({
       _id: comment._id,
+      userId: comment.userId,
       username:
         comment.userId && 'fullname' in comment.userId
           ? comment.userId.fullname
           : 'Unknown',
+      userImage:
+        comment.userId && 'image' in comment.userId
+          ? comment.userId.image
+          : 'https://firebasestorage.googleapis.com/v0/b/stiktify-bachend.firebasestorage.app/o/avatars%2Fdefault_avatar.png?alt=media&token=93109c9b-d284-41ea-95e7-4786e3c69328',
       musicId: comment.musicId,
       parentId: comment.parentId,
+      totalReactions: comment.totalReactions,
       CommentDescription: comment.CommentDescription,
     }));
   }
@@ -171,6 +177,46 @@ export class CommentsService {
       $inc: { totalComment: 1 },
     });
     return await newComment.save();
+  }
+  async updateMusicComment(userId: string, updateCommentDto: UpdateCommentDto) {
+    const { commentId, CommentDescription } = updateCommentDto;
+
+    const comment = await this.commentModel.findById(commentId);
+    if (!comment) {
+      throw new Error('Comment not found');
+    }
+    if (comment.userId.toString() !== userId) {
+      throw new Error('You are not authorized to update this comment');
+    }
+
+    comment.CommentDescription = CommentDescription;
+    return await comment.save();
+  }
+
+  async deleteMusicComment(userId: string, deleteCommentDto: DeleteCommentDto) {
+    const { commentId } = deleteCommentDto;
+
+    const comment = await this.commentModel.findById(commentId);
+    if (!comment) {
+      throw new Error('Comment not found');
+    }
+    if (comment.userId.toString() !== userId) {
+      throw new Error('You are not authorized to delete this comment');
+    }
+
+    await this.commentModel.findByIdAndDelete(commentId);
+
+    if (!comment.parentId) {
+      await this.MusicModal.findByIdAndUpdate(comment.musicId, {
+        $inc: { totalComment: -1 },
+      });
+    } else {
+      await this.commentModel.findByIdAndUpdate(comment.parentId, {
+        $inc: { totalOfChildComments: -1 },
+      });
+    }
+
+    return { message: 'Comment deleted successfully' };
   }
 
   // async getChildMusiComments(parentId: Types.ObjectId): Promise<any[]> {

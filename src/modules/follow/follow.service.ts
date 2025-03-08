@@ -7,24 +7,23 @@ import { Follow } from './schemas/follow.schema';
 import { ShortVideosService } from '../short-videos/short-videos.service';
 import { User } from '../users/schemas/user.schema';
 
-
 @Injectable()
 export class FollowService {
   constructor(
     @InjectModel(Follow.name) private followModel: Model<Follow>,
     @InjectModel(User.name) private userModel: Model<User>,
     private videoService: ShortVideosService,
-
   ) { }
   create(createFollowDto: CreateFollowDto) {
     return 'This action adds a new follow';
   }
 
   async findAll(userId: string) {
-    const result = await this.followModel.find({ userId: new Types.ObjectId(userId) });
-    const filter = result.map(x => x.userFollowingId)
+    const result = await this.followModel.find({
+      userId: new Types.ObjectId(userId),
+    });
+    const filter = result.map((x) => x.userFollowingId);
     return filter;
-
   }
 
   findOne(id: number) {
@@ -42,15 +41,18 @@ export class FollowService {
   async checkFollow(followerId: string, followingId: string) {
     const exsistFollowing = await this.followModel.findOne({
       userId: new Types.ObjectId(followerId),
-      userFollowingId: new Types.ObjectId(followingId)
-    })
+      userFollowingId: new Types.ObjectId(followingId),
+    });
     if (exsistFollowing) {
       return true;
     }
     return false;
   }
 
-  async followAnotherUser(followerId: string, followingId: string) {
+  async followAnotherUser(
+    followerId: string,
+    followingId: string,
+  ): Promise<any> {
     if (!followerId || !followingId) {
         throw new BadRequestException("Missing field!!!");
     }
@@ -113,6 +115,4 @@ async getFollowersList(userId: string) {
         .populate('userId', 'userName email image'); 
     return followersList.map(follow => follow.userId);
 }
-
 }
-
