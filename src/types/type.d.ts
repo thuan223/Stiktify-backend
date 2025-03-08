@@ -1,6 +1,7 @@
 interface IReportResult {
     report: IReport[],
     videoId: string,
+    musicId: string,
 }
 
 interface IReport {

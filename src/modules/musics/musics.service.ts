@@ -119,6 +119,8 @@ export class MusicsService {
 
     const filter = {
       isBlock: false,
+      isDelete: false,
+      flag: false
     };
 
     const totalItems = (await this.musicModel.find(filter)).length;
@@ -297,5 +299,44 @@ export class MusicsService {
     };
   }
 
+  async isIdExist(id: string) {
+    try {
+      const result = await this.musicModel.exists({ _id: id });
+      if (result) return true;
+      return false;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  async checkMusicRById(id: string) {
+    try {
+      const result = await this.musicModel
+        .findById(id)
+        .populate('userId', 'userName')
+        .select('-totalComment -totalReaction')
+        .where({ isDelete: false });
+
+      if (result) {
+        return result;
+      }
+      return null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async handleFlagVideo(_id: string, flag: boolean) {
+    const checkId = await this.isIdExist(_id);
+    if (checkId === false) {
+      throw new BadRequestException(`Music not found with ID: ${_id}`);
+    } else {
+      const result = await this.musicModel.findByIdAndUpdate(_id, {
+        flag: flag,
+      });
+      // await this.reportService.remove(_id)
+      return result._id;
+    }
+  }
 }
 

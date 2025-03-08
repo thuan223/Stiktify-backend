@@ -20,7 +20,7 @@ export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private readonly mailerService: MailerService,
-  ) {}
+  ) { }
   isEmailExist = async (email: string) => {
     const isExist = await this.userModel.exists({ email });
     if (isExist) return true;
@@ -358,6 +358,10 @@ export class UsersService {
       return { isBan: true };
     } else if (filter === 'unlock') {
       return { isBan: false };
+    } else if (filter === 'USERS') {
+      return { role: filter };
+    } else if (filter === 'ADMIN') {
+      return { role: filter };
     } else {
       return {};
     }
@@ -376,13 +380,8 @@ export class UsersService {
     if (!current) current = 1;
     if (!pageSize) pageSize = 10;
 
-    const totalItems = (await this.userModel.find(filter)).length;
-    const totalPages = Math.ceil(totalItems / pageSize);
-
-    const skip = (+current - 1) * +pageSize;
-    const searchRegex = new RegExp(`^${filter.search}`, 'i');
-
     const handleFilter = this.checkFilterAction(filter.filterReq);
+    const searchRegex = new RegExp(`^${filter.search}`, 'i');
 
     let handleSearch = [];
     if (filter.search.length > 0) {
@@ -392,6 +391,14 @@ export class UsersService {
         { fullname: searchRegex },
       ];
     }
+
+    const totalItems = (await this.userModel.find({
+      ...handleFilter,
+      $or: handleSearch,
+    })).length;
+    const totalPages = Math.ceil(totalItems / pageSize);
+
+    const skip = (+current - 1) * +pageSize;
 
     const result = await this.userModel
       .find({
@@ -405,10 +412,10 @@ export class UsersService {
 
     return {
       meta: {
-        current: current, // trang hien tai
-        pageSize: pageSize, // so luong ban ghi
-        pages: totalPages, // tong so trang voi dieu kien query
-        total: totalItems, // tong so ban ghi
+        current: current,
+        pageSize: pageSize,
+        pages: totalPages,
+        total: totalItems,
       },
       result: result,
     };

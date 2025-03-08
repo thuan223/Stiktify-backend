@@ -9,7 +9,7 @@ import { UpdateShortVideoDto } from './dto/update-short-video.dto';
 import { TrendingVideoDto } from './dto/trending-video.dto';
 import { Video } from './schemas/short-video.schema';
 import { InjectModel } from '@nestjs/mongoose';
-import mongoose, { Model } from 'mongoose';
+import mongoose, { Model, Types } from 'mongoose';
 import { WishlistService } from '../wishlist/wishlist.service';
 import { CreateWishListVideoDto } from './dto/create-wishlist-videos.dto';
 import { VideoCategoriesService } from '../video-categories/video-categories.service';
@@ -37,7 +37,7 @@ export class ShortVideosService {
     private settingsService: SettingsService,
     @Inject(forwardRef(() => ReportService))
     private reportService: ReportService,
-  ) {}
+  ) { }
 
   //Create a new short video - ThangLH
   async create(createShortVideoDto: CreateShortVideoDto): Promise<Video> {
@@ -122,7 +122,7 @@ export class ShortVideosService {
     return {
       videoUrl: video.videoUrl,
       videoThumbnail: video.videoThumbnail,
-      videoDescription: video.videoDescription,
+      videoDescription: video.videoDescription
     };
   }
   async findAll(query: string, current: number, pageSize: number) {
@@ -285,7 +285,7 @@ export class ShortVideosService {
         { $sample: { size: remainingCount } },
       ]);
       const populatedVideos = await this.videoModel.populate(randomVideos, [
-        { path: 'userId' },
+        { path: 'userId' }, { path: "musicId" }
       ]);
       videos = [...videos, ...populatedVideos];
     }
@@ -548,5 +548,37 @@ export class ShortVideosService {
     await video.save();
 
     return { message: 'Video marked as deleted successfully' };
+  }
+
+  async getVideoNearestByUserId(userIds: string[], pageSize: number, current: number) {
+    const filter = {
+      userId: { $in: userIds },
+      isDelete: false,
+      isBlock: false,
+    }
+    const totalItems = (await this.videoModel.find(filter)).length;
+    const totalPages = Math.ceil(totalItems / pageSize);
+
+    const skip = (+current - 1) * +pageSize;
+
+    const result = await this.videoModel
+      .find(filter)
+      .limit(pageSize)
+      .skip(skip)
+      .populate({
+        path: 'userId',
+        select: "_id userName fullname email image totalFollowers totalFollowings",
+      })
+      .sort({ createAt: -1 });
+
+    return {
+      meta: {
+        current: current, // trang hien tai
+        pageSize: pageSize, // so luong ban ghi
+        pages: totalPages, // tong so trang voi dieu kien query
+        total: totalItems, // tong so ban ghi
+      },
+      result: result,
+    };
   }
 }

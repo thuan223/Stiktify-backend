@@ -2,7 +2,8 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Request } fro
 import { MusicsService } from './musics.service';
 import { CreateMusicDto } from './dto/create-music.dto';
 import { UpdateMusicDto } from './dto/update-music.dto';
-import { Public } from '@/decorator/customize';
+import { Public, ResponseMessage } from '@/decorator/customize';
+import { flagMusicDto } from './dto/flag.dto';
 
 @Controller('musics')
 export class MusicsController {
@@ -68,14 +69,20 @@ export class MusicsController {
     return this.musicsService.handleUpdateListener(id);
   }
 
+  @Post('flag-music')
+  @ResponseMessage('Updated successfully')
+  findOne(@Body() req: flagMusicDto) {
+    return this.musicsService.handleFlagVideo(req._id, req.flag);
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.musicsService.remove(+id);
   }
 
-   // Share a music - ThangLH
-   @Get('share/:id')
-   @Public()
+  // Share a music - ThangLH
+  @Get('share/:id')
+  @Public()
   async shareMusic(@Param('id') id: string) {
     return this.musicsService.shareMusic(id);
   }

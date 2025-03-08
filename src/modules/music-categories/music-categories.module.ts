@@ -6,15 +6,17 @@ import {
   MusicCategory,
   MusicCategorySchema,
 } from './schemas/music-category.schema';
+import { CategoriesModule } from '../categories/categories.module';
 
 @Module({
   imports: [
+    CategoriesModule,
     MongooseModule.forFeature([
       { name: MusicCategory.name, schema: MusicCategorySchema },
     ]),
   ],
   controllers: [MusicCategoriesController],
   providers: [MusicCategoriesService],
-  exports: [MusicCategoriesService],
+  exports: [MusicCategoriesService, MongooseModule],
 })
 export class MusicCategoriesModule { }
