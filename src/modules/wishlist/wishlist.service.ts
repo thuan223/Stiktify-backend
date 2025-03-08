@@ -7,6 +7,7 @@ import { Model, ObjectId } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { WishlistScoreService } from '../wishlist-score/wishlist-score.service';
 import { ViewinghistoryService } from '../viewinghistory/viewinghistory.service';
+import { SettingsService } from '../settings/settings.service';
 
 @Injectable()
 export class WishlistService {
@@ -15,6 +16,8 @@ export class WishlistService {
     private wishListModel: Model<WishList>,
     @Inject(forwardRef(() => WishlistScoreService))
     private wishListScoreService: WishlistScoreService,
+    @Inject(forwardRef(() => SettingsService))
+    private settingsService:SettingsService,
     private viewingHistoryService: ViewinghistoryService,
   ) {}
   async create(createWishlistDto: CreateWishlistDto) {
@@ -148,22 +151,27 @@ export class WishlistService {
   }
 
   async createWishListVideo(videoId: string, userId: string) {
+    const setting = await this.settingsService.findAll();
+    const wishListCount = setting.algorithmConfig.numberOfCount.wishListCount;
+    
     const existingWishListItem = await this.wishListModel.findOne({
       userId: userId,
       videoId: videoId,
     });
-
-    if (!existingWishListItem) {
-      const newWishListItem = new this.wishListModel({
-        userId: userId,
-        videoId: videoId,
-      });
-
-      return await newWishListItem.save();
-    } else {
-      return { message: 'Wishlist item already exists' };
+    
+    if (existingWishListItem) {
+        return { message: 'Wishlist item already exists' };
     }
-  }
+    const existingWishList = await this.wishListModel.find({ userId }).sort({ createdAt: 1 });
+    if (existingWishList.length >= wishListCount) {
+        const oldestItem = existingWishList[0];
+        await this.wishListModel.deleteOne({ _id: oldestItem._id });
+    }
+    
+    const newWishListItem = new this.wishListModel({ userId, videoId });
+    return await newWishListItem.save();
+}
+
 
   async getScoreBySuggestIDAndType(
     suggestByVideo: {
@@ -235,8 +243,8 @@ export class WishlistService {
   remove(id: number) {
     return `This action removes a #${id} wishlist`;
   }
-  async getWishListByUserId(data: TrendingVideoDto) {
-    return await this.wishListModel.find({ userId: data.userId }).limit(8);
+  async getWishListByUserId(data: TrendingVideoDto, limit: number) {
+    return await this.wishListModel.find({ userId: data.userId }).limit(limit);
   }
   async deleteWishListByUserId(userId: string): Promise<any> {
     const result = await this.wishListModel.deleteMany({ userId });
@@ -248,7 +256,8 @@ export class WishlistService {
   async getCollaboratorList(userId: string) {
     const userWishLists = await this.wishListModel.find({ userId });
     if (!userWishLists.length) return [];
-
+    const setting = await this.settingsService.findAll();
+    const collaborativeFiltering = setting.algorithmConfig.collaborativeFiltering;
     const userVideoIds = userWishLists.map((wishlist) => wishlist.videoId);
 
     const collaboratorList = await this.wishListModel.aggregate([
@@ -275,14 +284,14 @@ export class WishlistService {
       },
       {
         $match: {
-          commonVideos: { $gte: 5 },
+          commonVideos: { $gte: collaborativeFiltering.numberWishListVideo },
         },
       },
       {
         $sort: { commonVideos: -1 },
       },
       {
-        $limit: 5,
+        $limit: collaborativeFiltering.numberCollaborator,
       },
     ]);
 
@@ -420,5 +429,30 @@ export class WishlistService {
       .map(([videoId]) => videoId); 
 
     return filteredVideos;
+  }
+  async getAverageCount() {
+    const result = await this.wishListModel.aggregate([
+      {
+        $group: {
+          _id: '$userId',
+          count: { $sum: 1 }, 
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalCount: { $sum: '$count' }, 
+          totalUsers: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          averageCount: { $divide: ['$totalCount', '$totalUsers'] }, 
+        },
+      },
+    ]);
+
+    return result.length > 0 ? result[0].averageCount : 0;
   }
 }

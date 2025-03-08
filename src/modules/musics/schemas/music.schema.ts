@@ -42,8 +42,8 @@ export class Music {
   @Prop()
   musicLyric: string;
 
-  @Prop()
-  flags: string[];
+  @Prop({ default: false })
+  flag: boolean;
 
   @Prop({ default: false })
   isDelete: boolean;

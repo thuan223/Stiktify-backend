@@ -40,7 +40,6 @@ export class ReportService {
     return await newReport.save();
   }
 
-
   // ThangLH - report music
   async createReportMusic(createReportDto: CreateReportMusicDto) {
     const { userId, musicId, reasons } = createReportDto;
@@ -71,10 +70,10 @@ export class ReportService {
         select: 'isDelete',
         match: { isDelete: false },
       })
-    ).filter((item) => item.videoId !== null);
+    ).filter((item) => item.musicId === null);
 
-    const totalItems = new Set(itemData.map((item: any) => item.videoId._id))
-      .size;
+    const totalItems = new Set(itemData.map((item: any) => item.videoId._id)).size;
+
     const totalPages = Math.ceil(totalItems / pageSize);
 
     const skip = (+current - 1) * +pageSize;
