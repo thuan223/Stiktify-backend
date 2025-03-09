@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { ListeninghistoryService } from './listeninghistory.service';
 import { CreateListeninghistoryDto } from './dto/create-listeninghistory.dto';
 import { UpdateListeninghistoryDto } from './dto/update-listeninghistory.dto';
@@ -7,14 +7,24 @@ import { UpdateListeninghistoryDto } from './dto/update-listeninghistory.dto';
 export class ListeninghistoryController {
   constructor(private readonly listeninghistoryService: ListeninghistoryService) {}
 
-  @Post()
+  @Post('create-listening-history')
   create(@Body() createListeninghistoryDto: CreateListeninghistoryDto) {
     return this.listeninghistoryService.create(createListeninghistoryDto);
   }
 
-  @Get()
-  findAll() {
-    return this.listeninghistoryService.findAll();
+  @Get('list-viewing-history')
+  handleGetListViewingHistory(
+    @Query() query: string,
+    @Query('current') current: string,
+    @Query('pageSize') pageSize: string,
+    @Query('searchValue') searchValue: string,
+  ) {
+    return this.listeninghistoryService.handleGetListListeningHistory(
+      query,
+      +current,
+      +pageSize,
+      searchValue
+    );
   }
 
   @Get(':id')
