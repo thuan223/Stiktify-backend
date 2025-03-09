@@ -47,6 +47,12 @@ export class Music {
 
   @Prop({ default: false })
   isDelete: boolean;
+
+  @Prop({ default: new Date() })
+  listeningAt: Date
+
+  @Prop({ default: 0 })
+  totalListeningOnWeek: number
 }
 
 export const MusicSchema = SchemaFactory.createForClass(Music);

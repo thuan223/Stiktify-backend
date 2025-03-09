@@ -158,10 +158,19 @@ export class MusicsService {
     if (!check) {
       throw new NotFoundException(`Not found music with id: ${id}`);
     }
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    let result = [];
+    if (check.listeningAt < sevenDaysAgo) {
+      result = await this.musicModel.findByIdAndUpdate(id, {
+        totalListener: check.totalListener + 1, totalListeningOnWeek: check.totalListeningOnWeek + 1, listeningAt: sevenDaysAgo
+      });
+    } else {
+      result = await this.musicModel.findByIdAndUpdate(id, {
+        totalListener: check.totalListener + 1
+      });
+    }
 
-    const result = await this.musicModel.findByIdAndUpdate(id, {
-      totalListener: check.totalListener + 1,
-    });
     return result;
   }
 
@@ -397,7 +406,19 @@ export class MusicsService {
       LIMIT 10
   `, { userId, similarUserIds }).run();
 
-    return recommendations.map(music => music.recommendedMusicId);
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const dataNeo4j = recommendations.map(music => music.recommendedMusicId);
+    const musicHot = await this.musicModel
+      .find({ listeningAt: { $gte: sevenDaysAgo } })
+      .limit(10 - dataNeo4j.length)
+      .sort({ totalListeningOnWeek: -1 })
+
+    const results = await this.musicModel.find({ _id: { $in: dataNeo4j } });
+
+    const mergedArray = [...new Set([...results, ...musicHot])];
+    return mergedArray
   }
 
   async handleListenMusicNeo4j(userId: Types.ObjectId, musicId: Types.ObjectId) {
