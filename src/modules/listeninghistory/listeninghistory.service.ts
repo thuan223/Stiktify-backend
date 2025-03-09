@@ -35,65 +35,16 @@ export class ListeninghistoryService {
     return await newHistory.save();
   }
 
-    async handleGetListListeningHistory(
-      query: string,
-      current: number,
-      pageSize: number,
-      searchValue: string,
-    ) {
-      const { filter, sort } = aqp(query);
-
-      if (filter.current) delete filter.current;
-      if (filter.pageSize) delete filter.pageSize;
-      if (filter.searchValue) delete filter.searchValue;
-  
-      if (filter.query.$in) {
-        filter.query = filter.query.$in;
-      }
-      filter.query = JSON.parse(filter.query);
-  
-      if (!filter.query.updatedAt || filter.query.updatedAt?.length === 0) {
-        filter.query = { userId: filter.query.userId };
-      }
-  
-      if (filter.query?.updatedAt && typeof filter.query.updatedAt === 'string') {
-        const date = new Date(filter.query.updatedAt);
-        if (!isNaN(date.getTime())) {
-          const isoDateStr = date.toISOString().split('T')[0];
-          filter.query.updatedAt = {
-            $gte: new Date(`${isoDateStr}T00:00:00.000Z`),
-            $lt: new Date(`${isoDateStr}T23:59:59.999Z`),
-          };
-        }
-      }
-      if (!current) current = 1;
-      if (!pageSize) pageSize = 10;
-  
-      let result = await this.listeningHistoryModel
-        .find({
-          ...filter.query,
-          isDelete: { $ne: true },
-        })
-        .populate<{ musicId: { musicDescription: string } }>('musicId')
-        .sort({ updatedAt: -1, ...sort });
-  
-      if (searchValue) {
-        result = result.filter(
-          (item) =>
-            item.musicId &&
-            item.musicId.musicDescription &&
-            item.musicId.musicDescription
-              .toLowerCase()
-              .includes(searchValue.toLowerCase()),
-        );
-      }
-  
-      const paginatedResult = result.slice(
-        (current - 1) * pageSize,
-        current * pageSize,
-      );
-      return { result: paginatedResult };
+  async handleGetAllListeningHistory(userId: string) {
+    const result = await this.listeningHistoryModel
+      .find({ userId }) 
+      .populate('musicId') 
+      .sort({ updatedAt: -1 }); 
+    if (!result || result.length === 0) {
+      return { message: "Not found data!" };
     }
+    return { result };
+  }
 
   async clearAll(clearAllListeningHistoryDto: ClearAllListeningHistoryDto): Promise<DeleteResult> {
         const userId = clearAllListeningHistoryDto.userId;

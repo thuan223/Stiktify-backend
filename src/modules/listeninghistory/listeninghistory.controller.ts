@@ -21,19 +21,9 @@ export class ListeninghistoryController {
       return this.listeninghistoryService.clearAll(clearAllListeningHistoryDto);
   }
 
-  @Get('list-viewing-history')
-  handleGetListViewingHistory(
-    @Query() query: string,
-    @Query('current') current: string,
-    @Query('pageSize') pageSize: string,
-    @Query('searchValue') searchValue: string,
-  ) {
-    return this.listeninghistoryService.handleGetListListeningHistory(
-      query,
-      +current,
-      +pageSize,
-      searchValue
-    );
+  @Get('all-listening-history/:userId')
+  async handleGetAllListeningHistory(@Param('userId') userId: string) {
+    return this.listeninghistoryService.handleGetAllListeningHistory(userId);
   }
 
   @Get(':id')
