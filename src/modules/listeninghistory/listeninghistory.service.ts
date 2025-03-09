@@ -3,9 +3,10 @@ import { Injectable } from '@nestjs/common';
 import { UpdateListeninghistoryDto } from './dto/update-listeninghistory.dto';
 import { ListeningHistory } from './schemas/listeninghistory.schema';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { DeleteResult, Model } from 'mongoose';
 import { CreateListeninghistoryDto } from './dto/create-listeninghistory.dto';
 import aqp from 'api-query-params';
+import { ClearAllListeningHistoryDto } from './dto/clear-all-listeninghistory.dto';
 
 @Injectable()
 export class ListeninghistoryService {
@@ -93,6 +94,12 @@ export class ListeninghistoryService {
       );
       return { result: paginatedResult };
     }
+
+  async clearAll(clearAllListeningHistoryDto: ClearAllListeningHistoryDto): Promise<DeleteResult> {
+        const userId = clearAllListeningHistoryDto.userId;
+        return await this.listeningHistoryModel.deleteMany(
+          { userId });
+  }
 
   findAll() {
     return `This action returns all listeninghistory`;

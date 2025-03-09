@@ -71,3 +71,4 @@ export class ViewinghistoryController {
     return this.viewinghistoryService.remove(+id);
   }
 }
+ 

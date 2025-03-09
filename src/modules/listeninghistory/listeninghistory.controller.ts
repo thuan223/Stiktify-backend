@@ -2,6 +2,10 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestj
 import { ListeninghistoryService } from './listeninghistory.service';
 import { CreateListeninghistoryDto } from './dto/create-listeninghistory.dto';
 import { UpdateListeninghistoryDto } from './dto/update-listeninghistory.dto';
+import { ClearAllListeningHistoryDto } from './dto/clear-all-listeninghistory.dto';
+import { DeleteResult } from 'mongoose';
+
+
 
 @Controller('listeninghistory')
 export class ListeninghistoryController {
@@ -10,6 +14,11 @@ export class ListeninghistoryController {
   @Post('create-listening-history')
   create(@Body() createListeninghistoryDto: CreateListeninghistoryDto) {
     return this.listeninghistoryService.create(createListeninghistoryDto);
+  }
+
+  @Post('clear-all')
+  clearAll(@Body() clearAllListeningHistoryDto: ClearAllListeningHistoryDto): Promise<DeleteResult> {
+      return this.listeninghistoryService.clearAll(clearAllListeningHistoryDto);
   }
 
   @Get('list-viewing-history')
