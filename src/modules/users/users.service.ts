@@ -38,7 +38,9 @@ export class UsersService {
 
   async checkUserById(id: string) {
     try {
-      const result = await this.userModel.findById(id).select('userName image');
+      const result = await this.userModel
+        .findById(id)
+        .select('userName image email totalFollowers');
 
       if (result) {
         return result;

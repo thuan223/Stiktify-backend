@@ -47,11 +47,11 @@ export class NotificationsGateway {
     @ConnectedSocket() client: Socket,
   ) {
     client.join(userId);
-    console.log(`User ${userId} joined room`);
+    // console.log(`User ${userId} joined room`);
   }
 
   async sendFriendRequestNotification(recipientId: string, notification: any) {
-    console.log(`📢 Gửi thông báo đến user ${recipientId}`);
+    // console.log(`📢 Gửi thông báo đến user ${recipientId}`);
     this.server.to(recipientId).emit('receiveNotification', notification);
   }
 
