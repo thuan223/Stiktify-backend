@@ -1,5 +1,9 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { CreateUserDto, UserCreateByManager } from './dto/create-user.dto';
+import {
+  BussinessAccountDto,
+  CreateUserDto,
+  UserCreateByManager,
+} from './dto/create-user.dto';
 import { UpdateUserDto, SendMailDto } from './dto/update-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './schemas/user.schema';
@@ -20,7 +24,7 @@ export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private readonly mailerService: MailerService,
-  ) { }
+  ) {}
   isEmailExist = async (email: string) => {
     const isExist = await this.userModel.exists({ email });
     if (isExist) return true;
@@ -34,7 +38,9 @@ export class UsersService {
 
   async checkUserById(id: string) {
     try {
-      const result = await this.userModel.findById(id).select('userName image');
+      const result = await this.userModel
+        .findById(id)
+        .select('userName image email totalFollowers');
 
       if (result) {
         return result;
@@ -392,10 +398,12 @@ export class UsersService {
       ];
     }
 
-    const totalItems = (await this.userModel.find({
-      ...handleFilter,
-      $or: handleSearch,
-    })).length;
+    const totalItems = (
+      await this.userModel.find({
+        ...handleFilter,
+        $or: handleSearch,
+      })
+    ).length;
     const totalPages = Math.ceil(totalItems / pageSize);
 
     const skip = (+current - 1) * +pageSize;
@@ -492,4 +500,36 @@ export class UsersService {
     });
     return;
   }
+  // CreateUser Bussiness Account - ThangLH
+  async handleCreateUserBussinessAccount(createDto: BussinessAccountDto, userId: string) {
+    // Tìm user theo userId
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+  
+    // Kiểm tra followers
+    if (user.totalFollowers < 1000) {
+      throw new BadRequestException('You need at least 1000 followers to register a business account');
+    }
+  
+    // Kiểm tra thông tin nhập vào
+    if (!createDto.shopName || !createDto.taxCode || !createDto.shopBrandsAddress || !createDto.shopDescription) {
+      throw new BadRequestException('All fields are required');
+    }
+
+    // Cập nhật thông tin business
+    user.isShop = true;
+    user.shopOwnerDetail = {
+      shopName: createDto.shopName,
+      taxCode: createDto.taxCode,
+      shopBrandsAddress: createDto.shopBrandsAddress,
+      shopDescription: createDto.shopDescription,
+    };
+  
+    await user.save();
+    return { message: 'Business account registered successfully' };
+  }
+  
+  
 }

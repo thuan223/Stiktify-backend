@@ -39,6 +39,7 @@ import { CategoryProductsModule } from './modules/categories-products/category-p
 import { ListeninghistoryModule } from './modules/listeninghistory/listeninghistory.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { Neo4jModule } from './modules/neo4j/neo4j.module';
+import { TickedUserModule } from './modules/ticked-user/ticked-user.module';
 
 @Module({
   imports: [
@@ -71,6 +72,8 @@ import { Neo4jModule } from './modules/neo4j/neo4j.module';
     NotificationsModule,
     SettingsModule,
     ConfigModule.forRoot({ isGlobal: true, envFilePath: ".env" }),
+    TickedUserModule,
+    ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
