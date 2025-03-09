@@ -7,11 +7,13 @@ import { Model, Types } from 'mongoose';
 import { MusicsService } from '../musics/musics.service';
 import { CategoriesService } from '../categories/categories.service';
 import aqp from 'api-query-params';
+import { Music } from '../musics/schemas/music.schema';
 
 @Injectable()
 export class MusicCategoriesService {
   constructor(
     @InjectModel(MusicCategory.name) private musicCategoryModel: Model<MusicCategory>,
+    @InjectModel(Music.name) private musicModel: Model<Music>,
     private categoryService: CategoriesService,
   ) { }
 
@@ -55,6 +57,33 @@ export class MusicCategoriesService {
     }
   }
 
+  async handleSearchMusic(
+    pageSize: any, handleSearch: any, current: any
+  ) {
+    const totalItems = (await this.musicModel.find({
+      $or: handleSearch,
+    })).length;
+    const totalPages = Math.ceil(totalItems / pageSize);
+
+    const skip = (+current - 1) * +pageSize;
+    const result = await this.musicModel
+      .find({
+        $or: handleSearch,
+      })
+      .limit(pageSize)
+      .skip(skip)
+
+    return {
+      meta: {
+        current: current,
+        pageSize: pageSize,
+        pages: totalPages,
+        total: totalItems,
+      },
+      result: result,
+    };
+  }
+
   async handleFilterAndSearch(
     query: string,
     current: number,
@@ -80,6 +109,10 @@ export class MusicCategoriesService {
       ];
     }
 
+    const isEmptyObject = (obj: object) => Object.keys(obj).length === 0;
+    if (isEmptyObject(handleFilter)) {
+      return await this.handleSearchMusic(pageSize, handleSearch, current)
+    }
     const totalItem = (await this.musicCategoryModel
       .find({ ...handleFilter })
       .populate({
@@ -93,18 +126,25 @@ export class MusicCategoriesService {
 
     const skip = (+current - 1) * +pageSize;
 
+
     const result = await this.musicCategoryModel
       .find({
         ...handleFilter
       })
       .populate({
         path: "musicId",
-        match: { $or: handleSearch }
+        match: { $or: handleSearch },
+        // options: {
+        //   skip: skip,
+        //   limit: pageSize,
+        //   sort: sort as any
+        // }
       })
-      .limit(pageSize)
-      .skip(skip)
-      .sort(sort as any);
+    // .limit(pageSize)
+    // .skip(skip)
+    // .sort(sort as any);
 
+    const configResult = result.slice(current - 1, pageSize);
     const configData = result.map(item => item.musicId).filter(music => music);
     const uniqueData = Array.from(new Map(configData.map((item: any) => [item._id, item])).values());
     return {

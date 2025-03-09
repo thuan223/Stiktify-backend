@@ -7,10 +7,12 @@ import {
   MusicCategorySchema,
 } from './schemas/music-category.schema';
 import { CategoriesModule } from '../categories/categories.module';
+import { Music, MusicSchema } from '../musics/schemas/music.schema';
 
 @Module({
   imports: [
     CategoriesModule,
+    MongooseModule.forFeature([{ name: Music.name, schema: MusicSchema }]),
     MongooseModule.forFeature([
       { name: MusicCategory.name, schema: MusicCategorySchema },
     ]),

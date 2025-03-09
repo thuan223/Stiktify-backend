@@ -38,10 +38,12 @@ import { ProductCategoriesModule } from './modules/product-categories/product-ca
 import { CategoryProductsModule } from './modules/categories-products/category-products.module';
 import { ListeninghistoryModule } from './modules/listeninghistory/listeninghistory.module';
 import { SettingsModule } from './modules/settings/settings.module';
+import { Neo4jModule } from './modules/neo4j/neo4j.module';
 import { TickedUserModule } from './modules/ticked-user/ticked-user.module';
 
 @Module({
   imports: [
+    Neo4jModule.forRootAsync(),
     UploadModule,
     ProductsModule,
     ProductCategoriesModule,
@@ -69,6 +71,7 @@ import { TickedUserModule } from './modules/ticked-user/ticked-user.module';
     FriendRequestModule,
     NotificationsModule,
     SettingsModule,
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: ".env" }),
     TickedUserModule,
     ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRootAsync({
@@ -123,4 +126,4 @@ import { TickedUserModule } from './modules/ticked-user/ticked-user.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }
