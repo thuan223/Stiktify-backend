@@ -20,7 +20,7 @@ export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private readonly mailerService: MailerService,
-  ) { }
+  ) {}
   isEmailExist = async (email: string) => {
     const isExist = await this.userModel.exists({ email });
     if (isExist) return true;
@@ -34,7 +34,9 @@ export class UsersService {
 
   async checkUserById(id: string) {
     try {
-      const result = await this.userModel.findById(id).select('userName image');
+      const result = await this.userModel
+        .findById(id)
+        .select('userName image email totalFollowers');
 
       if (result) {
         return result;
@@ -392,10 +394,12 @@ export class UsersService {
       ];
     }
 
-    const totalItems = (await this.userModel.find({
-      ...handleFilter,
-      $or: handleSearch,
-    })).length;
+    const totalItems = (
+      await this.userModel.find({
+        ...handleFilter,
+        $or: handleSearch,
+      })
+    ).length;
     const totalPages = Math.ceil(totalItems / pageSize);
 
     const skip = (+current - 1) * +pageSize;

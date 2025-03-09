@@ -38,6 +38,7 @@ import { ProductCategoriesModule } from './modules/product-categories/product-ca
 import { CategoryProductsModule } from './modules/categories-products/category-products.module';
 import { ListeninghistoryModule } from './modules/listeninghistory/listeninghistory.module';
 import { SettingsModule } from './modules/settings/settings.module';
+import { TickedUserModule } from './modules/ticked-user/ticked-user.module';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { SettingsModule } from './modules/settings/settings.module';
     FriendRequestModule,
     NotificationsModule,
     SettingsModule,
+    TickedUserModule,
     ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
