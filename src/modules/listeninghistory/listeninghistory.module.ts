@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ListeninghistoryService } from './listeninghistory.service';
 import { ListeninghistoryController } from './listeninghistory.controller';
-import { ListeningHistory, ListeningHistorySchema } from './schemas/listeninghistory.entity';
+import { ListeningHistory, ListeningHistorySchema } from './schemas/listeninghistory.schema';
 import { MongooseModule } from '@nestjs/mongoose';
 
 @Module({
