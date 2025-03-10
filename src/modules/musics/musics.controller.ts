@@ -74,7 +74,7 @@ export class MusicsController {
   findOne(@Body() req: flagMusicDto) {
     return this.musicsService.handleFlagVideo(req._id, req.flag);
   }
-
+// Delete
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.musicsService.remove(+id);
