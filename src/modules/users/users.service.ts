@@ -1,10 +1,10 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   BussinessAccountDto,
   CreateUserDto,
   UserCreateByManager,
 } from './dto/create-user.dto';
-import { UpdateUserDto, SendMailDto } from './dto/update-user.dto';
+import { UpdateUserDto, SendMailDto, UpdateShopOwnerDto } from './dto/update-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './schemas/user.schema';
 import { Model } from 'mongoose';
@@ -529,6 +529,30 @@ export class UsersService {
   
     await user.save();
     return { message: 'Business account registered successfully' };
+  }
+  
+  // Edit shop
+  async updateShopOwner(id: string, updateShopDto: Partial<User['shopOwnerDetail']>) {
+    const user = await this.userModel.findById(id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    if (!user.isShop) {
+      throw new BadRequestException('User is not a shop owner');
+    }
+  
+    return this.userModel.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          'shopOwnerDetail.shopName': updateShopDto.shopName,
+          'shopOwnerDetail.taxCode': updateShopDto.taxCode,
+          'shopOwnerDetail.shopBrandsAddress': updateShopDto.shopBrandsAddress,
+          'shopOwnerDetail.shopDescription': updateShopDto.shopDescription,
+        },
+      },
+      { new: true, runValidators: true }
+    ).exec();
   }
   
   

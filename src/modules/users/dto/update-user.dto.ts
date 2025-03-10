@@ -46,3 +46,21 @@ export class SendMailDto {
    @IsNotEmpty({ message: "content not empty!!!" })
    content: string;
 }
+
+export class UpdateShopOwnerDto {
+    @IsOptional()
+    @IsString()
+    shopName?: string;
+  
+    @IsOptional()
+    @IsString()
+    taxCode?: string;
+  
+    @IsOptional()
+    @IsString()
+    shopBrandsAddress?: string;
+  
+    @IsOptional()
+    @IsString()
+    shopDescription?: string;
+  }
