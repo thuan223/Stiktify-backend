@@ -19,7 +19,6 @@ export class FollowController {
   }
 
   @Get('list-following/:userId')
-
   findAll(
     @Param("userId") userId: string
   ) {
