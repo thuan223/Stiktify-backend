@@ -17,7 +17,7 @@ import {
   CreateUserDto,
   UserCreateByManager,
 } from './dto/create-user.dto';
-import { SendMailDto, UpdateUserDto } from './dto/update-user.dto';
+import { SendMailDto, UpdateShopOwnerDto, UpdateUserDto } from './dto/update-user.dto';
 import { ResponseMessage } from '@/decorator/customize';
 import { JwtAuthGuard } from '@/auth/passport/jwt-auth.guard';
 import { BanUserDto } from './dto/ban-user.dto';
@@ -112,5 +112,9 @@ export class UsersController {
     return this.usersService.handleCreateUserBussinessAccount(createDto, userId);
   }
   
-  
+// Edit shop
+@Patch('editShop/:id')
+async updateShopOwner(@Param('id') id: string, @Body() updateShopDto: UpdateShopOwnerDto) {
+  return this.usersService.updateShopOwner(id, updateShopDto);
+}
 }
