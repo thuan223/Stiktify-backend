@@ -2,10 +2,6 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestj
 import { ListeninghistoryService } from './listeninghistory.service';
 import { CreateListeninghistoryDto } from './dto/create-listeninghistory.dto';
 import { UpdateListeninghistoryDto } from './dto/update-listeninghistory.dto';
-import { ClearAllListeningHistoryDto } from './dto/clear-all-listeninghistory.dto';
-import { DeleteResult } from 'mongoose';
-
-
 
 @Controller('listeninghistory')
 export class ListeninghistoryController {
@@ -16,14 +12,22 @@ export class ListeninghistoryController {
     return this.listeninghistoryService.create(createListeninghistoryDto);
   }
 
-  @Post('clear-all')
-  clearAll(@Body() clearAllListeningHistoryDto: ClearAllListeningHistoryDto): Promise<DeleteResult> {
-      return this.listeninghistoryService.clearAll(clearAllListeningHistoryDto);
+  @Post('clear-all/:userId')
+  async clearAll(@Param('userId') userId: string) {
+    return this.listeninghistoryService.clearAllHistory(userId);
   }
+  
 
   @Get('all-listening-history/:userId')
   async handleGetAllListeningHistory(@Param('userId') userId: string) {
     return this.listeninghistoryService.handleGetAllListeningHistory(userId);
+  }
+
+  @Get('search-history')
+  async searchHistory(
+    @Query('search') search: string,
+  ) {
+    return this.listeninghistoryService.searchListeningHistory(search);
   }
 
   @Get(':id')
