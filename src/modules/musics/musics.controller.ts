@@ -75,7 +75,7 @@ export class MusicsController {
   findOne(@Body() req: flagMusicDto) {
     return this.musicsService.handleFlagVideo(req._id, req.flag);
   }
-
+// Delete
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.musicsService.remove(+id);
@@ -86,6 +86,12 @@ export class MusicsController {
   @Public()
   async shareMusic(@Param('id') id: string) {
     return this.musicsService.shareMusic(id);
+  }
+
+  // Getall music id - ThanglH
+@Get()
+  getAllMusic() {
+    return this.musicsService.getAllMusic();
   }
 
   @Get('list-music-admin')

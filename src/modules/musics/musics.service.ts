@@ -431,5 +431,11 @@ export class MusicsService {
   `, { userId, musicId }).run();
     return query
   }
+
+  // Getall music id - ThanglH
+async getAllMusic(): Promise<Music[]> {
+  return this.musicModel.find().exec();
+}
+
 }
 
