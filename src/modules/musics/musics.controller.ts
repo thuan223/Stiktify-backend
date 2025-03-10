@@ -4,6 +4,7 @@ import { CreateMusicDto } from './dto/create-music.dto';
 import { UpdateMusicDto } from './dto/update-music.dto';
 import { Public, ResponseMessage } from '@/decorator/customize';
 import { flagMusicDto } from './dto/flag.dto';
+import { CreateNeo4j } from './dto/create-neo4j.dto';
 
 @Controller('musics')
 export class MusicsController {
@@ -94,5 +95,15 @@ export class MusicsController {
     @Query('pageSize') pageSize: string,
   ) {
     return this.musicsService.handleListAllMusicAdmin(query, +current, +pageSize);
+  }
+
+  @Get('recommend-music/:userId')
+  recommend(@Param('userId') userId: string) {
+    return this.musicsService.handleRecommendMusic(userId);
+  }
+
+  @Post('listen-music-in-user')
+  listenMusicInUser(@Body() req: CreateNeo4j) {
+    return this.musicsService.handleListenMusicNeo4j(req.userId, req.musicId);
   }
 }

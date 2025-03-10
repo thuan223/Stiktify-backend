@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -8,11 +9,12 @@ import { UpdateMusicDto } from './dto/update-music.dto';
 import aqp from 'api-query-params';
 import { InjectModel } from '@nestjs/mongoose';
 import { Music } from './schemas/music.schema';
-import mongoose, { Model } from 'mongoose';
+import mongoose, { Model, Types } from 'mongoose';
 import { Category } from '../categories/schemas/category.schema';
 import { MusicCategory } from '../music-categories/schemas/music-category.schema';
 import { MusicCategoriesService } from '../music-categories/music-categories.service';
 import { CategoriesService } from '../categories/categories.service';
+import { QueryRepository } from '../neo4j/neo4j.service';
 
 @Injectable()
 export class MusicsService {
@@ -23,7 +25,7 @@ export class MusicsService {
     private musicCategoryModel: Model<MusicCategory>,
     private musicCategoryService: MusicCategoriesService,
     private categoryService: CategoriesService,
-
+    private readonly queryRepository: QueryRepository
   ) { }
 
   async checkMusicById(id: string) {
@@ -71,7 +73,8 @@ export class MusicsService {
       musicDescription: musicDescription,
       musicLyric: musicLyric,
       musicThumbnail: musicThumbnail,
-      musicUrl: musicUrl
+      musicUrl: musicUrl,
+      listeningAt: new Date()
     });
     await this.musicCategoryService.handleCreateCategoryMusic(categoryId, result._id + "")
     return result;
@@ -156,10 +159,20 @@ export class MusicsService {
     if (!check) {
       throw new NotFoundException(`Not found music with id: ${id}`);
     }
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    let result = [];
 
-    const result = await this.musicModel.findByIdAndUpdate(id, {
-      totalListener: check.totalListener + 1,
-    });
+    if (!check.listeningAt || check.listeningAt < sevenDaysAgo) {
+      result = await this.musicModel.findByIdAndUpdate(id, {
+        totalListener: check.totalListener + 1, totalListeningOnWeek: 1, listeningAt: new Date()
+      });
+    } else {
+      result = await this.musicModel.findByIdAndUpdate(id, {
+        totalListener: check.totalListener + 1, totalListeningOnWeek: check.totalListeningOnWeek + 1
+      });
+    }
+
     return result;
   }
 
@@ -369,7 +382,54 @@ export class MusicsService {
     } catch (error) {
       console.log(error);
       return null;
-    } 
+    }
+  }
+
+  async handleRecommendMusic(userId: string) {
+    const similarUsers = await this.queryRepository.initQuery().raw(`
+      MATCH (u1:User {id: $userId})-[:LISTENED_TO]->(m:Music)<-[:LISTENED_TO]-(u2:User)
+      WHERE u1 <> u2
+      WITH u2, COUNT(m) AS commonMusicCount
+      ORDER BY commonMusicCount DESC
+      LIMIT 5
+      RETURN u2.id AS similarUserId
+  `, { userId }).run();
+
+    const similarUserIds = similarUsers.map(user => user.similarUserId);
+
+    if (similarUserIds.length === 0) return [];
+
+    const recommendations = await this.queryRepository.initQuery().raw(`
+      MATCH (u1:User {id: $userId})-[:LISTENED_TO]->(m:Music)
+      WITH COLLECT(m) AS listenedMusic
+      MATCH (u2:User)-[:LISTENED_TO]->(m2:Music)
+      WHERE u2.id IN $similarUserIds AND NOT m2 IN listenedMusic
+      RETURN DISTINCT m2.id AS recommendedMusicId
+      LIMIT 10
+  `, { userId, similarUserIds }).run();
+
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const dataNeo4j = recommendations.map(music => music.recommendedMusicId);
+    const musicHot = await this.musicModel
+      .find({ listeningAt: { $gte: sevenDaysAgo } })
+      .limit(10 - dataNeo4j.length)
+      .sort({ totalListeningOnWeek: -1 })
+
+    const results = await this.musicModel.find({ _id: { $in: dataNeo4j } });
+
+    const mergedArray = [...new Set([...results, ...musicHot])];
+    return mergedArray
+  }
+
+  async handleListenMusicNeo4j(userId: Types.ObjectId, musicId: Types.ObjectId) {
+    const query = await this.queryRepository.initQuery().raw(`
+      MERGE (u:User {id: $userId})
+      MERGE (m:Music {id: $musicId})
+      MERGE (u)-[:LISTENED_TO]->(m)
+  `, { userId, musicId }).run();
+    return query
   }
 }
 
