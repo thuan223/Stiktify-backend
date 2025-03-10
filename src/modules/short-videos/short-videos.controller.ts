@@ -28,7 +28,11 @@ import multer from 'multer';
 @Controller('short-videos')
 export class ShortVideosController {
   constructor(private readonly shortVideosService: ShortVideosService) {}
-
+  @Public()
+  @Get('getColabVideo/:userCollabId')
+  async init(@Param('userCollabId') userCollabId: string) {
+    return this.shortVideosService.getCollaboratorFilteringVideo(userCollabId);
+  }
   //Create a new short video - ThangLH
   @Post('create')
   @UseInterceptors(
@@ -163,6 +167,7 @@ export class ShortVideosController {
     if (!file) throw new BadRequestException('No file uploaded');
     return this.shortVideosService.getTagVideoByAi(file);
   }
+
   // Update video
   @Patch(':id')
   async update(
@@ -186,7 +191,4 @@ export class ShortVideosController {
   async shareVideo(@Param('id') id: string) {
     return this.shortVideosService.shareVideo(id);
   }
-
-  
-  
 }

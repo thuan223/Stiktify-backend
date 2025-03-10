@@ -41,7 +41,6 @@ export class WishlistScoreService {
       scoreIncrease = scoreIncreaseSetting.reactionAboutMusic;
       suggest.tags = [];
       suggest.categoryId = [];
-
     } else if (triggerWishlistScoreDto.triggerAction === 'ClickLinkMusic') {
       suggest = {
         musicId: triggerWishlistScoreDto.id,
@@ -448,7 +447,13 @@ export class WishlistScoreService {
 
     return result.length > 0 ? result[0].averageCount : 0;
   }
-
+  async createGraphDBWatchData(
+    userId: string,
+    videoId: string,
+    suggestByVideo: any,
+  ) {
+    await this.videoService.watchVideo(userId, videoId+"", 0);
+  }
   findAll() {
     return `This action returns all wishlistScore`;
   }
