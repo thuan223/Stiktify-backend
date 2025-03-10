@@ -5,13 +5,14 @@ import { ListeningHistory } from './schemas/listeninghistory.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { DeleteResult, Model } from 'mongoose';
 import { CreateListeninghistoryDto } from './dto/create-listeninghistory.dto';
-import aqp from 'api-query-params';
-import { ClearAllListeningHistoryDto } from './dto/clear-all-listeninghistory.dto';
+import { Music } from '../musics/schemas/music.schema';
+
 
 @Injectable()
 export class ListeninghistoryService {
   constructor(
     @InjectModel(ListeningHistory.name)private listeningHistoryModel: Model<ListeningHistory>,
+    @InjectModel(Music.name) private musicModel: Model<Music>,
   ) {}
 
   async create(createListeninghistoryDto: CreateListeninghistoryDto ) {
@@ -35,72 +36,38 @@ export class ListeninghistoryService {
     return await newHistory.save();
   }
 
-    async handleGetListListeningHistory(
-      query: string,
-      current: number,
-      pageSize: number,
-      searchValue: string,
-    ) {
-      const { filter, sort } = aqp(query);
-
-      if (filter.current) delete filter.current;
-      if (filter.pageSize) delete filter.pageSize;
-      if (filter.searchValue) delete filter.searchValue;
-  
-      if (filter.query.$in) {
-        filter.query = filter.query.$in;
-      }
-      filter.query = JSON.parse(filter.query);
-  
-      if (!filter.query.updatedAt || filter.query.updatedAt?.length === 0) {
-        filter.query = { userId: filter.query.userId };
-      }
-  
-      if (filter.query?.updatedAt && typeof filter.query.updatedAt === 'string') {
-        const date = new Date(filter.query.updatedAt);
-        if (!isNaN(date.getTime())) {
-          const isoDateStr = date.toISOString().split('T')[0];
-          filter.query.updatedAt = {
-            $gte: new Date(`${isoDateStr}T00:00:00.000Z`),
-            $lt: new Date(`${isoDateStr}T23:59:59.999Z`),
-          };
-        }
-      }
-      if (!current) current = 1;
-      if (!pageSize) pageSize = 10;
-  
-      let result = await this.listeningHistoryModel
-        .find({
-          ...filter.query,
-          isDelete: { $ne: true },
-        })
-        .populate<{ musicId: { musicDescription: string } }>('musicId')
-        .sort({ updatedAt: -1, ...sort });
-  
-      if (searchValue) {
-        result = result.filter(
-          (item) =>
-            item.musicId &&
-            item.musicId.musicDescription &&
-            item.musicId.musicDescription
-              .toLowerCase()
-              .includes(searchValue.toLowerCase()),
-        );
-      }
-  
-      const paginatedResult = result.slice(
-        (current - 1) * pageSize,
-        current * pageSize,
-      );
-      return { result: paginatedResult };
+  async handleGetAllListeningHistory(userId: string) {
+    const result = await this.listeningHistoryModel
+      .find({ userId }) 
+      .populate('musicId') 
+      .sort({ updatedAt: -1 }); 
+    if (!result || result.length === 0) {
+      return { message: "Not found data!" };
     }
-
-  async clearAll(clearAllListeningHistoryDto: ClearAllListeningHistoryDto): Promise<DeleteResult> {
-        const userId = clearAllListeningHistoryDto.userId;
-        return await this.listeningHistoryModel.deleteMany(
-          { userId });
+    return { result };
   }
 
+  async clearAllHistory(userId: string): Promise<{ deletedCount: number }> {
+    const result = await this.listeningHistoryModel.deleteMany({ userId });
+    return { deletedCount: result.deletedCount }; 
+  }
+
+async searchListeningHistory(search: string) {
+  const searchRegex = new RegExp(search, 'i'); 
+  const musicIds = await this.musicModel.find({
+    musicDescription: { $regex: searchRegex }, 
+  }).select('_id');
+  if (musicIds.length === 0) {
+    return { message: "No history found for the search term!" };
+  }
+  const result = await this.listeningHistoryModel
+    .find({ musicId: { $in: musicIds.map(item => item._id) } })
+    .populate('musicId')
+    .sort({ updatedAt: -1 });
+  return { result };
+}
+
+  
   findAll() {
     return `This action returns all listeninghistory`;
   }

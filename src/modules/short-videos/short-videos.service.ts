@@ -20,10 +20,16 @@ import { ReportService } from '../report/report.service';
 import { UpdateVideoByViewingDto } from './dto/update-view-by-viewing.dto';
 import { VideoCategory } from '../video-categories/schemas/video-category.schema';
 import { SettingsService } from '../settings/settings.service';
+import { firstValueFrom } from 'rxjs';
+import FormData from 'form-data';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ShortVideosService {
   constructor(
+    private readonly httpService: HttpService,
+    private configService: ConfigService,
     @InjectModel(Video.name)
     private videoModel: Model<Video>,
     @InjectModel(VideoCategory.name)
@@ -584,4 +590,62 @@ export class ShortVideosService {
       result: result,
     };
   }
+  async getTagVideoByAi(file: Express.Multer.File): Promise<any> {
+    try {
+      console.log('Sending video to FastAPI:', file.originalname);
+      const tags = [];
+  
+      // Hàm tạo FormData mới để tránh lỗi "stream already consumed"
+      const createFormData = () => {
+        const formData = new FormData();
+        formData.append('file', file.buffer, {
+          filename: file.originalname,
+          contentType: file.mimetype,
+        });
+        return formData;
+      };
+  
+      console.log(
+        `${this.configService.get<string>('AI_GETSONG_URL')}/analyze-video/`,
+      );
+  
+      const faceResponsePromise = firstValueFrom(
+        this.httpService.post(
+          `${this.configService.get<string>('AI_FACERECOGNITION_URL')}/analyze-video/`,
+          createFormData(),
+          { headers: { ...createFormData().getHeaders() }, timeout: 0 },
+        ),
+      ).catch((error) => {
+        console.error('Lỗi nhận diện khuôn mặt:', error.message);
+        return null;
+      });
+  
+      const songResponsePromise = firstValueFrom(
+        this.httpService.post(
+          `${this.configService.get<string>('AI_GETSONG_URL')}/analyze-video/`,
+          createFormData(),
+          { headers: { ...createFormData().getHeaders() }, timeout: 0 },
+        ),
+      ).catch((error) => {
+        console.error('Lỗi nhận diện bài hát:', error.message);
+        return null;
+      });
+  
+      const [faceResponse, songResponse] = await Promise.all([
+        faceResponsePromise,
+        songResponsePromise,
+      ]);
+  
+      if (faceResponse) {
+        tags.push(faceResponse.data.top_celebrities[0][0]);
+      }
+      if (songResponse) {
+        tags.push(...songResponse.data.music_genre, songResponse.data.song_title,songResponse.data.artist);
+      }
+      return tags
+    } catch (error) {
+      throw new Error(`Video upload failed: ${error.message}`);
+    }
+  }
+  
 }
