@@ -1,6 +1,5 @@
 import { Public } from '@/decorator/customize';
 import { TrendingVideoDto } from './dto/trending-video.dto';
-import { CreateWishListVideoDto } from './dto/create-wishlist-videos.dto';
 import {
   Controller,
   Get,
@@ -13,6 +12,7 @@ import {
   Request,
   UseInterceptors,
   UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
 import { ShortVideosService } from './short-videos.service';
 import { CreateShortVideoDto } from './dto/create-short-video.dto';
@@ -23,7 +23,7 @@ import { UpdateVideoByViewingDto } from './dto/update-view-by-viewing.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
-
+import multer from 'multer';
 
 @Controller('short-videos')
 export class ShortVideosController {
@@ -36,7 +36,8 @@ export class ShortVideosController {
       storage: diskStorage({
         destination: './uploads/thumbnails', // Thư mục lưu ảnh thumbnail
         filename: (req, file, callback) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
           callback(null, uniqueSuffix + extname(file.originalname));
         },
       }),
@@ -66,10 +67,9 @@ export class ShortVideosController {
   }
 
   @Get(':videoId')
-async getVideoById(@Param('videoId') videoId: string) {
-  return this.shortVideosService.findVideoById(videoId);
-}
-
+  async getVideoById(@Param('videoId') videoId: string) {
+    return this.shortVideosService.findVideoById(videoId);
+  }
 
   @Post('flag-video')
   @ResponseMessage('Updated successfully')
@@ -83,7 +83,9 @@ async getVideoById(@Param('videoId') videoId: string) {
   }
   @Post('update-view-by-viewing')
   @Public()
-  updateViewByViewing(@Body() updateVideoByViewingDto: UpdateVideoByViewingDto) {
+  updateViewByViewing(
+    @Body() updateVideoByViewingDto: UpdateVideoByViewingDto,
+  ) {
     return this.shortVideosService.updateViewByViewing(updateVideoByViewingDto);
   }
 
@@ -98,11 +100,7 @@ async getVideoById(@Param('videoId') videoId: string) {
     @Query('current') current: string,
     @Query('pageSize') pageSize: string,
   ) {
-    return this.shortVideosService.ViewVideoPosted(
-      userId,
-      +current,
-      +pageSize,
-    );
+    return this.shortVideosService.ViewVideoPosted(userId, +current, +pageSize);
   }
 
   @Get('search-video')
@@ -131,7 +129,7 @@ async getVideoById(@Param('videoId') videoId: string) {
     );
   }
 
-  @Get("filter-searchVideo")
+  @Get('filter-searchVideo')
   @Get('filter-searchCategory')
   findAllUserByFilterAndSearch(
     @Query() query: string,
@@ -144,7 +142,27 @@ async getVideoById(@Param('videoId') videoId: string) {
       +pageSize,
     );
   }
-
+  @Post('get-tag-by-ai')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: multer.memoryStorage(),
+      limits: { fileSize: 10 * 1024 * 1024 },
+      fileFilter: (req, file, callback) => {
+        if (!file.mimetype.startsWith('video/')) {
+          return callback(
+            new BadRequestException('Only video files are allowed!'),
+            false,
+          );
+        }
+        callback(null, true);
+      },
+    }),
+  )
+  async getTagByAI(@UploadedFile() file: Express.Multer.File) {
+    console.log(file);
+    if (!file) throw new BadRequestException('No file uploaded');
+    return this.shortVideosService.getTagVideoByAi(file);
+  }
   // Update video
   @Patch(':id')
   async update(
@@ -169,4 +187,6 @@ async getVideoById(@Param('videoId') videoId: string) {
     return this.shortVideosService.shareVideo(id);
   }
 
+  
+  
 }
