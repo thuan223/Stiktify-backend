@@ -48,7 +48,7 @@ export class Music {
   @Prop({ default: false })
   isDelete: boolean;
 
-  @Prop({ default: new Date() })
+  @Prop()
   listeningAt: Date
 
   @Prop({ default: 0 })

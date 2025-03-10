@@ -73,7 +73,8 @@ export class MusicsService {
       musicDescription: musicDescription,
       musicLyric: musicLyric,
       musicThumbnail: musicThumbnail,
-      musicUrl: musicUrl
+      musicUrl: musicUrl,
+      listeningAt: new Date()
     });
     await this.musicCategoryService.handleCreateCategoryMusic(categoryId, result._id + "")
     return result;
@@ -161,13 +162,14 @@ export class MusicsService {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     let result = [];
-    if (check.listeningAt < sevenDaysAgo) {
+
+    if (!check.listeningAt || check.listeningAt < sevenDaysAgo) {
       result = await this.musicModel.findByIdAndUpdate(id, {
-        totalListener: check.totalListener + 1, totalListeningOnWeek: check.totalListeningOnWeek + 1, listeningAt: sevenDaysAgo
+        totalListener: check.totalListener + 1, totalListeningOnWeek: 1, listeningAt: new Date()
       });
     } else {
       result = await this.musicModel.findByIdAndUpdate(id, {
-        totalListener: check.totalListener + 1
+        totalListener: check.totalListener + 1, totalListeningOnWeek: check.totalListeningOnWeek + 1
       });
     }
 
