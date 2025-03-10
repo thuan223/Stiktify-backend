@@ -49,6 +49,7 @@ export class WishlistService {
       );
       if (videoFound.length === 1) {
         return await this.createWishListVideo(
+          suggestByVideo,
           videoFound[0]._id,
           createWishlistDto.userId,
         );
@@ -60,6 +61,7 @@ export class WishlistService {
         createWishlistDto.userId,
       );
       return await this.createWishListVideo(
+        suggestByVideo,
         bestVideo._id,
         createWishlistDto.userId,
       );
@@ -150,7 +152,8 @@ export class WishlistService {
     return bestVideo;
   }
 
-  async createWishListVideo(videoId: string, userId: string) {
+  async createWishListVideo( suggestByVideo:any,videoId: string, userId: string) {
+    await this.wishListScoreService.createGraphDBWatchData(userId, videoId,suggestByVideo);
     const setting = await this.settingsService.findAll();
     const wishListCount = setting.algorithmConfig.numberOfCount.wishListCount;
     
