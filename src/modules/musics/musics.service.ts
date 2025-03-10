@@ -371,5 +371,11 @@ export class MusicsService {
       return null;
     } 
   }
+
+  // Getall music id - ThanglH
+async getAllMusic(): Promise<Music[]> {
+  return this.musicModel.find().exec();
+}
+
 }
 

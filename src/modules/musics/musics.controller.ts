@@ -87,6 +87,12 @@ export class MusicsController {
     return this.musicsService.shareMusic(id);
   }
 
+  // Getall music id - ThanglH
+@Get()
+  getAllMusic() {
+    return this.musicsService.getAllMusic();
+  }
+
   @Get('list-music-admin')
   findAll(
     @Query() query: string,
