@@ -7,7 +7,7 @@ import {
 import { UpdateUserDto, SendMailDto, UpdateShopOwnerDto } from './dto/update-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './schemas/user.schema';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { MailerService } from '@nestjs-modules/mailer';
 import {
   ChangePasswordAuthDto,
@@ -530,8 +530,9 @@ export class UsersService {
     await user.save();
     return { message: 'Business account registered successfully' };
   }
-  
-  // Edit shop
+
+
+  // Edit shop - ThangLH
   async updateShopOwner(id: string, updateShopDto: Partial<User['shopOwnerDetail']>) {
     const user = await this.userModel.findById(id);
     if (!user) {
@@ -555,5 +556,5 @@ export class UsersService {
     ).exec();
   }
   
-  
+
 }

@@ -112,8 +112,9 @@ export class UsersController {
     return this.usersService.handleCreateUserBussinessAccount(createDto, userId);
   }
   
-// Edit shop
-@Patch('editShop/:id')
+
+  // Edit shop - ThangLH
+  @Patch('editShop/:id')
 async updateShopOwner(@Param('id') id: string, @Body() updateShopDto: UpdateShopOwnerDto) {
   return this.usersService.updateShopOwner(id, updateShopDto);
 }
