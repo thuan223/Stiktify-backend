@@ -448,7 +448,7 @@ export class UsersService {
     const userResult = await this.userModel
       .find(userFilter)
       .limit(5) 
-      .select('userName fullname imageimage');
+      .select('userName fullname image');
     const videoFilter = { videoDescription: { $regex: searchRegex } };
     const totalVideos = await this.videoModel.countDocuments(videoFilter);
     const videoResult = await this.videoModel

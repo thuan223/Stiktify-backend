@@ -77,6 +77,7 @@ export class UsersController {
     return this.usersService.handleUpdateInformation(userId, updateUserDto); // Truyền userId vào service
   }
 
+  @Public()
   @Get('search-user-video')
   searchAll(
   @Query('searchText') searchText: string,
