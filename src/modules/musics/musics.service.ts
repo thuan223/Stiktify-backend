@@ -413,7 +413,7 @@ export class MusicsService {
 
     const dataNeo4j = recommendations.map(music => music.recommendedMusicId);
     const musicHot = await this.musicModel
-      .find({ listeningAt: { $gte: sevenDaysAgo } })
+      .find({ listeningAt: { $gte: sevenDaysAgo },_id: { $nin: dataNeo4j }, })
       .limit(10 - dataNeo4j.length)
       .sort({ totalListeningOnWeek: -1 })
 
