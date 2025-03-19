@@ -413,7 +413,7 @@ export class MusicsService {
 
     const dataNeo4j = recommendations.map(music => music.recommendedMusicId);
     const musicHot = await this.musicModel
-      .find({ listeningAt: { $gte: sevenDaysAgo },_id: { $nin: dataNeo4j }, })
+      .find({ listeningAt: { $gte: sevenDaysAgo }, _id: { $nin: dataNeo4j }, })
       .limit(10 - dataNeo4j.length)
       .sort({ totalListeningOnWeek: -1 })
 
@@ -433,9 +433,20 @@ export class MusicsService {
   }
 
   // Getall music id - ThanglH
-async getAllMusic(): Promise<Music[]> {
-  return this.musicModel.find().exec();
-}
+  async getAllMusic(): Promise<Music[]> {
+    return this.musicModel.find().exec();
+  }
+
+  async getMusicHotInWeek() {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const musicHot = await this.musicModel
+      .find({ listeningAt: { $gte: sevenDaysAgo } })
+      .limit(10)
+      .sort({ totalListeningOnWeek: -1 })
+    return musicHot
+  }
 
 }
 

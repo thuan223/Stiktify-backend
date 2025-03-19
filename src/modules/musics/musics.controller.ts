@@ -40,11 +40,8 @@ export class MusicsController {
 
   @Public()
   @Get("list-hot-music")
-  listHotMusic(
-    @Query("current") current: string,
-    @Query("pageSize") pageSize: string,
-  ) {
-    return this.musicsService.handleListHotMusic(+current, +pageSize);
+  listHotMusic() {
+    return this.musicsService.getMusicHotInWeek();
   }
 
   @Public()
@@ -75,7 +72,7 @@ export class MusicsController {
   findOne(@Body() req: flagMusicDto) {
     return this.musicsService.handleFlagVideo(req._id, req.flag);
   }
-// Delete
+  // Delete
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.musicsService.remove(+id);
@@ -89,7 +86,7 @@ export class MusicsController {
   }
 
   // Getall music id - ThanglH
-@Get()
+  @Get()
   getAllMusic() {
     return this.musicsService.getAllMusic();
   }
