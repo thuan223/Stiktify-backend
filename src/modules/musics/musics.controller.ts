@@ -15,7 +15,7 @@ export class MusicsController {
     return this.musicsService.handleUploadMusic(createMusicDto);
   }
 
-  @Post("upload-music")
+  @Post("update-music")
   updateMusic(@Body() updateMusicDto: UpdateMusicDto) {
     return this.musicsService.handleUpdateMusic(updateMusicDto);
   }

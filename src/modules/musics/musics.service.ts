@@ -448,9 +448,9 @@ export class MusicsService {
   }
 
   async handleUpdateMusic(updateMusicDto: UpdateMusicDto) {
-    const { musicDescription, musicTag, musicThumbnail, musicUrl, musicId } = updateMusicDto
+    const { musicDescription, musicTag, musicThumbnail, musicId } = updateMusicDto
 
-    const result = await this.musicModel.findByIdAndUpdate(musicId, { musicDescription, musicTag, musicThumbnail, musicUrl })
+    const result = await this.musicModel.findByIdAndUpdate(musicId, { musicDescription, musicTag, musicThumbnail })
 
     return result
   }
