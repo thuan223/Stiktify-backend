@@ -49,13 +49,8 @@ export class MusicsService {
   }
 
   async handleUploadMusic(createMusicDto: CreateMusicDto) {
-    const { musicTag, categoryId, musicDescription, musicLyric, musicThumbnail, musicUrl, userId } = createMusicDto;
-
-    for (const e of musicTag) {
-      if (typeof e !== 'string') {
-        throw new BadRequestException('musicTag must be array string!');
-      }
-    }
+    const { musicTag, categoryId, musicDescription, musicThumbnail,
+      musicUrl, userId, bassMusic, drumsMusic, musicLyric, otherMusic } = createMusicDto;
 
     for (const e of categoryId) {
       if (typeof e !== 'string') {
@@ -71,10 +66,14 @@ export class MusicsService {
     const result = await this.musicModel.create({
       userId: userId,
       musicDescription: musicDescription,
-      musicLyric: musicLyric,
       musicThumbnail: musicThumbnail,
       musicUrl: musicUrl,
-      listeningAt: new Date()
+      listeningAt: new Date(),
+      bassMusic: bassMusic,
+      drumsMusic: drumsMusic,
+      otherMusic: otherMusic,
+      musicLyric: musicLyric,
+      musicTag: musicTag
     });
     await this.musicCategoryService.handleCreateCategoryMusic(categoryId, result._id + "")
     return result;
@@ -448,5 +447,22 @@ export class MusicsService {
     return musicHot
   }
 
+  async handleUpdateMusic(updateMusicDto: UpdateMusicDto) {
+    const { musicDescription, musicTag, musicThumbnail, musicUrl, musicId } = updateMusicDto
+
+    const result = await this.musicModel.findByIdAndUpdate(musicId, { musicDescription, musicTag, musicThumbnail, musicUrl })
+
+    return result
+  }
+
+  async handlePopularArtists() {
+    const result = await this.musicModel
+      .find()
+      .limit(10)
+      .populate("userId")
+      .sort({ totalListeningOnWeek: -1 })
+
+    return result
+  }
 }
 

@@ -1,4 +1,4 @@
-import { IsMongoId, IsNotEmpty } from "class-validator";
+import { IsArray, IsMongoId, IsNotEmpty } from "class-validator";
 
 export class CreateMusicDto {
     @IsNotEmpty({ message: 'musicUrl must not be empty' })
@@ -15,11 +15,22 @@ export class CreateMusicDto {
     musicThumbnail: string;
 
     @IsNotEmpty({ message: 'musicTag must not be empty' })
-    musicTag: string[];
+    @IsArray({ message: 'musicTag must be array' })
+    musicTag: { _id: string, fullname: string }[];
 
     @IsNotEmpty({ message: 'musicLyric must not be empty' })
-    musicLyric: string;
+    @IsArray({ message: 'musicLyric must be array' })
+    musicLyric: { start: number, end: number, text: string }[];;
 
-    @IsNotEmpty({ message: 'musicLyric must not be empty' })
+    @IsNotEmpty({ message: 'categoryId must not be empty' })
     categoryId: string[];
+
+    @IsNotEmpty({ message: 'bassMusic must not be empty' })
+    bassMusic: string
+
+    @IsNotEmpty({ message: 'drumsMusic must not be empty' })
+    drumsMusic: string
+
+    @IsNotEmpty({ message: 'otherMusic must not be empty' })
+    otherMusic: string
 }

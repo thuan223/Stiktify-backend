@@ -1,10 +1,10 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Request } from '@nestjs/common';
 import { MusicsService } from './musics.service';
 import { CreateMusicDto } from './dto/create-music.dto';
-import { UpdateMusicDto } from './dto/update-music.dto';
 import { Public, ResponseMessage } from '@/decorator/customize';
 import { flagMusicDto } from './dto/flag.dto';
 import { CreateNeo4j } from './dto/create-neo4j.dto';
+import { UpdateMusicDto } from './dto/update-music.dto';
 
 @Controller('musics')
 export class MusicsController {
@@ -13,6 +13,11 @@ export class MusicsController {
   @Post("upload-music")
   uploadMusic(@Body() createMusicDto: CreateMusicDto) {
     return this.musicsService.handleUploadMusic(createMusicDto);
+  }
+
+  @Post("upload-music")
+  updateMusic(@Body() updateMusicDto: UpdateMusicDto) {
+    return this.musicsService.handleUpdateMusic(updateMusicDto);
   }
 
   @Get('my-musics')
@@ -26,6 +31,12 @@ export class MusicsController {
       +current,
       +pageSize,
     );
+  }
+
+  @Public()
+  @Get("filter-search")
+  popularArtists() {
+    return this.musicsService.handlePopularArtists()
   }
 
   @Public()
