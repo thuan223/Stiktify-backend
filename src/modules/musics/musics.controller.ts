@@ -5,6 +5,8 @@ import { Public, ResponseMessage } from '@/decorator/customize';
 import { flagMusicDto } from './dto/flag.dto';
 import { CreateNeo4j } from './dto/create-neo4j.dto';
 import { UpdateMusicDto } from './dto/update-music.dto';
+import { Types } from 'mongoose';
+import { TrackRelatedDto } from './dto/track-related.dto';
 
 @Controller('musics')
 export class MusicsController {
@@ -119,5 +121,10 @@ export class MusicsController {
   @Post('listen-music-in-user')
   listenMusicInUser(@Body() req: CreateNeo4j) {
     return this.musicsService.handleListenMusicNeo4j(req.userId, req.musicId);
+  }
+  @Public()
+  @Post('track-related')
+  trackRelated(@Body() req: TrackRelatedDto) {
+    return this.musicsService.handleTrackRelated(req);
   }
 }

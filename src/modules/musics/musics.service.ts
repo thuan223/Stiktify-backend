@@ -15,6 +15,7 @@ import { MusicCategory } from '../music-categories/schemas/music-category.schema
 import { MusicCategoriesService } from '../music-categories/music-categories.service';
 import { CategoriesService } from '../categories/categories.service';
 import { QueryRepository } from '../neo4j/neo4j.service';
+import { TrackRelatedDto } from './dto/track-related.dto';
 
 @Injectable()
 export class MusicsService {
@@ -463,6 +464,61 @@ export class MusicsService {
       .sort({ totalListeningOnWeek: -1 })
 
     return result
+  }
+
+  async handleTrackRelated(req: TrackRelatedDto) {
+    const { musicId, musicTag } = req
+    if (!musicId) {
+      throw new BadRequestException(`Missing param musicId!`)
+    }
+
+    let configMusicId = [];
+    let configMusicTag = [];
+
+    for (const element of musicId) {
+      const data = new Types.ObjectId(element)
+      configMusicId.push(data)
+    }
+
+    for (const element of musicTag) {
+      const data = {
+        _id: new Types.ObjectId(element._id + ""),
+        fullname: element.fullname
+      }
+      configMusicTag.push(data)
+    }
+
+    let music: any;
+    let count = 0
+    for (const element of configMusicId) {
+      music = await this.checkMusicById(element)
+      count++;
+      if (!music) {
+        throw new BadRequestException(`Music not exist in the system!`)
+      } else if (count === configMusicId.length) {
+        const result = await this.musicModel.findOne({
+          _id: { $nin: configMusicId },
+          userId: music.userId,
+        });
+
+        if (!result) {
+          for (var i = 0; i < configMusicTag.length - 1; i++) {
+            const result = await this.musicModel.findOne({
+              _id: { $nin: configMusicId },
+              userId: configMusicTag[i + 1]._id,
+            });
+            if (!result) {
+              const result = await this.musicModel.findOne({
+                userId: music.userId,
+              });
+              return result
+            }
+            return result
+          }
+        }
+        return result;
+      }
+    }
   }
 }
 
