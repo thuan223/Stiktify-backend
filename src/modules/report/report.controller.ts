@@ -57,6 +57,24 @@ export class ReportController {
     return this.reportService.remove(_id);
   }
 
+  @Get('search-music')
+  async searcMusicReport(
+    @Query('search') search: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.reportService.searchReportMusic(search, startDate, endDate);
+  }
+
+  @Get('search-video')
+  async searchVideoReport(
+    @Query('search') search: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.reportService.searchReportVideo(search, startDate, endDate);
+  }
+  
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.reportService.findOne(+id);
