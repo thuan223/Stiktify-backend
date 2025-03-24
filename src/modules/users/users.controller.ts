@@ -18,7 +18,7 @@ import {
   UserCreateByManager,
 } from './dto/create-user.dto';
 import { SendMailDto, UpdateShopOwnerDto, UpdateUserDto } from './dto/update-user.dto';
-import { ResponseMessage } from '@/decorator/customize';
+import { Public, ResponseMessage } from '@/decorator/customize';
 import { JwtAuthGuard } from '@/auth/passport/jwt-auth.guard';
 import { BanUserDto } from './dto/ban-user.dto';
 
@@ -50,7 +50,11 @@ export class UsersController {
   update(@Body() updateUserDto: UpdateUserDto) {
     return this.usersService.handleUpdate(updateUserDto);
   }
-
+  @Public()
+  @Get('getTopCreator/:title') 
+  getTop50Creator(@Param('title') title: string) {
+    return this.usersService.getTop50Creator(title);
+  }
   @Get('list-user')
   findAllUser(
     @Query() query: string,
