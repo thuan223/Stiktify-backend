@@ -12,10 +12,11 @@ import { Music } from '../musics/schemas/music.schema';
 @Injectable()
 export class MusicCategoriesService {
   constructor(
-    @InjectModel(MusicCategory.name) private musicCategoryModel: Model<MusicCategory>,
+    @InjectModel(MusicCategory.name)
+    private musicCategoryModel: Model<MusicCategory>,
     @InjectModel(Music.name) private musicModel: Model<Music>,
     private categoryService: CategoriesService,
-  ) { }
+  ) {}
 
   async handleCreateCategoryMusic(categoryId: string[], musicId: string) {
     for (const e of categoryId) {
@@ -43,26 +44,26 @@ export class MusicCategoriesService {
   async checkFilterAction(filter: string) {
     try {
       if (!filter) {
-        return {}
+        return {};
       }
       const result = await this.categoryService.checkCategoryById(filter);
       if (result) {
         return {
-          categoryId: new Types.ObjectId(filter)
-        }
+          categoryId: new Types.ObjectId(filter),
+        };
       }
-      return {}
+      return {};
     } catch (error) {
-      return {}
+      return {};
     }
   }
 
-  async handleSearchMusic(
-    pageSize: any, handleSearch: any, current: any
-  ) {
-    const totalItems = (await this.musicModel.find({
-      $or: handleSearch,
-    })).length;
+  async handleSearchMusic(pageSize: any, handleSearch: any, current: any) {
+    const totalItems = (
+      await this.musicModel.find({
+        $or: handleSearch,
+      })
+    ).length;
     const totalPages = Math.ceil(totalItems / pageSize);
 
     const skip = (+current - 1) * +pageSize;
@@ -71,7 +72,7 @@ export class MusicCategoriesService {
         $or: handleSearch,
       })
       .limit(pageSize)
-      .skip(skip)
+      .skip(skip);
 
     return {
       meta: {
@@ -111,42 +112,45 @@ export class MusicCategoriesService {
 
     const isEmptyObject = (obj: object) => Object.keys(obj).length === 0;
     if (isEmptyObject(handleFilter)) {
-      return await this.handleSearchMusic(pageSize, handleSearch, current)
+      return await this.handleSearchMusic(pageSize, handleSearch, current);
     }
-    const totalItem = (await this.musicCategoryModel
-      .find({ ...handleFilter })
-      .populate({
-        path: "musicId",
-        match: { $or: handleSearch }
+    const totalItem = (
+      await this.musicCategoryModel.find({ ...handleFilter }).populate({
+        path: 'musicId',
+        match: { $or: handleSearch },
       })
-    ).filter(x => x.musicId !== null)
-    const totalItems = new Set(totalItem.map((item: any) => item.musicId._id)).size
+    ).filter((x) => x.musicId !== null);
+    const totalItems = new Set(totalItem.map((item: any) => item.musicId._id))
+      .size;
 
     const totalPages = Math.ceil(totalItems / pageSize);
 
     const skip = (+current - 1) * +pageSize;
 
-
     const result = await this.musicCategoryModel
       .find({
-        ...handleFilter
+        ...handleFilter,
       })
       .populate({
-        path: "musicId",
+        path: 'musicId',
         match: { $or: handleSearch },
         // options: {
         //   skip: skip,
         //   limit: pageSize,
         //   sort: sort as any
         // }
-      })
+      });
     // .limit(pageSize)
     // .skip(skip)
     // .sort(sort as any);
 
     const configResult = result.slice(current - 1, pageSize);
-    const configData = result.map(item => item.musicId).filter(music => music);
-    const uniqueData = Array.from(new Map(configData.map((item: any) => [item._id, item])).values());
+    const configData = result
+      .map((item) => item.musicId)
+      .filter((music) => music);
+    const uniqueData = Array.from(
+      new Map(configData.map((item: any) => [item._id, item])).values(),
+    );
     return {
       meta: {
         current: current, // trang hien tai
@@ -156,5 +160,8 @@ export class MusicCategoriesService {
       },
       result: uniqueData,
     };
+  }
+  async getMusicCategoriesByMusicId(musicId: string) {
+    return await this.musicCategoryModel.find({ musicId });
   }
 }

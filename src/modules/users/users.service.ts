@@ -1,10 +1,18 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   BussinessAccountDto,
   CreateUserDto,
   UserCreateByManager,
 } from './dto/create-user.dto';
-import { UpdateUserDto, SendMailDto, UpdateShopOwnerDto } from './dto/update-user.dto';
+import {
+  UpdateUserDto,
+  SendMailDto,
+  UpdateShopOwnerDto,
+} from './dto/update-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './schemas/user.schema';
 import { Model } from 'mongoose';
@@ -495,20 +503,30 @@ export class UsersService {
     return;
   }
   // CreateUser Bussiness Account - ThangLH
-  async handleCreateUserBussinessAccount(createDto: BussinessAccountDto, userId: string) {
+  async handleCreateUserBussinessAccount(
+    createDto: BussinessAccountDto,
+    userId: string,
+  ) {
     // Tìm user theo userId
     const user = await this.userModel.findById(userId);
     if (!user) {
       throw new BadRequestException('User not found');
     }
-  
+
     // Kiểm tra followers
     if (user.totalFollowers < 1000) {
-      throw new BadRequestException('You need at least 1000 followers to register a business account');
+      throw new BadRequestException(
+        'You need at least 1000 followers to register a business account',
+      );
     }
-  
+
     // Kiểm tra thông tin nhập vào
-    if (!createDto.shopName || !createDto.taxCode || !createDto.shopBrandsAddress || !createDto.shopDescription) {
+    if (
+      !createDto.shopName ||
+      !createDto.taxCode ||
+      !createDto.shopBrandsAddress ||
+      !createDto.shopDescription
+    ) {
       throw new BadRequestException('All fields are required');
     }
 
@@ -520,13 +538,16 @@ export class UsersService {
       shopBrandsAddress: createDto.shopBrandsAddress,
       shopDescription: createDto.shopDescription,
     };
-  
+
     await user.save();
     return { message: 'Business account registered successfully' };
   }
-  
+
   // Edit shop
-  async updateShopOwner(id: string, updateShopDto: Partial<User['shopOwnerDetail']>) {
+  async updateShopOwner(
+    id: string,
+    updateShopDto: Partial<User['shopOwnerDetail']>,
+  ) {
     const user = await this.userModel.findById(id);
     if (!user) {
       throw new NotFoundException('User not found');
@@ -534,20 +555,206 @@ export class UsersService {
     if (!user.isShop) {
       throw new BadRequestException('User is not a shop owner');
     }
-  
-    return this.userModel.findByIdAndUpdate(
-      id,
+
+    return this.userModel
+      .findByIdAndUpdate(
+        id,
+        {
+          $set: {
+            'shopOwnerDetail.shopName': updateShopDto.shopName,
+            'shopOwnerDetail.taxCode': updateShopDto.taxCode,
+            'shopOwnerDetail.shopBrandsAddress':
+              updateShopDto.shopBrandsAddress,
+            'shopOwnerDetail.shopDescription': updateShopDto.shopDescription,
+          },
+        },
+        { new: true, runValidators: true },
+      )
+      .exec();
+  }
+  async getTop50Creator(
+    title: string,
+  ): Promise<
+    (User & {
+      totalFollows: number;
+      totalReactions: number;
+      totalViews: number;
+      total: number;
+    })[]
+  > {
+    // Tách title thành condition và timeframe
+    const [condition, timeframe] = title.split('-');
+
+    // Xác định khoảng thời gian
+    let dateFilter = {};
+    const now = new Date();
+    if (timeframe === 'weekly') {
+      dateFilter = { $gte: new Date(now.setDate(now.getDate() - 7)) };
+    } else if (timeframe === 'monthly') {
+      dateFilter = { $gte: new Date(now.setMonth(now.getMonth() - 1)) };
+    } else if (timeframe === 'yearly') {
+      dateFilter = { $gte: new Date(now.setFullYear(now.getFullYear() - 1)) };
+    } else if (timeframe !== 'alltime') {
+      throw new Error('Invalid timeframe');
+    }
+
+    // Pipeline tổng hợp dữ liệu
+    const aggregationPipeline: any = [
+      { $match: {} },
+      // Lookup totalViews và totalReactions từ videos
       {
-        $set: {
-          'shopOwnerDetail.shopName': updateShopDto.shopName,
-          'shopOwnerDetail.taxCode': updateShopDto.taxCode,
-          'shopOwnerDetail.shopBrandsAddress': updateShopDto.shopBrandsAddress,
-          'shopOwnerDetail.shopDescription': updateShopDto.shopDescription,
+        $lookup: {
+          from: 'videos',
+          let: { userId: '$_id' },
+          pipeline: [
+            { $match: { $expr: { $eq: ['$userId', '$$userId'] } } },
+            ...(timeframe !== 'alltime'
+              ? [{ $match: { createdAt: dateFilter } }]
+              : []),
+            {
+              $group: {
+                _id: null,
+                totalViews: { $sum: '$totalViews' },
+                totalReactions: { $sum: '$totalReaction' },
+              },
+            },
+          ],
+          as: 'videoData',
         },
       },
-      { new: true, runValidators: true }
-    ).exec();
+      // Lookup totalListeners và totalReactions từ musics
+      {
+        $lookup: {
+          from: 'musics',
+          let: { userId: '$_id' },
+          pipeline: [
+            { $match: { $expr: { $eq: ['$userId', '$$userId'] } } },
+            ...(timeframe !== 'alltime'
+              ? [{ $match: { createdAt: dateFilter } }]
+              : []),
+            {
+              $group: {
+                _id: null,
+                totalListeners: { $sum: '$totalListeners' },
+                totalReactions: { $sum: '$totalReactions' },
+              },
+            },
+          ],
+          as: 'musicData',
+        },
+      },
+      // Lookup totalFollows từ follows
+      {
+        $lookup: {
+          from: 'follows',
+          let: { userId: '$_id' },
+          pipeline: [
+            { $match: { $expr: { $eq: ['$userId', '$$userId'] } } },
+            ...(timeframe !== 'alltime'
+              ? [{ $match: { createdAt: dateFilter } }]
+              : []),
+            { $group: { _id: null, totalFollows: { $sum: 1 } } },
+          ],
+          as: 'followData',
+        },
+      },
+      // Dựng dữ liệu trả về với cả 3 trường
+      {
+        $project: {
+          fullname: 1,
+          image: 1,
+          totalFollows: {
+            $ifNull: [{ $arrayElemAt: ['$followData.totalFollows', 0] }, 0],
+          },
+          totalReactions: {
+            $add: [
+              {
+                $ifNull: [
+                  { $arrayElemAt: ['$videoData.totalReactions', 0] },
+                  0,
+                ],
+              },
+              {
+                $ifNull: [
+                  { $arrayElemAt: ['$musicData.totalReactions', 0] },
+                  0,
+                ],
+              },
+            ],
+          },
+          totalViews: {
+            $add: [
+              { $ifNull: [{ $arrayElemAt: ['$videoData.totalViews', 0] }, 0] },
+              {
+                $ifNull: [
+                  { $arrayElemAt: ['$musicData.totalListeners', 0] },
+                  0,
+                ],
+              },
+            ],
+          },
+          // Trường total để sắp xếp theo condition
+          total: {
+            $cond: {
+              if: { $eq: [condition, 'Views'] },
+              then: {
+                $add: [
+                  {
+                    $ifNull: [
+                      { $arrayElemAt: ['$videoData.totalViews', 0] },
+                      0,
+                    ],
+                  },
+                  {
+                    $ifNull: [
+                      { $arrayElemAt: ['$musicData.totalListeners', 0] },
+                      0,
+                    ],
+                  },
+                ],
+              },
+              else: {
+                $cond: {
+                  if: { $eq: [condition, 'Reactions'] },
+                  then: {
+                    $add: [
+                      {
+                        $ifNull: [
+                          { $arrayElemAt: ['$videoData.totalReactions', 0] },
+                          0,
+                        ],
+                      },
+                      {
+                        $ifNull: [
+                          { $arrayElemAt: ['$musicData.totalReactions', 0] },
+                          0,
+                        ],
+                      },
+                    ],
+                  },
+                  else: {
+                    $ifNull: [
+                      { $arrayElemAt: ['$followData.totalFollows', 0] },
+                      0,
+                    ],
+                  }, // Mặc định là Follow
+                },
+              },
+            },
+          },
+        },
+      },
+      { $sort: { total: -1 } },
+      { $limit: 50 },
+    ];
+
+    // Thực thi truy vấn
+    const top50 = await this.userModel.aggregate(aggregationPipeline).exec();
+    return top50 as (User & {
+      totalFollows: number;
+      totalReactions: number;
+      totalViews: number;
+      total: number;
+    })[];
   }
-  
-  
 }
