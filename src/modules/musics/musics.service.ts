@@ -196,8 +196,13 @@ export class MusicsService {
 
   async handleMyMusic(userId: string, current: number, pageSize: number) {
     const filter = { userId: new mongoose.Types.ObjectId(userId) };
-    const totalItems = await this.musicModel.countDocuments(filter);
-    if (totalItems === 0) {
+    const result = await this.musicModel
+    .find(filter)
+    .skip((current - 1) * pageSize)
+    .limit(pageSize)
+    .sort({ createdAt: -1 })
+    .populate('userId', 'musicId');
+    if (result.length == 0){
       return {
         meta: {
           current,
@@ -206,21 +211,15 @@ export class MusicsService {
           totalPages: 0,
         },
         result: [],
-        message: 'No videos found for this user',
+        message: 'No musics found for this user',
       };
     }
-    const skip = (current - 1) * pageSize;
-    const result = await this.musicModel
-      .find(filter)
-      .skip(skip)
-      .limit(pageSize)
-      .sort({ createdAt: -1 });
     return {
       meta: {
         current,
         pageSize,
-        totalItems,
-        totalPages: Math.ceil(totalItems / pageSize),
+        totalItems: result.length,
+        totalPages: Math.ceil(result.length / pageSize),
       },
       result,
     };

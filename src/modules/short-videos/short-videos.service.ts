@@ -373,37 +373,6 @@ export class ShortVideosService {
     return await this.videoModel.findById(videoId);
   }
 
-  async searchVideosByDescription(
-    searchText: string,
-    current: number,
-    pageSize: number,
-  ) {
-    const regex = new RegExp(searchText, 'i');
-    const filter = { videoDescription: { $regex: regex } };
-    const totalItems = await this.videoModel.countDocuments(filter);
-    const totalPages = Math.ceil(totalItems / pageSize);
-    const skip = (current - 1) * pageSize;
-    const result = await this.videoModel
-      .find(filter)
-      .skip(skip)
-      .limit(pageSize)
-      .sort({ createdAt: -1 })
-      .select(
-        'videoUrl totalFavorite totalReaction totalViews videoDescription videoThumbnail',
-      )
-      .populate('userId', 'userName');
-
-    return {
-      meta: {
-        current,
-        pageSize,
-        totalItems,
-        totalPages,
-      },
-      result,
-    };
-  }
-
   async findByCategory(
     categoryName: string,
     current: number = 1,
