@@ -15,6 +15,9 @@ import { MusicCategory } from '../music-categories/schemas/music-category.schema
 import { MusicCategoriesService } from '../music-categories/music-categories.service';
 import { CategoriesService } from '../categories/categories.service';
 import { QueryRepository } from '../neo4j/neo4j.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
+import { FriendRequestService } from '../friend-request/friend-request.service';
 
 @Injectable()
 export class MusicsService {
@@ -26,6 +29,9 @@ export class MusicsService {
     private musicCategoryService: MusicCategoriesService,
     private categoryService: CategoriesService,
     private readonly queryRepository: QueryRepository,
+    private friendRequestService: FriendRequestService,
+    private notificationsService: NotificationsService,
+    private notificationsGateway: NotificationsGateway,
   ) {}
 
   async checkMusicById(id: string) {
@@ -88,6 +94,32 @@ export class MusicsService {
       categoryId,
       result._id + '',
     );
+    // Lấy danh sách bạn bè
+    const friends = await this.friendRequestService.getFriendsList(
+      createMusicDto.userId,
+    );
+
+    // Gửi thông báo đến bạn bè
+    for (const friend of friends) {
+      const notification = await this.notificationsService.createNotification({
+        sender: createMusicDto.userId,
+        recipient: friend.friendId,
+        type: 'new-music',
+        musicId: result._id,
+      });
+
+      // Lấy thông tin đầy đủ để gửi qua WebSocket
+      const populatedNotification =
+        await this.notificationsService.populateNotification(notification._id);
+      console.log(populatedNotification);
+
+      // Gửi thông báo realtime qua WebSocket
+      this.notificationsGateway.sendNotification(
+        createMusicDto.userId,
+        friend.friendId,
+        populatedNotification,
+      );
+    }
     return result;
   }
 
@@ -472,6 +504,7 @@ export class MusicsService {
   async getAllMusic(): Promise<Music[]> {
     return this.musicModel.find().exec();
   }
+
   async getTop50Music(title: string): Promise<Music[]> {
     if (!title.includes('-')) {
       throw new Error(

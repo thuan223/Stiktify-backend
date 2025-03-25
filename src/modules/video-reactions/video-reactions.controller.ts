@@ -15,10 +15,11 @@ import {
 } from './dto/create-video-reaction.dto';
 import { DeleteVideoReactionDto } from './dto/delete-video-reaction.dto';
 import { Types } from 'mongoose';
+import { Public } from '@/decorator/customize';
 
 @Controller('video-reactions')
 export class VideoReactionsController {
-  constructor(private readonly videoReactionsService: VideoReactionsService) { }
+  constructor(private readonly videoReactionsService: VideoReactionsService) {}
 
   @UseGuards(JwtAuthGuard)
   @Post('react')
@@ -41,6 +42,7 @@ export class VideoReactionsController {
     return this.videoReactionsService.getUserReaction(userId, dto);
   }
 
+  @Public()
   @Get(':videoId/reactions')
   async getReactions(@Param('videoId') videoId: string) {
     return this.videoReactionsService.getVideoReactions(videoId);
@@ -52,5 +54,4 @@ export class VideoReactionsController {
   async getReactionsByUserId(@Param('userId') userId: string) {
     return this.videoReactionsService.getReactionsByUserId(userId);
   }
-
 }

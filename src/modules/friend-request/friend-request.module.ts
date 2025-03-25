@@ -17,5 +17,6 @@ import { NotificationsModule } from '../notifications/notifications.module';
   ],
   controllers: [FriendRequestController],
   providers: [FriendRequestService],
+  exports: [FriendRequestService],
 })
 export class FriendRequestModule {}
