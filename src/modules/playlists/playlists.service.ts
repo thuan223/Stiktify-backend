@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreatePlaylistDto } from './dto/create-playlist.dto';
 import { UpdatePlaylistDto } from './dto/update-playlist.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -8,6 +8,7 @@ import { UsersService } from '../users/users.service';
 import { Category } from '../categories/schemas/category.schema';
 import { MusicCategory } from '../music-categories/schemas/music-category.schema';
 import aqp from 'api-query-params';
+import { StorePlaylistService } from '../store-playlist/store-playlist.service';
 
 @Injectable()
 export class PlaylistsService {
@@ -15,7 +16,9 @@ export class PlaylistsService {
     @InjectModel(Playlist.name) private playlistModel: Model<Playlist>,
     private readonly userService: UsersService,
     @InjectModel(Category.name) private categoryModel: Model<Category>,
-    @InjectModel(MusicCategory.name) private musicCategoryModel: Model<MusicCategory>
+    @InjectModel(MusicCategory.name) private musicCategoryModel: Model<MusicCategory>,
+    @Inject(forwardRef(() => StorePlaylistService))
+    private storePlaylistService: StorePlaylistService,
   ) { }
 
   async checkPlaylistById(id: string) {
@@ -194,7 +197,7 @@ export class PlaylistsService {
     if (!check) {
       throw new NotFoundException(`Not found playlist with id: ${id}`)
     }
-
+    await this.storePlaylistService.handleDeletePlaylist(id)
     const result = await this.playlistModel.findByIdAndDelete(id)
     return result
   }

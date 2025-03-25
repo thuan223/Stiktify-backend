@@ -15,6 +15,8 @@ import { MusicCategory } from '../music-categories/schemas/music-category.schema
 import { MusicCategoriesService } from '../music-categories/music-categories.service';
 import { CategoriesService } from '../categories/categories.service';
 import { QueryRepository } from '../neo4j/neo4j.service';
+import { TrackRelatedDto } from './dto/track-related.dto';
+
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationsGateway } from '../notifications/notifications.gateway';
 import { FriendRequestService } from '../friend-request/friend-request.service';
@@ -55,21 +57,8 @@ export class MusicsService {
   }
 
   async handleUploadMusic(createMusicDto: CreateMusicDto) {
-    const {
-      musicTag,
-      categoryId,
-      musicDescription,
-      musicLyric,
-      musicThumbnail,
-      musicUrl,
-      userId,
-    } = createMusicDto;
-
-    for (const e of musicTag) {
-      if (typeof e !== 'string') {
-        throw new BadRequestException('musicTag must be array string!');
-      }
-    }
+    const { musicTag, categoryId, musicDescription, musicThumbnail,
+      musicUrl, userId, musicSeparate, musicLyric } = createMusicDto;
 
     for (const e of categoryId) {
       if (typeof e !== 'string') {
@@ -85,10 +74,13 @@ export class MusicsService {
     const result = await this.musicModel.create({
       userId: userId,
       musicDescription: musicDescription,
-      musicLyric: musicLyric,
       musicThumbnail: musicThumbnail,
       musicUrl: musicUrl,
       listeningAt: new Date(),
+      musicSeparate: musicSeparate,
+      musicLyric: musicLyric,
+      musicTag: musicTag
+
     });
     await this.musicCategoryService.handleCreateCategoryMusic(
       categoryId,
@@ -472,7 +464,7 @@ export class MusicsService {
 
     const dataNeo4j = recommendations.map((music) => music.recommendedMusicId);
     const musicHot = await this.musicModel
-      .find({ listeningAt: { $gte: sevenDaysAgo } })
+      .find({ listeningAt: { $gte: sevenDaysAgo }, _id: { $nin: dataNeo4j }, })
       .limit(10 - dataNeo4j.length)
       .sort({ totalListeningOnWeek: -1 });
 
@@ -504,6 +496,98 @@ export class MusicsService {
   async getAllMusic(): Promise<Music[]> {
     return this.musicModel.find().exec();
   }
+
+  async getMusicHotInWeek() {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const musicHot = await this.musicModel
+      .find({ listeningAt: { $gte: sevenDaysAgo } })
+      .limit(10)
+      .sort({ totalListeningOnWeek: -1 })
+    return musicHot
+  }
+
+  async handleUpdateMusic(updateMusicDto: UpdateMusicDto) {
+    const { musicDescription, musicTag, musicThumbnail, musicId } = updateMusicDto
+
+    const result = await this.musicModel.findByIdAndUpdate(musicId, { musicDescription, musicTag, musicThumbnail })
+
+    return result
+  }
+
+  async handlePopularArtists() {
+    const result = await this.musicModel
+      .find()
+      .limit(10)
+      .populate("userId")
+      .sort({ totalListeningOnWeek: -1 })
+
+    return result
+  }
+
+  async handleTrackRelated(req: TrackRelatedDto) {
+    const { musicId, musicTag } = req
+    if (!musicId) {
+      throw new BadRequestException(`Missing param musicId!`)
+    }
+    console.log(musicId + " : " + musicTag);
+
+    let configMusicId = [];
+    let configMusicTag = [];
+
+    for (const element of musicId) {
+      const data = new Types.ObjectId(element)
+      configMusicId.push(data)
+    }
+    for (const element of musicTag) {
+      const data = {
+        _id: new Types.ObjectId(element._id + ""),
+        fullname: element.fullname
+      }
+      configMusicTag.push(data)
+    }
+
+    let music: any;
+    let count = 0
+    for (const element of configMusicId) {
+      music = await this.checkMusicById(element)
+      count++;
+      if (!music) {
+        throw new BadRequestException(`Music not exist in the system!`)
+      } else if (count === configMusicId.length) {
+        const result = await this.musicModel.findOne({
+          _id: { $nin: configMusicId },
+          userId: music.userId,
+        });
+
+        if (!result) {
+          if (configMusicTag && configMusicTag.length !== 0) {
+            for (var i = 0; i < configMusicTag.length - 1; i++) {
+              const result = await this.musicModel.findOne({
+                _id: { $nin: configMusicId },
+                userId: configMusicTag[i + 1]._id,
+              });
+              if (!result) {
+                const result = await this.musicModel.findOne({
+                  userId: music.userId,
+                });
+                return result
+              }
+              return result
+            }
+          } else {
+            const result = await this.musicModel.findOne({
+              userId: music.userId,
+            });
+            return result
+          }
+        }
+        return result;
+      }
+    }
+  }
+}
 
   async getTop50Music(title: string): Promise<Music[]> {
     if (!title.includes('-')) {

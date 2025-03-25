@@ -11,10 +11,12 @@ import {
 } from '@nestjs/common';
 import { MusicsService } from './musics.service';
 import { CreateMusicDto } from './dto/create-music.dto';
-import { UpdateMusicDto } from './dto/update-music.dto';
 import { Public, ResponseMessage } from '@/decorator/customize';
 import { flagMusicDto } from './dto/flag.dto';
 import { CreateNeo4j } from './dto/create-neo4j.dto';
+import { UpdateMusicDto } from './dto/update-music.dto';
+import { Types } from 'mongoose';
+import { TrackRelatedDto } from './dto/track-related.dto';
 
 @Controller('musics')
 export class MusicsController {
@@ -24,6 +26,12 @@ export class MusicsController {
   uploadMusic(@Body() createMusicDto: CreateMusicDto) {
     return this.musicsService.handleUploadMusic(createMusicDto);
   }
+
+  @Post("update-music")
+  updateMusic(@Body() updateMusicDto: UpdateMusicDto) {
+    return this.musicsService.handleUpdateMusic(updateMusicDto);
+  }
+
 
   @Get('my-musics/:userId')
   getUserMusics(
@@ -53,13 +61,11 @@ export class MusicsController {
   }
 
   @Public()
-  @Get('list-hot-music')
-  listHotMusic(
-    @Query('current') current: string,
-    @Query('pageSize') pageSize: string,
-  ) {
-    return this.musicsService.handleListHotMusic(+current, +pageSize);
+  @Get("list-hot-music")
+  listHotMusic() {
+    return this.musicsService.getMusicHotInWeek();
   }
+  
   @Public()
   @Get('getTopMusic/:title') 
   getTopMusic(@Param('title') title: string) {
@@ -131,5 +137,11 @@ export class MusicsController {
   @Post('listen-music-in-user')
   listenMusicInUser(@Body() req: CreateNeo4j) {
     return this.musicsService.handleListenMusicNeo4j(req.userId, req.musicId);
+  }
+  
+  @Public()
+  @Post('track-related')
+  trackRelated(@Body() req: TrackRelatedDto) {
+    return this.musicsService.handleTrackRelated(req);
   }
 }

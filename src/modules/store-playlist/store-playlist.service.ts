@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable } from '@nestjs/common';
 import { CreateStorePlaylistDto } from './dto/create-store-playlist.dto';
 import { UpdateStorePlaylistDto } from './dto/update-store-playlist.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -21,8 +21,9 @@ export class StorePlaylistService {
     private musicCategoryModel: Model<MusicCategory>,
     @InjectModel(Category.name) private categoryModel: Model<Category>,
     private readonly musicService: MusicsService,
-    private readonly playlistService: PlaylistsService,
-  ) {}
+    @Inject(forwardRef(() => PlaylistsService))
+    private playlistService: PlaylistsService,
+  ) { }
 
   async handleFilterSearchStorePlayList(
     query: any,
@@ -263,5 +264,10 @@ export class StorePlaylistService {
 
     const result = await this.storePlaylistModel.deleteOne({ musicId: id });
     return result;
+  }
+
+  async handleDeletePlaylist(playlistId: string) {
+    await this.storePlaylistModel.deleteMany({ _id: playlistId })
+    return true
   }
 }
