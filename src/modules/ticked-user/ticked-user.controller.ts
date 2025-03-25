@@ -9,11 +9,11 @@ import {
 } from '@nestjs/common';
 import { TickedUserService } from './ticked-user.service';
 import { CreateTickedUserDto } from './dto/create-ticked-user.dto';
+import { UsersService } from '../users/users.service';
 
 @Controller('ticked-users')
 export class TickedUserController {
   constructor(private readonly tickedUserService: TickedUserService) {}
-
   @Get('list-ticked')
   async getUserTicked(
     @Query() query: string,
@@ -22,6 +22,16 @@ export class TickedUserController {
   ) {
     return this.tickedUserService.getUserTicked(query, +current, +pageSize);
   }
+
+  @Get('filter-search')
+  findUserRequestFilterAndSearch(
+    @Query() query: string,
+    @Query('current') current: string,
+    @Query('pageSize') pageSize: string,
+  ) {
+    return this.tickedUserService.handleFilterAndSearchUserReTicked(query, +current, +pageSize);
+  }
+
   @Post()
   async requestTick(@Body() dto: CreateTickedUserDto) {
     return this.tickedUserService.requestTick(dto);

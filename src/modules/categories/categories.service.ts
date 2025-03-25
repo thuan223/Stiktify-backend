@@ -10,7 +10,7 @@ export class CategoriesService {
   constructor(
     @InjectModel(Category.name)
     private categoryModel: Model<Category>,
-  ) { }
+  ) {}
 
   create(createCategoryDto: CreateCategoryDto) {
     return 'This action adds a new category';
@@ -18,7 +18,7 @@ export class CategoriesService {
 
   async checkCategoryById(id: string) {
     try {
-      const result = await this.categoryModel.findById(id)
+      const result = await this.categoryModel.findById(id);
 
       if (result) {
         return result;
@@ -34,7 +34,7 @@ export class CategoriesService {
   }
 
   async handleGetAllCategory() {
-    const result = await this.categoryModel.find()
+    const result = await this.categoryModel.find();
     return result;
   }
 
@@ -51,9 +51,15 @@ export class CategoriesService {
   }
 
   async findCategoryByName(categoryName: string) {
-    const category = await this.categoryModel.findOne({
-      categoryName: { $regex: new RegExp(`^${categoryName}$`, "i") }
-    }).exec();
+    const category = await this.categoryModel
+      .findOne({
+        categoryName: { $regex: new RegExp(`^${categoryName}$`, 'i') },
+      })
+      .exec();
     return category;
+  }
+
+  async getCategoryById(categoryId: string) {
+    return await this.categoryModel.findById(categoryId);
   }
 }

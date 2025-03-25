@@ -50,7 +50,11 @@ export class UsersController {
   update(@Body() updateUserDto: UpdateUserDto) {
     return this.usersService.handleUpdate(updateUserDto);
   }
-
+  @Public()
+  @Get('getTopCreator/:title') 
+  getTop50Creator(@Param('title') title: string) {
+    return this.usersService.getTop50Creator(title);
+  }
   @Get('list-user')
   findAllUser(
     @Query() query: string,
@@ -77,20 +81,18 @@ export class UsersController {
     return this.usersService.handleUpdateInformation(userId, updateUserDto); // Truyền userId vào service
   }
 
-  @Get('search-name')
-  @ResponseMessage('Search users successfully')
-  searchUsers(
-    @Query('search') search: string,
-    @Query('current') current: string,
-    @Query('pageSize') pageSize: string,
-    @Query('sort') sort: string,
+  @Public()
+  @Get('search-user-video')
+  searchAll(
+  @Query('searchText') searchText: string,
+  @Query('current') current: string,
+  @Query('pageSize') pageSize: string,
   ) {
-    return this.usersService.handleSearchUser(
-      search,
-      +current || 1,
-      +pageSize || 10,
-      sort ? JSON.parse(sort) : {},
-    );
+  return this.usersService.searchUserAndVideo(
+    searchText,
+    +current || 1,
+    +pageSize || 10
+  );
   }
 
   // Detail user - ThangLH

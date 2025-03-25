@@ -45,7 +45,8 @@ export class FriendRequestService {
     }
 
     // Gửi thông báo với fullname
-    this.notificationsGateway.sendFriendRequestNotification(
+    this.notificationsGateway.sendNotification(
+      dto.senderId,
       dto.receiverId,
       populatedNotification,
     );
@@ -63,11 +64,37 @@ export class FriendRequestService {
       { new: true },
     );
 
-    return await this.friendRequestModel.findByIdAndUpdate(
+    const request = await this.friendRequestModel.findByIdAndUpdate(
       id,
       { status: 'accepted' },
       { new: true },
     );
+
+    // Gửi thông báo
+    const notification = await this.notificationsService.createNotification({
+      recipient: request.senderId,
+      sender: request.receiverId,
+      type: 'accept-friend-request',
+      friendRequestId: request._id,
+      status: 'accepted',
+    });
+
+    // Populate fullname của sender
+    const populatedNotification = await this.notificationModel
+      .findById(notification._id)
+      .populate('sender', 'fullname image')
+      .select('recipient sender type status createdAt friendRequestId')
+      .lean();
+
+    this.notificationsGateway.sendNotification(
+      request.receiverId,
+      request.senderId,
+      populatedNotification,
+    );
+
+    console.log('Request >>>', request);
+
+    return request;
   }
 
   async rejectFriendRequest(id: string) {
@@ -92,5 +119,49 @@ export class FriendRequestService {
       receiverId: userId,
       status: 'pending',
     });
+  }
+
+  async checkFriendshipStatus(
+    userId1: string,
+    userId2: string,
+  ): Promise<boolean> {
+    const friendship = await this.friendRequestModel.findOne({
+      $or: [
+        { senderId: userId1, receiverId: userId2, status: 'accepted' },
+        { senderId: userId2, receiverId: userId1, status: 'accepted' },
+      ],
+    });
+
+    return !!friendship;
+  }
+
+  async unFriend(userId1: string, userId2: string): Promise<boolean> {
+    const friendship = await this.friendRequestModel.findOneAndDelete({
+      $or: [
+        { senderId: userId1, receiverId: userId2, status: 'accepted' },
+        { senderId: userId2, receiverId: userId1, status: 'accepted' },
+      ],
+    });
+
+    return !!friendship;
+  }
+
+  async getFriendsList(userId: string) {
+    const friends = await this.friendRequestModel
+      .find({
+        $or: [{ senderId: userId }, { receiverId: userId }],
+        status: 'accepted',
+      })
+      .lean();
+
+    const uniqueFriends = Array.from(
+      new Set(
+        friends.map((friend) =>
+          friend.senderId === userId ? friend.receiverId : friend.senderId,
+        ),
+      ),
+    ).map((friendId) => ({ friendId }));
+
+    return uniqueFriends;
   }
 }

@@ -16,11 +16,15 @@ import { Report } from './schemas/report.schema';
 import { ShortVideosService } from '../short-videos/short-videos.service';
 import { MusicsService } from '../musics/musics.service';
 import { UsersService } from '../users/users.service';
+import { Music } from '../musics/schemas/music.schema';
+import { Video } from '../short-videos/schemas/short-video.schema';
 
 @Injectable()
 export class ReportService {
   constructor(
     @InjectModel(Report.name) private reportModel: Model<Report>,
+    @InjectModel(Music.name) private musicModel: Model<Music>,
+    @InjectModel(Video.name) private videoModel: Model<Video>,
     @Inject(forwardRef(() => ShortVideosService))
     private shortVideosService: ShortVideosService,
     private usersService: UsersService,
@@ -278,5 +282,74 @@ export class ReportService {
       },
       result: result,
     }
+  }
+
+  async searchReportMusic(search: string, startDate?: string, endDate?: string) {
+    const searchRegex = new RegExp(search, 'i'); 
+    const musicIds = await this.musicModel.find({
+      musicDescription: { $regex: searchRegex },
+    }).select('_id');
+    if (musicIds.length === 0) {
+      return { message: "No music found for the search term!" };
+    }
+    let dateFilter: any = {};
+    if (startDate) {
+      dateFilter = { ...dateFilter, createdAt: { $gte: new Date(startDate) } };
+    }
+    if (endDate) {
+      const endDateWithTime = new Date(endDate);
+      endDateWithTime.setHours(23, 59, 59, 999);  
+      dateFilter = { 
+        ...dateFilter, 
+        createdAt: { 
+          ...dateFilter.createdAt, 
+          $lte: endDateWithTime 
+        } 
+      }; 
+    }
+    const result = await this.reportModel
+      .find({
+        musicId: { $in: musicIds.map(item => item._id) },
+        ...dateFilter, 
+      })
+      .populate('musicId', 'musicDescription musicUrl musicThumbnail') 
+      .sort({ updatedAt: -1 }) 
+      .limit(10);
+  
+    return { result };
+  }
+
+  async searchReportVideo(search: string, startDate?: string, endDate?: string) {
+    const searchRegex = new RegExp(search, 'i'); 
+    const videoIds = await this.videoModel.find({
+      videoDescription: { $regex: searchRegex },
+    }).select('_id');
+    if (videoIds.length === 0) {
+      return { message: "No video found for the search term!" };
+    }
+    let dateFilter: any = {};
+    if (startDate) {
+      dateFilter = { ...dateFilter, createdAt: { $gte: new Date(startDate) } };
+    }
+    if (endDate) {
+      const endDateWithTime = new Date(endDate);
+      endDateWithTime.setHours(23, 59, 59, 999);  
+      dateFilter = { 
+        ...dateFilter, 
+        createdAt: { 
+          ...dateFilter.createdAt, 
+          $lte: endDateWithTime 
+        } 
+      }; 
+    }
+    const result = await this.reportModel
+      .find({
+        videoId: { $in: videoIds.map(item => item._id) },
+        ...dateFilter, 
+      })
+      .populate('videoId', 'videoDescription videoUrl videoThumbnail') 
+      .sort({ updatedAt: -1 }) 
+      .limit(10);
+    return { result }; 
   }
 }

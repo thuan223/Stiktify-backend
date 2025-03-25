@@ -13,6 +13,8 @@ import { Music } from '../musics/schemas/music.schema';
 import { Request, Response, NextFunction } from 'express';
 import { uploadFile } from '@/helpers/uploadFileHelper';
 import { DeleteCommentDto, UpdateCommentDto } from './dto/update-comment.dto';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
 
 @Injectable()
 export class CommentsService {
@@ -20,6 +22,8 @@ export class CommentsService {
     @InjectModel(Comment.name) private commentModel: Model<Comment>,
     @InjectModel(Video.name) private VideoModal: Model<Video>,
     @InjectModel(Music.name) private MusicModal: Model<Music>,
+    private notificationsService: NotificationsService,
+    private notificationsGateway: NotificationsGateway,
   ) {}
   async getCommentsByVideoId(videoId: Types.ObjectId): Promise<any[]> {
     const thisVideoComments = await this.commentModel
@@ -56,6 +60,33 @@ export class CommentsService {
     await this.VideoModal.findByIdAndUpdate(createCommentDto.videoId, {
       $inc: { totalComment: 1 },
     });
+    const video: any = await this.VideoModal.findById(
+      createCommentDto.videoId,
+    ).populate('userId', '_id');
+
+    if (!video) {
+      throw new Error('Video not exist');
+    }
+
+    const notification = await this.notificationsService.createNotification({
+      sender: userId,
+      recipient: video.userId._id.toString(),
+      type: 'new-comment',
+      postId: video._id,
+    });
+
+    // Lấy dữ liệu thông báo đầy đủ
+    const populatedNotification =
+      await this.notificationsService.populateNotification(notification._id);
+    console.log(populatedNotification);
+
+    // Gửi thông báo realtime qua WebSocket
+    this.notificationsGateway.sendNotification(
+      userId,
+      populatedNotification.recipient,
+      populatedNotification,
+    );
+
     return await newComment.save();
   }
 
@@ -176,6 +207,33 @@ export class CommentsService {
     await this.MusicModal.findByIdAndUpdate(createCommentDto.musicId, {
       $inc: { totalComment: 1 },
     });
+
+    const music: any = await this.MusicModal.findById(
+      createCommentDto.musicId,
+    ).populate('userId', '_id');
+
+    if (!music) {
+      throw new Error('Music not exist');
+    }
+
+    const notification = await this.notificationsService.createNotification({
+      sender: userId,
+      recipient: music.userId._id.toString(),
+      type: 'new-music-comment',
+      musicId: music._id,
+    });
+
+    // Lấy dữ liệu thông báo đầy đủ
+    const populatedNotification =
+      await this.notificationsService.populateNotification(notification._id);
+    console.log(populatedNotification);
+
+    // Gửi thông báo realtime qua WebSocket
+    this.notificationsGateway.sendNotification(
+      userId,
+      populatedNotification.recipient,
+      populatedNotification,
+    );
     return await newComment.save();
   }
   async updateMusicComment(userId: string, updateCommentDto: UpdateCommentDto) {
