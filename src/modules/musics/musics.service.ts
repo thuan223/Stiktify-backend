@@ -34,7 +34,7 @@ export class MusicsService {
     private friendRequestService: FriendRequestService,
     private notificationsService: NotificationsService,
     private notificationsGateway: NotificationsGateway,
-  ) {}
+  ) { }
 
   async checkMusicById(id: string) {
     try {
@@ -221,12 +221,12 @@ export class MusicsService {
   async handleMyMusic(userId: string, current: number, pageSize: number) {
     const filter = { userId: new mongoose.Types.ObjectId(userId) };
     const result = await this.musicModel
-    .find(filter)
-    .skip((current - 1) * pageSize)
-    .limit(pageSize)
-    .sort({ createdAt: -1 })
-    .populate('userId', 'musicId');
-    if (result.length == 0){
+      .find(filter)
+      .skip((current - 1) * pageSize)
+      .limit(pageSize)
+      .sort({ createdAt: -1 })
+      .populate('userId', 'musicId');
+    if (result.length == 0) {
       return {
         meta: {
           current,
@@ -587,7 +587,6 @@ export class MusicsService {
       }
     }
   }
-}
 
   async getTop50Music(title: string): Promise<Music[]> {
     if (!title.includes('-')) {
