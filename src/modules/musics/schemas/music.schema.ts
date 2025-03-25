@@ -54,14 +54,8 @@ export class Music {
   @Prop({ default: 0 })
   totalListeningOnWeek: number
 
-  @Prop()
-  bassMusic: string
-
-  @Prop()
-  drumsMusic: string
-
-  @Prop()
-  otherMusic: string
+  @Prop({ type: [String], default: [] })
+  musicSeparate: string[];
 }
 
 export const MusicSchema = SchemaFactory.createForClass(Music);

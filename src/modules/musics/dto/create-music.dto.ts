@@ -25,12 +25,6 @@ export class CreateMusicDto {
     @IsNotEmpty({ message: 'categoryId must not be empty' })
     categoryId: string[];
 
-    @IsNotEmpty({ message: 'bassMusic must not be empty' })
-    bassMusic: string
-
-    @IsNotEmpty({ message: 'drumsMusic must not be empty' })
-    drumsMusic: string
-
-    @IsNotEmpty({ message: 'otherMusic must not be empty' })
-    otherMusic: string
+    @IsNotEmpty({ message: 'musicSeparate must not be empty' })
+    musicSeparate: string[]
 }

@@ -51,7 +51,7 @@ export class MusicsService {
 
   async handleUploadMusic(createMusicDto: CreateMusicDto) {
     const { musicTag, categoryId, musicDescription, musicThumbnail,
-      musicUrl, userId, bassMusic, drumsMusic, musicLyric, otherMusic } = createMusicDto;
+      musicUrl, userId, musicSeparate, musicLyric } = createMusicDto;
 
     for (const e of categoryId) {
       if (typeof e !== 'string') {
@@ -70,9 +70,7 @@ export class MusicsService {
       musicThumbnail: musicThumbnail,
       musicUrl: musicUrl,
       listeningAt: new Date(),
-      bassMusic: bassMusic,
-      drumsMusic: drumsMusic,
-      otherMusic: otherMusic,
+      musicSeparate: musicSeparate,
       musicLyric: musicLyric,
       musicTag: musicTag
     });
@@ -471,6 +469,7 @@ export class MusicsService {
     if (!musicId) {
       throw new BadRequestException(`Missing param musicId!`)
     }
+    console.log(musicId + " : " + musicTag);
 
     let configMusicId = [];
     let configMusicTag = [];
@@ -479,7 +478,6 @@ export class MusicsService {
       const data = new Types.ObjectId(element)
       configMusicId.push(data)
     }
-
     for (const element of musicTag) {
       const data = {
         _id: new Types.ObjectId(element._id + ""),
@@ -502,17 +500,24 @@ export class MusicsService {
         });
 
         if (!result) {
-          for (var i = 0; i < configMusicTag.length - 1; i++) {
-            const result = await this.musicModel.findOne({
-              _id: { $nin: configMusicId },
-              userId: configMusicTag[i + 1]._id,
-            });
-            if (!result) {
+          if (configMusicTag && configMusicTag.length !== 0) {
+            for (var i = 0; i < configMusicTag.length - 1; i++) {
               const result = await this.musicModel.findOne({
-                userId: music.userId,
+                _id: { $nin: configMusicId },
+                userId: configMusicTag[i + 1]._id,
               });
+              if (!result) {
+                const result = await this.musicModel.findOne({
+                  userId: music.userId,
+                });
+                return result
+              }
               return result
             }
+          } else {
+            const result = await this.musicModel.findOne({
+              userId: music.userId,
+            });
             return result
           }
         }
