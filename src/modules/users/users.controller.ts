@@ -18,7 +18,7 @@ import {
   UserCreateByManager,
 } from './dto/create-user.dto';
 import { SendMailDto, UpdateShopOwnerDto, UpdateUserDto } from './dto/update-user.dto';
-import { ResponseMessage } from '@/decorator/customize';
+import { Public, ResponseMessage } from '@/decorator/customize';
 import { JwtAuthGuard } from '@/auth/passport/jwt-auth.guard';
 import { BanUserDto } from './dto/ban-user.dto';
 
@@ -95,6 +95,7 @@ export class UsersController {
 
   // Detail user - ThangLH
   @Get('get-user/:id')
+  @Public()
   @ResponseMessage('Fetched user details successfully')
   async getUserDetail(@Param('id') id: string) {
     return this.usersService.getUserById(id);
@@ -112,7 +113,6 @@ export class UsersController {
     return this.usersService.handleCreateUserBussinessAccount(createDto, userId);
   }
   
-
   // Edit shop - ThangLH
   @Patch('editShop/:id')
 async updateShopOwner(@Param('id') id: string, @Body() updateShopDto: UpdateShopOwnerDto) {

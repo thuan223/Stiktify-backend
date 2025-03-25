@@ -30,10 +30,6 @@ searchProducts(
   return this.productsService.searchProducts({ name, category, minPrice, maxPrice });
 }
 
-
-
-//// get all products by userId - ThangLH
-
  @Get('user/:userId')
 findByUser(@Param('userId') userId: string) {
   return this.productsService.findByUser(userId);

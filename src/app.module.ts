@@ -40,9 +40,11 @@ import { ListeninghistoryModule } from './modules/listeninghistory/listeninghist
 import { SettingsModule } from './modules/settings/settings.module';
 import { Neo4jModule } from './modules/neo4j/neo4j.module';
 import { TickedUserModule } from './modules/ticked-user/ticked-user.module';
+import { OrderModule } from './modules/order/order.module';
 
 @Module({
   imports: [
+    OrderModule,
     Neo4jModule.forRootAsync(),
     UploadModule,
     ProductsModule,

@@ -36,7 +36,8 @@ export class Neo4jModule {
                             console.log("SUCCESS");
                             return connection;
                         } catch (error) {
-                            throw new Error(error)
+                            // throw new Error(error)
+                            console.log(error);
                         }
                     }
                 }
