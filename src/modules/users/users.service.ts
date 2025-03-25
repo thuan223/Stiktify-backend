@@ -544,16 +544,22 @@ export class UsersService {
   }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 
   // Edit shop - ThangLH
   async updateShopOwner(id: string, updateShopDto: Partial<User['shopOwnerDetail']>) {
 =======
+=======
+>>>>>>> ded5eb6c3034c12e04ccba0d8a8dfa13ddb9b7c9
   // Edit shop
   async updateShopOwner(
     id: string,
     updateShopDto: Partial<User['shopOwnerDetail']>,
   ) {
+<<<<<<< HEAD
 >>>>>>> 3797c6d502717a5d61a1e5e42d3182077eddb6e4
+=======
+>>>>>>> ded5eb6c3034c12e04ccba0d8a8dfa13ddb9b7c9
     const user = await this.userModel.findById(id);
     if (!user) {
       throw new NotFoundException('User not found');
@@ -764,8 +770,12 @@ export class UsersService {
     })[];
   }
 <<<<<<< HEAD
+<<<<<<< HEAD
   
 
 =======
 >>>>>>> 3797c6d502717a5d61a1e5e42d3182077eddb6e4
+=======
+
+>>>>>>> ded5eb6c3034c12e04ccba0d8a8dfa13ddb9b7c9
 }

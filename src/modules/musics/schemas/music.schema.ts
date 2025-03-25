@@ -40,7 +40,7 @@ export class Music {
   totalShare: number;
 
   @Prop()
-  musicLyric: string;
+  musicLyric: { start: number, end: number, text: string }[];
 
   @Prop({ default: false })
   flag: boolean;
@@ -53,6 +53,9 @@ export class Music {
 
   @Prop({ default: 0 })
   totalListeningOnWeek: number
+
+  @Prop({ type: [String], default: [] })
+  musicSeparate: string[];
 }
 
 export const MusicSchema = SchemaFactory.createForClass(Music);
