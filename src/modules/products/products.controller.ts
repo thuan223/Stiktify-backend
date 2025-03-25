@@ -13,6 +13,21 @@ export class ProductsController {
   async create(@Body() createProductDto: CreateProductDto) {
     return await this.productsService.create(createProductDto);
   }
+
+  @Get('list-product')
+  findAllProduct(
+    @Query() query: string,
+    @Query('current') current: string,
+    @Query('pageSize') pageSize: string,
+  ) {
+    return this.productsService.handleGetListProduct(query, +current, +pageSize);
+  }
+
+  @Get('product-details/:id')
+  findProductById(@Param('id') id: string) {
+  return this.productsService.handleGetProductById(id);
+}
+
   // get all products - ThangLH
   @Get()
   findAll() {
@@ -25,14 +40,10 @@ searchProducts(
   @Query('category') category?: string,
   @Query('minPrice') minPrice?: string,
   @Query('maxPrice') maxPrice?: string,
-  @Query('color') color?: string
+  // @Query('color') color?: string
 ) {
-  return this.productsService.searchProducts({ name, category, minPrice, maxPrice, color });
+  return this.productsService.searchProducts({ name, category, minPrice, maxPrice });
 }
-
-
-
-//// get all products by userId - ThangLH
 
  @Get('user/:userId')
 findByUser(@Param('userId') userId: string) {

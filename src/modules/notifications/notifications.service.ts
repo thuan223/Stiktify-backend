@@ -11,11 +11,13 @@ export class NotificationsService {
   ) {}
 
   async createNotification(data: {
-    recipient: string;
-    sender: string;
+    recipient: string | Types.ObjectId;
+    sender: string | Types.ObjectId;
     type: string;
-    postId?: string;
+    postId?: Types.ObjectId;
+    musicId?: Types.ObjectId;
     friendRequestId?: Types.ObjectId;
+    status?: string;
   }) {
     const notification = await this.notificationModel.create(data);
 
@@ -30,7 +32,9 @@ export class NotificationsService {
       .find({ recipient })
       .sort({ createdAt: -1 }) // Sắp xếp thông báo mới nhất trước
       .populate('sender', 'fullname image')
-      .select('recipient sender status type friendRequestId createdAt')
+      .select(
+        'recipient sender status type friendRequestId createdAt postId musicId',
+      )
       .skip(skip)
       .limit(limit);
 
@@ -47,8 +51,40 @@ export class NotificationsService {
   async markNotificationAsRead(id: string) {
     return await this.notificationModel.findByIdAndUpdate(
       id,
-      { isRead: true },
+      { status: 'read' },
       { new: true },
     );
+  }
+
+  async populateNotification(id: Types.ObjectId) {
+    return await this.notificationModel
+      .findById(id)
+      .populate('sender', 'fullname image')
+      .select(
+        'recipient sender type postId musicId status createdAt friendRequestId',
+      )
+      .lean();
+  }
+
+  async findNotification(filter: {
+    sender?: string;
+    recipient?: string;
+    type?: string;
+    postId?: string;
+    musicId?: string;
+    status?: string;
+    friendRequestId?: Types.ObjectId;
+  }) {
+    const query: any = {};
+
+    if (filter.sender) query.sender = filter.sender;
+    if (filter.recipient) query.recipient = filter.recipient;
+    if (filter.type) query.type = filter.type;
+    if (filter.postId) query.postId = filter.postId;
+    if (filter.musicId) query.musicId = filter.musicId;
+    if (filter.status) query.status = filter.status;
+    if (filter.friendRequestId) query.friendRequestId = filter.friendRequestId;
+
+    return this.notificationModel.findOne(query);
   }
 }

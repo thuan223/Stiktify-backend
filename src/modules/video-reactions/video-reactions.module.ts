@@ -7,6 +7,7 @@ import {
   VideoReactionSchema,
 } from './schemas/video-reaction.schema';
 import { ShortVideosModule } from '../short-videos/short-videos.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { ShortVideosModule } from '../short-videos/short-videos.module';
       { name: VideoReaction.name, schema: VideoReactionSchema },
     ]),
     ShortVideosModule,
+    NotificationsModule,
   ],
   controllers: [VideoReactionsController],
   providers: [VideoReactionsService],

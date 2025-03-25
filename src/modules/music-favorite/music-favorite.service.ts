@@ -5,6 +5,8 @@ import { Model, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { MusicFavorite } from './schema/music-favorite.schema';
 import { Music } from '../musics/schemas/music.schema';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
 
 @Injectable()
 export class MusicFavoriteService {
@@ -12,6 +14,8 @@ export class MusicFavoriteService {
     @InjectModel(MusicFavorite.name)
     private MusicFavoriteModel: Model<MusicFavorite>,
     @InjectModel(Music.name) private MusicModel: Model<Music>,
+    private notificationsService: NotificationsService,
+    private notificationsGateway: NotificationsGateway,
   ) {}
 
   create(createMusicFavoriteDto: CreateMusicFavoriteDto) {
@@ -81,6 +85,45 @@ export class MusicFavoriteService {
       userId: new Types.ObjectId(userId),
       musicId: new Types.ObjectId(musicId),
     });
+    const music: any = await this.MusicModel.findById(musicId).populate(
+      'userId',
+      '_id',
+    );
+
+    if (!music) {
+      throw new Error('Music not exist');
+    }
+
+    const existingNotification =
+      await this.notificationsService.findNotification({
+        sender: userId,
+        recipient: music.userId._id.toString(),
+        type: 'new-music-favorite',
+        musicId: music._id,
+      });
+
+    if (existingNotification) {
+      return !!existingFavorite; // Nếu đã có, không gửi thông báo nữa
+    }
+
+    const notification = await this.notificationsService.createNotification({
+      sender: userId,
+      recipient: music.userId._id.toString(),
+      type: 'new-music-favorite',
+      musicId: music._id,
+    });
+
+    // Lấy dữ liệu thông báo đầy đủ
+    const populatedNotification =
+      await this.notificationsService.populateNotification(notification._id);
+    console.log(populatedNotification);
+
+    // Gửi thông báo realtime qua WebSocket
+    this.notificationsGateway.sendNotification(
+      userId,
+      populatedNotification.recipient,
+      populatedNotification,
+    );
     return !!existingFavorite;
   }
 

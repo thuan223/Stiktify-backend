@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  Request,
+} from '@nestjs/common';
 import { MusicsService } from './musics.service';
 import { CreateMusicDto } from './dto/create-music.dto';
 import { Public, ResponseMessage } from '@/decorator/customize';
@@ -10,9 +20,9 @@ import { TrackRelatedDto } from './dto/track-related.dto';
 
 @Controller('musics')
 export class MusicsController {
-  constructor(private readonly musicsService: MusicsService) { }
+  constructor(private readonly musicsService: MusicsService) {}
 
-  @Post("upload-music")
+  @Post('upload-music')
   uploadMusic(@Body() createMusicDto: CreateMusicDto) {
     return this.musicsService.handleUploadMusic(createMusicDto);
   }
@@ -22,33 +32,32 @@ export class MusicsController {
     return this.musicsService.handleUpdateMusic(updateMusicDto);
   }
 
-  @Get('my-musics')
+
+  @Get('my-musics/:userId')
   getUserMusics(
-    @Request() req,
+    @Param('userId') userId: string,
     @Query('current') current: string,
     @Query('pageSize') pageSize: string,
   ) {
     return this.musicsService.handleMyMusic(
-      req.user._id,
+      userId,
       +current,
       +pageSize,
     );
   }
 
   @Public()
-  @Get("filter-search")
-  popularArtists() {
-    return this.musicsService.handlePopularArtists()
-  }
-
-  @Public()
-  @Get("filter-search")
+  @Get('filter-search')
   findMusicFilterAndSearch(
     @Query() query: any,
-    @Query("current") current: string,
-    @Query("pageSize") pageSize: string,
+    @Query('current') current: string,
+    @Query('pageSize') pageSize: string,
   ) {
-    return this.musicsService.handleFilterAndSearchMusic(query, +current, +pageSize)
+    return this.musicsService.handleFilterAndSearchMusic(
+      query,
+      +current,
+      +pageSize,
+    );
   }
 
   @Public()
@@ -56,20 +65,23 @@ export class MusicsController {
   listHotMusic() {
     return this.musicsService.getMusicHotInWeek();
   }
-
+  
+  @Public()
+  @Get('getTopMusic/:title') 
+  getTopMusic(@Param('title') title: string) {
+    return this.musicsService.getTop50Music(title);
+  }
   @Public()
   @Get('/display-music/:id')
-  displayMusic(
-    @Param("id") id: string
-  ) {
+  displayMusic(@Param('id') id: string) {
     return this.musicsService.handleDisplayMusic(id);
   }
 
   @Public()
   @Get('/list-music')
   listMusic(
-    @Query("current") current: string,
-    @Query("pageSize") pageSize: string,
+    @Query('current') current: string,
+    @Query('pageSize') pageSize: string,
   ) {
     return this.musicsService.handleListMusic(+current, +pageSize);
   }
@@ -110,7 +122,11 @@ export class MusicsController {
     @Query('current') current: string,
     @Query('pageSize') pageSize: string,
   ) {
-    return this.musicsService.handleListAllMusicAdmin(query, +current, +pageSize);
+    return this.musicsService.handleListAllMusicAdmin(
+      query,
+      +current,
+      +pageSize,
+    );
   }
 
   @Get('recommend-music/:userId')
@@ -122,6 +138,7 @@ export class MusicsController {
   listenMusicInUser(@Body() req: CreateNeo4j) {
     return this.musicsService.handleListenMusicNeo4j(req.userId, req.musicId);
   }
+  
   @Public()
   @Post('track-related')
   trackRelated(@Body() req: TrackRelatedDto) {

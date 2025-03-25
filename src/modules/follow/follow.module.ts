@@ -9,13 +9,11 @@ import { User, UserSchema } from '../users/schemas/user.schema';
 @Module({
   imports: [
     ShortVideosModule,
-    MongooseModule.forFeature([{ name: Follow.name, schema: FollowSchema }
-    ]),
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }
-    ])
+    MongooseModule.forFeature([{ name: Follow.name, schema: FollowSchema }]),
+    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
   ],
   controllers: [FollowController],
   providers: [FollowService],
-  exports: [MongooseModule]
+  exports: [MongooseModule],
 })
-export class FollowModule { }
+export class FollowModule {}

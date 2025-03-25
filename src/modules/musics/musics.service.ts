@@ -17,6 +17,10 @@ import { CategoriesService } from '../categories/categories.service';
 import { QueryRepository } from '../neo4j/neo4j.service';
 import { TrackRelatedDto } from './dto/track-related.dto';
 
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
+import { FriendRequestService } from '../friend-request/friend-request.service';
+
 @Injectable()
 export class MusicsService {
   constructor(
@@ -26,8 +30,11 @@ export class MusicsService {
     private musicCategoryModel: Model<MusicCategory>,
     private musicCategoryService: MusicCategoriesService,
     private categoryService: CategoriesService,
-    private readonly queryRepository: QueryRepository
-  ) { }
+    private readonly queryRepository: QueryRepository,
+    private friendRequestService: FriendRequestService,
+    private notificationsService: NotificationsService,
+    private notificationsGateway: NotificationsGateway,
+  ) {}
 
   async checkMusicById(id: string) {
     try {
@@ -59,7 +66,7 @@ export class MusicsService {
       } else {
         const checkCategoryId = await this.categoryService.checkCategoryById(e);
         if (!checkCategoryId) {
-          throw new NotFoundException(`Not found categoryId with id ${e}`)
+          throw new NotFoundException(`Not found categoryId with id ${e}`);
         }
       }
     }
@@ -73,8 +80,38 @@ export class MusicsService {
       musicSeparate: musicSeparate,
       musicLyric: musicLyric,
       musicTag: musicTag
+
     });
-    await this.musicCategoryService.handleCreateCategoryMusic(categoryId, result._id + "")
+    await this.musicCategoryService.handleCreateCategoryMusic(
+      categoryId,
+      result._id + '',
+    );
+    // Lấy danh sách bạn bè
+    const friends = await this.friendRequestService.getFriendsList(
+      createMusicDto.userId,
+    );
+
+    // Gửi thông báo đến bạn bè
+    for (const friend of friends) {
+      const notification = await this.notificationsService.createNotification({
+        sender: createMusicDto.userId,
+        recipient: friend.friendId,
+        type: 'new-music',
+        musicId: result._id,
+      });
+
+      // Lấy thông tin đầy đủ để gửi qua WebSocket
+      const populatedNotification =
+        await this.notificationsService.populateNotification(notification._id);
+      console.log(populatedNotification);
+
+      // Gửi thông báo realtime qua WebSocket
+      this.notificationsGateway.sendNotification(
+        createMusicDto.userId,
+        friend.friendId,
+        populatedNotification,
+      );
+    }
     return result;
   }
 
@@ -120,7 +157,7 @@ export class MusicsService {
     const filter = {
       isBlock: false,
       isDelete: false,
-      flag: false
+      flag: false,
     };
 
     const totalItems = (await this.musicModel.find(filter)).length;
@@ -163,11 +200,14 @@ export class MusicsService {
 
     if (!check.listeningAt || check.listeningAt < sevenDaysAgo) {
       result = await this.musicModel.findByIdAndUpdate(id, {
-        totalListener: check.totalListener + 1, totalListeningOnWeek: 1, listeningAt: new Date()
+        totalListener: check.totalListener + 1,
+        totalListeningOnWeek: 1,
+        listeningAt: new Date(),
       });
     } else {
       result = await this.musicModel.findByIdAndUpdate(id, {
-        totalListener: check.totalListener + 1, totalListeningOnWeek: check.totalListeningOnWeek + 1
+        totalListener: check.totalListener + 1,
+        totalListeningOnWeek: check.totalListeningOnWeek + 1,
       });
     }
 
@@ -180,8 +220,13 @@ export class MusicsService {
 
   async handleMyMusic(userId: string, current: number, pageSize: number) {
     const filter = { userId: new mongoose.Types.ObjectId(userId) };
-    const totalItems = await this.musicModel.countDocuments(filter);
-    if (totalItems === 0) {
+    const result = await this.musicModel
+    .find(filter)
+    .skip((current - 1) * pageSize)
+    .limit(pageSize)
+    .sort({ createdAt: -1 })
+    .populate('userId', 'musicId');
+    if (result.length == 0){
       return {
         meta: {
           current,
@@ -190,21 +235,15 @@ export class MusicsService {
           totalPages: 0,
         },
         result: [],
-        message: 'No videos found for this user',
+        message: 'No musics found for this user',
       };
     }
-    const skip = (current - 1) * pageSize;
-    const result = await this.musicModel
-      .find(filter)
-      .skip(skip)
-      .limit(pageSize)
-      .sort({ createdAt: -1 });
     return {
       meta: {
         current,
         pageSize,
-        totalItems,
-        totalPages: Math.ceil(totalItems / pageSize),
+        totalItems: result.length,
+        totalPages: Math.ceil(result.length / pageSize),
       },
       result,
     };
@@ -283,7 +322,6 @@ export class MusicsService {
     return result;
   }
 
-
   // Share a music - ThangLH
   async shareMusic(id: string): Promise<{
     musicUrl: string;
@@ -292,9 +330,11 @@ export class MusicsService {
     totalListener: number;
     totalReactions: number;
   }> {
-    const music = await this.musicModel.findById(id).select(
-      'musicUrl musicDescription musicThumbnail totalListener totalReactions'
-    );
+    const music = await this.musicModel
+      .findById(id)
+      .select(
+        'musicUrl musicDescription musicThumbnail totalListener totalReactions',
+      );
 
     if (!music) {
       throw new BadRequestException('Music not found');
@@ -349,17 +389,18 @@ export class MusicsService {
     }
   }
 
-
-  async handleListAllMusicAdmin(query: string, current: number, pageSize: number) {
+  async handleListAllMusicAdmin(
+    query: string,
+    current: number,
+    pageSize: number,
+  ) {
     try {
       const { filter, sort } = aqp(query);
       if (filter.current) delete filter.current;
       if (filter.pageSize) delete filter.pageSize;
       if (!current) current = 1;
       if (!pageSize) pageSize = 10;
-      const totalItems = (
-        await this.musicModel.find(filter)
-      ).length;
+      const totalItems = (await this.musicModel.find(filter)).length;
       const totalPages = Math.ceil(totalItems / pageSize);
       const skip = (+current - 1) * +pageSize;
       const result = await this.musicModel
@@ -367,7 +408,7 @@ export class MusicsService {
         .limit(pageSize)
         .skip(skip)
         .sort(sort as any)
-        .populate('userId')
+        .populate('userId');
       return {
         meta: {
           current: current, // trang hien tai
@@ -384,50 +425,71 @@ export class MusicsService {
   }
 
   async handleRecommendMusic(userId: string) {
-    const similarUsers = await this.queryRepository.initQuery().raw(`
+    const similarUsers = await this.queryRepository
+      .initQuery()
+      .raw(
+        `
       MATCH (u1:User {id: $userId})-[:LISTENED_TO]->(m:Music)<-[:LISTENED_TO]-(u2:User)
       WHERE u1 <> u2
       WITH u2, COUNT(m) AS commonMusicCount
       ORDER BY commonMusicCount DESC
       LIMIT 5
       RETURN u2.id AS similarUserId
-  `, { userId }).run();
+  `,
+        { userId },
+      )
+      .run();
 
-    const similarUserIds = similarUsers.map(user => user.similarUserId);
+    const similarUserIds = similarUsers.map((user) => user.similarUserId);
 
     if (similarUserIds.length === 0) return [];
 
-    const recommendations = await this.queryRepository.initQuery().raw(`
+    const recommendations = await this.queryRepository
+      .initQuery()
+      .raw(
+        `
       MATCH (u1:User {id: $userId})-[:LISTENED_TO]->(m:Music)
       WITH COLLECT(m) AS listenedMusic
       MATCH (u2:User)-[:LISTENED_TO]->(m2:Music)
       WHERE u2.id IN $similarUserIds AND NOT m2 IN listenedMusic
       RETURN DISTINCT m2.id AS recommendedMusicId
       LIMIT 10
-  `, { userId, similarUserIds }).run();
+  `,
+        { userId, similarUserIds },
+      )
+      .run();
 
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const dataNeo4j = recommendations.map(music => music.recommendedMusicId);
+    const dataNeo4j = recommendations.map((music) => music.recommendedMusicId);
     const musicHot = await this.musicModel
       .find({ listeningAt: { $gte: sevenDaysAgo }, _id: { $nin: dataNeo4j }, })
       .limit(10 - dataNeo4j.length)
-      .sort({ totalListeningOnWeek: -1 })
+      .sort({ totalListeningOnWeek: -1 });
 
     const results = await this.musicModel.find({ _id: { $in: dataNeo4j } });
 
     const mergedArray = [...new Set([...results, ...musicHot])];
-    return mergedArray
+    return mergedArray;
   }
 
-  async handleListenMusicNeo4j(userId: Types.ObjectId, musicId: Types.ObjectId) {
-    const query = await this.queryRepository.initQuery().raw(`
+  async handleListenMusicNeo4j(
+    userId: Types.ObjectId,
+    musicId: Types.ObjectId,
+  ) {
+    const query = await this.queryRepository
+      .initQuery()
+      .raw(
+        `
       MERGE (u:User {id: $userId})
       MERGE (m:Music {id: $musicId})
       MERGE (u)-[:LISTENED_TO]->(m)
-  `, { userId, musicId }).run();
-    return query
+  `,
+        { userId, musicId },
+      )
+      .run();
+    return query;
   }
 
   // Getall music id - ThanglH
@@ -527,3 +589,115 @@ export class MusicsService {
   }
 }
 
+  async getTop50Music(title: string): Promise<Music[]> {
+    if (!title.includes('-')) {
+      throw new Error(
+        'Invalid title format. Expected: type-timeframe (e.g., Linked-alltime)',
+      );
+    }
+    const [type, timeframe] = title.split('-');
+
+    const timeFilter = this.getTimeFilter(timeframe);
+
+    if (type.toLowerCase() === 'linked') {
+      const top50Music = await this.musicModel
+        .aggregate([
+          { $match: timeFilter },
+          {
+            $lookup: {
+              from: 'videos',
+              localField: 'musicId',
+              foreignField: 'musicId',
+              as: 'linkedVideos',
+            },
+          },
+          {
+            $addFields: {
+              linkedVideoCount: { $size: '$linkedVideos' },
+            },
+          },
+          {
+            $lookup: {
+              from: 'users',
+              localField: 'userId',
+              foreignField: '_id',
+              as: 'user',
+            },
+          },
+          {
+            $unwind: {
+              path: '$user',
+              preserveNullAndEmptyArrays: true,
+            },
+          },
+          { $sort: { linkedVideoCount: -1 } },
+          { $limit: 50 },
+          { $project: { linkedVideos: 0 } },
+        ])
+        .exec();
+
+      return top50Music;
+    }
+
+    const sortField = this.getSortField(type);
+    const top50Music = await this.musicModel
+      .find(timeFilter)
+      .populate('userId')
+      .sort({ [sortField]: -1 })
+      .limit(50)
+      .exec();
+
+    return top50Music;
+  }
+  private getSortField(type: string): string {
+    switch (type.toLowerCase()) {
+      case 'listens':
+        return 'totalListener';
+      case 'reactions':
+        return 'totalReactions';
+      default:
+        throw new Error(
+          `Invalid type: ${type}. Expected: Linked, Listens, or Reactions`,
+        );
+    }
+  }
+
+  private getTimeFilter(timeframe: string): any {
+    const now = new Date();
+    let filter = {};
+
+    switch (timeframe.toLowerCase()) {
+      case 'weekly': {
+        const oneWeekAgo = new Date(now);
+        oneWeekAgo.setDate(now.getDate() - 7);
+        filter = { createdAt: { $gte: oneWeekAgo } };
+        break;
+      }
+      case 'monthly': {
+        const oneMonthAgo = new Date(now);
+        oneMonthAgo.setMonth(now.getMonth() - 1);
+        filter = { createdAt: { $gte: oneMonthAgo } };
+        break;
+      }
+      case 'yearly': {
+        const oneYearAgo = new Date(now);
+        oneYearAgo.setFullYear(now.getFullYear() - 1);
+        filter = { createdAt: { $gte: oneYearAgo } };
+        break;
+      }
+      case 'alltime':
+        filter = {};
+        break;
+      default:
+        throw new Error(
+          `Invalid timeframe: ${timeframe}. Expected: weekly, monthly, yearly, or alltime`,
+        );
+    }
+
+    return filter;
+  }
+
+  async getMusicById(id: string) {
+    return await this.musicModel.findById(id);
+  }
+}
