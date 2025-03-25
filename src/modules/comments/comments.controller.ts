@@ -21,11 +21,13 @@ import {
 } from './dto/create-comment.dto';
 import { Types } from 'mongoose';
 import { DeleteCommentDto, UpdateCommentDto } from './dto/update-comment.dto';
+import { Public } from '@/decorator/customize';
 
 @Controller('comments')
 export class CommentsController {
   constructor(private readonly commentsService: CommentsService) {}
 
+  @Public()
   @Get('video/:videoId')
   async getCommentsByVideoId(@Param('videoId') videoId: Types.ObjectId) {
     return await this.commentsService.getCommentsByVideoId(videoId);
@@ -58,6 +60,7 @@ export class CommentsController {
     return this.commentsService.replyToComment(userId, dto);
   }
 
+  @Public()
   @Get('music/:musicId')
   async getCommentsByMusicId(@Param('musicId') musicId: Types.ObjectId) {
     return await this.commentsService.getCommentsByMusicId(musicId);

@@ -25,6 +25,12 @@ import FormData from 'form-data';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { QueryRepository } from '../neo4j/neo4j.service';
+import { FriendRequestService } from '../friend-request/friend-request.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
+import { Notification } from '../notifications/schema/notification.schema';
+import { FollowService } from '../follow/follow.service';
+
 
 @Injectable()
 export class ShortVideosService {
@@ -45,6 +51,10 @@ export class ShortVideosService {
     @Inject(forwardRef(() => ReportService))
     private reportService: ReportService,
     private readonly queryRepository: QueryRepository,
+    private friendRequestService: FriendRequestService,
+    // private followService: FollowService,
+    private notificationsService: NotificationsService,
+    private notificationsGateway: NotificationsGateway,
   ) {}
 
   //Create a new short video - ThangLH
@@ -62,6 +72,69 @@ export class ShortVideosService {
         );
         await this.videoCategoryModel.insertMany(videoCategories);
       }
+      console.log('THIS >>>', createShortVideoDto.userId);
+
+      // Lấy danh sách bạn bè
+      const friends = await this.friendRequestService.getFriendsList(
+        createShortVideoDto.userId,
+      );
+      // Gửi thông báo đến bạn bè
+      for (const friend of friends) {
+        const notification = await this.notificationsService.createNotification(
+          {
+            sender: createShortVideoDto.userId,
+            recipient: friend.friendId,
+            type: 'new-video',
+            postId: createdVideo._id,
+          },
+        );
+
+        // Lấy thông tin đầy đủ để gửi qua WebSocket
+        const populatedNotification =
+          await this.notificationsService.populateNotification(
+            notification._id,
+          );
+        console.log(populatedNotification);
+
+        // Gửi thông báo realtime qua WebSocket
+        this.notificationsGateway.sendNotification(
+          createShortVideoDto.userId,
+          friend.friendId,
+          populatedNotification,
+        );
+      }
+
+      // // Lấy danh sách follower
+      // const followers: any = await this.followService.getFollowersList(
+      //   createShortVideoDto.userId,
+      // );
+      // // Gửi thông báo đến follower
+      // for (const follower of followers) {
+      //   console.log(follower._id);
+
+      //   const notification = await this.notificationsService.createNotification(
+      //     {
+      //       sender: createShortVideoDto.userId,
+      //       recipient: follower._id,
+      //       type: 'new-video',
+      //       postId: createdVideo._id,
+      //     },
+      //   );
+
+      //   // Lấy thông tin đầy đủ để gửi qua WebSocket
+      //   const populatedNotification =
+      //     await this.notificationsService.populateNotification(
+      //       notification._id,
+      //     );
+      //   console.log(populatedNotification);
+
+      //   // Gửi thông báo realtime qua WebSocket
+      //   this.notificationsGateway.sendNotification(
+      //     createShortVideoDto.userId,
+      //     follower._id,
+      //     populatedNotification,
+      //   );
+      // }
       return createdVideo;
     } catch (error) {
       throw new BadRequestException('Failed to create video post');
@@ -209,16 +282,15 @@ export class ShortVideosService {
         .populate('userId')
         .populate('musicId');
     }
-    // const collaboratorVideoIdList =
-    //   await this.wishListService.getCollaborativeVideo(
-    //     data.userId,
-    //     resetScore.collaboration,
-    //   );
-      const collaboratorVideoIdList =
-      await this.getCollaboratorFilteringVideo(
+    const collaboratorVideoIdList =
+      await this.wishListService.getCollaborativeVideo(
         data.userId,
         resetScore.collaboration,
       );
+    // const collaboratorVideoIdList = await this.getCollaboratorFilteringVideo(
+    //   data.userId,
+    //   resetScore.collaboration,
+    // );
     let collaboratorVideoFound = [];
     if (collaboratorVideoIdList && collaboratorVideoIdList.length > 0) {
       countVideo += collaboratorVideoIdList.length;
@@ -371,37 +443,6 @@ export class ShortVideosService {
 
   async findVideoById(videoId: string) {
     return await this.videoModel.findById(videoId);
-  }
-
-  async searchVideosByDescription(
-    searchText: string,
-    current: number,
-    pageSize: number,
-  ) {
-    const regex = new RegExp(searchText, 'i');
-    const filter = { videoDescription: { $regex: regex } };
-    const totalItems = await this.videoModel.countDocuments(filter);
-    const totalPages = Math.ceil(totalItems / pageSize);
-    const skip = (current - 1) * pageSize;
-    const result = await this.videoModel
-      .find(filter)
-      .skip(skip)
-      .limit(pageSize)
-      .sort({ createdAt: -1 })
-      .select(
-        'videoUrl totalFavorite totalReaction totalViews videoDescription videoThumbnail',
-      )
-      .populate('userId', 'userName');
-
-    return {
-      meta: {
-        current,
-        pageSize,
-        totalItems,
-        totalPages,
-      },
-      result,
-    };
   }
 
   async findByCategory(
@@ -591,7 +632,7 @@ export class ShortVideosService {
         select:
           '_id userName fullname email image totalFollowers totalFollowings',
       })
-      .sort({ createAt: -1 });
+      .sort({ createdAt: -1 });
 
     return {
       meta: {
@@ -674,23 +715,21 @@ export class ShortVideosService {
           MATCH (u:User {id: $userId})-[w:WATCHED]->(v:Video {id: $videoId})
           RETURN w.score AS currentScore
           `,
-          { userId, videoId }
+          { userId, videoId },
         )
-        .first(); // Lấy giá trị đầu tiên
-        console.log(existingScore)
+        .first();
       if (existingScore?.currentScore !== undefined) {
         console.log(
           `Quan hệ đã tồn tại với score = ${existingScore.currentScore}`,
         );
-  
+
         // Nếu score = 0, không cập nhật
         if (score === 0) {
-          console.log("Không cập nhật vì score = 0");
           return;
         }
-  
+
         // Nếu đã tồn tại, cập nhật điểm số
-        return await this.queryRepository
+        await this.queryRepository
           .initQuery()
           .raw(
             `
@@ -698,12 +737,10 @@ export class ShortVideosService {
             SET w.score = w.score + $score
             RETURN w.score
             `,
-            { userId, videoId, score }
+            { userId, videoId, score },
           )
           .run();
       } else {
-        console.log("Quan hệ chưa tồn tại, tạo mới...");
-  
         // Nếu chưa tồn tại, tạo mới
         return await this.queryRepository
           .initQuery()
@@ -715,69 +752,74 @@ export class ShortVideosService {
             SET w.score = $score
             RETURN w.score
             `,
-            { userId, videoId, score }
+            { userId, videoId, score },
           )
           .run();
       }
     } catch (error) {
-      console.error(`Error adding watch event for ${userId} - ${videoId}:`, error);
+      console.error(
+        `Error adding watch event for ${userId} - ${videoId}:`,
+        error,
+      );
     }
   }
-  
 
-  async addTagToVideo(videoId: string, tagName: string, score: number) {
+  async addTagToVideo(userId: string, tagName: string, score: number) {
     return this.queryRepository
       .initQuery()
       .raw(
         `
-        MERGE (v:Video {id: $videoId})
-        ON CREATE SET v.score = 0
+        MERGE (u:User {id: $userId})
+        WITH u
+        MATCH (u)-[w:WATCHED]->(v:Video)
         MERGE (t:Tag {name: $tagName})
         MERGE (v)-[:HAS_TAG {score: $score}]->(t)
         SET v.score = v.score + $score
-        RETURN v.score
+        SET w.score = w.score + $score
+        RETURN v.id, w.score
       `,
-        { videoId, tagName, score },
+        { userId, tagName, score },
       )
       .run();
   }
-
-  async addMusicToVideo(videoId: string, musicId: string, score: number) {
+  async addMusicToVideo(userId: string, musicId: string, score: number) {
     return this.queryRepository
       .initQuery()
       .raw(
         `
-      MERGE (v:Video {id: $videoId})
-      ON CREATE SET v.score = 0
-      MERGE (m:Music {id: $musicId})
-      MERGE (v)-[:HAS_MUSIC {score: $score}]->(m)
-      SET v.score = v.score + $score
-      RETURN v.score
-    `,
-        { videoId, musicId, score },
+        MERGE (u:User {id: $userId})
+        WITH u
+        MATCH (u)-[w:WATCHED]->(v:Video)
+        MERGE (m:Music {id: $musicId})
+        MERGE (v)-[:HAS_MUSIC {score: $score}]->(m)
+        SET v.score = v.score + $score
+        SET w.score = w.score + $score
+        RETURN v.id, w.score
+      `,
+        { userId, musicId, score },
       )
       .run();
   }
-
-  async addCreatorToVideo(videoId: string, creatorId: string, score: number) {
+  async addCreatorToVideo(userId: string, creatorId: string, score: number) {
     return this.queryRepository
       .initQuery()
       .raw(
         `
-      MERGE (v:Video {id: $videoId})
-      ON CREATE SET v.score = 0
-      MERGE (c:Creator {id: $creatorId})
-      MERGE (v)-[:CREATED_BY {score: $score}]->(c)
-      SET v.score = v.score + $score
-      RETURN v.score
-    `,
-        { videoId, creatorId, score },
+        MERGE (u:User {id: $userId})
+        WITH u
+        MATCH (u)-[w:WATCHED]->(v:Video)
+        MERGE (c:Creator {id: $creatorId})
+        MERGE (v)-[:CREATED_BY {score: $score}]->(c)
+        SET v.score = v.score + $score
+        SET w.score = w.score + $score
+        RETURN v.id, w.score
+      `,
+        { userId, creatorId, score },
       )
       .run();
   }
-
   async addCategoryToVideo(
-    videoId: string,
+    userId: string,
     categoryName: string,
     score: number,
   ) {
@@ -785,17 +827,20 @@ export class ShortVideosService {
       .initQuery()
       .raw(
         `
-      MERGE (v:Video {id: $videoId})
-      ON CREATE SET v.score = 0
-      MERGE (cat:Category {name: $categoryName})
-      MERGE (v)-[:IN_CATEGORY {score: $score}]->(cat)
-      SET v.score = v.score + $score
-      RETURN v.score
-    `,
-        { videoId, categoryName, score },
+        MERGE (u:User {id: $userId})
+        WITH u
+        MATCH (u)-[w:WATCHED]->(v:Video)
+        MERGE (cat:Category {name: $categoryName})
+        MERGE (v)-[:IN_CATEGORY {score: $score}]->(cat)
+        SET v.score = v.score + $score
+        SET w.score = w.score + $score
+        RETURN v.id, w.score
+      `,
+        { userId, categoryName, score },
       )
       .run();
   }
+
   async getVideoDetails(videoId: string) {
     return this.queryRepository
       .initQuery()
@@ -817,50 +862,50 @@ export class ShortVideosService {
       )
       .run();
   }
-  
+
   async getUserSimilarities(userId: string) {
     return this.queryRepository
       .initQuery()
       .raw(
         `
-        // Lấy danh sách tất cả video đã từng được xem bởi bất kỳ user nào
-        MATCH (v:Video)
-        WITH COLLECT(v.id) AS allVideoIds
-  
-        // Lấy danh sách video và điểm số của user1
-        MATCH (u1:User {id: $userId})-[r1:WATCHED]->(v:Video)
-        WITH u1, allVideoIds, 
-             COLLECT({id: v.id, score: toFloat(r1.score)}) AS user1Videos
-  
-        // Lấy danh sách video và điểm số của tất cả user khác
-        MATCH (u2:User)-[r2:WATCHED]->(v:Video)
-        WHERE u1 <> u2
-        WITH u1, u2, allVideoIds, user1Videos, 
-             COLLECT({id: v.id, score: toFloat(r2.score)}) AS user2Videos
-  
-        // Xây dựng danh sách điểm số với giá trị mặc định 0 nếu user chưa xem video
-        WITH u1, u2, allVideoIds,
-             [x IN allVideoIds | COALESCE([v IN user1Videos WHERE v.id = x | v.score][0], 0)] AS scores1,
-             [x IN allVideoIds | COALESCE([v IN user2Videos WHERE v.id = x | v.score][0], 0)] AS scores2
-  
-        // Tính cosine similarity
-        WITH u1, u2, allVideoIds AS videoIds, scores1, scores2,
-             REDUCE(sum = 0.0, i IN range(0, size(scores1)-1) | sum + scores1[i] * scores2[i]) AS dotProduct,
-             SQRT(REDUCE(s = 0.0, x IN scores1 | s + x * x)) AS norm1,
-             SQRT(REDUCE(s = 0.0, x IN scores2 | s + x * x)) AS norm2
-  
-        RETURN u2.id AS otherUser, 
-               videoIds AS allVideos,
-               scores1 AS currentUserScores, 
-               scores2 AS otherUserScores,
-               dotProduct,
-               norm1,
-               norm2,
-               CASE 
-                 WHEN norm1 * norm2 = 0 THEN 0 
-                 ELSE dotProduct / (norm1 * norm2) 
-               END AS similarity
-        // ORDER BY similarity DESC
+       // Lấy danh sách tất cả video đã từng được xem bởi bất kỳ user nào
+MATCH (v:Video)
+WITH COLLECT(v.id) AS allVideoIds
+
+// Lấy danh sách video và điểm số của user1
+MATCH (u1:User {id: $userId})-[r1:WATCHED]->(v:Video)
+WITH u1, allVideoIds, 
+     COLLECT({id: v.id, score: toFloat(r1.score)}) AS user1Videos
+
+// Lấy danh sách video và điểm số của tất cả user khác
+MATCH (u2:User)-[r2:WATCHED]->(v:Video)
+WHERE u1 <> u2
+WITH u1, u2, allVideoIds, user1Videos, 
+     COLLECT({id: v.id, score: toFloat(r2.score)}) AS user2Videos
+
+// Xây dựng danh sách điểm số với giá trị mặc định 0 nếu user chưa xem video
+WITH u1, u2, allVideoIds,
+     [x IN allVideoIds | COALESCE([v IN user1Videos WHERE v.id = x | v.score][0], 0)] AS scores1,
+     [x IN allVideoIds | COALESCE([v IN user2Videos WHERE v.id = x | v.score][0], 0)] AS scores2
+
+// Tính cosine similarity
+WITH u1, u2, allVideoIds AS videoIds, scores1, scores2,
+     REDUCE(sum = 0.0, i IN range(0, size(scores1)-1) | sum + scores1[i] * scores2[i]) AS dotProduct,
+     SQRT(REDUCE(s = 0.0, x IN scores1 | s + x * x)) AS norm1,
+     SQRT(REDUCE(s = 0.0, x IN scores2 | s + x * x)) AS norm2
+
+RETURN u2.id AS otherUser, 
+       videoIds AS allVideos,  // Trả về tất cả ID video mà không kèm theo mối quan hệ
+       scores1 AS currentUserScores, 
+       scores2 AS otherUserScores,
+       dotProduct,
+       norm1,
+       norm2,
+       CASE 
+         WHEN norm1 * norm2 = 0 THEN 0 
+         ELSE dotProduct / (norm1 * norm2) 
+       END AS similarity
+
         `,
         { userId },
       )
@@ -880,33 +925,203 @@ export class ShortVideosService {
       .run();
   }
 
-  async getCollaboratorFilteringVideo(userId: string, numberChooseVideo: number = 2) {
-    
+  async getCollaboratorFilteringVideo(
+    userId: string,
+    numberChooseVideo: number = 2,
+  ) {
+
     const similarities = await this.getUserSimilarities(userId);
     const totalSimilarity = similarities.reduce(
       (sum, user) => sum + user.similarity,
-      0
+      0,
     );
 
-    if (totalSimilarity === 0) return []; // Tránh chia cho 0
+    if (totalSimilarity === 0) return [];
 
-    // Tính điểm recommend cho từng video
     const recommendedScores = similarities[0]?.allVideos.map((video, index) => {
       const weightedSum = similarities.reduce(
         (sum, user) => sum + user.similarity * user.otherUserScores[index],
-        0
+        0,
       );
       return {
         videoId: video,
         score: weightedSum / totalSimilarity,
       };
     });
-    console.log(recommendedScores);
+
     return recommendedScores
-      .sort((a, b) => b.score - a.score) 
+      .sort((a, b) => b.score - a.score)
       .slice(0, numberChooseVideo)
-      .map(video => video.videoId); 
-}
+      .map((video) => video.videoId);
+  }
 
+  // async deleteAllVideos() {
+  //   try {
+  //     // Xóa tất cả mối quan hệ liên quan đến video
+  //     await this.queryRepository
+  //       .initQuery()
+  //       .raw(
+  //         `
+  //         MATCH (v:Video)
+  //         OPTIONAL MATCH (v)-[r:WATCHED]->(u:User)
+  //         OPTIONAL MATCH (v)-[r2:HAS_TAG]->(t:Tag)
+  //         OPTIONAL MATCH (v)-[r3:IN_CATEGORY]->(c:Category)
+  //         OPTIONAL MATCH (v)-[r4:CREATED_BY]->(cr:Creator)
+  //         OPTIONAL MATCH (v)-[r5:HAS_MUSIC]->(m:Music)
+  //         DELETE r, r2, r3, r4, r5
+  //         `,
+  //         {},
+  //       )
+  //       .run();
 
+  //     // Xóa video cùng với các mối quan hệ của nó
+  //     await this.queryRepository
+  //       .initQuery()
+  //       .raw(
+  //         `
+  //         MATCH (v:Video)
+  //         DETACH DELETE v
+  //         `,
+  //         {},
+  //       )
+  //       .run();
+
+  //     console.log(
+  //       'Tất cả các video và mối quan hệ liên quan đã được xóa thành công.',
+  //     );
+  //   } catch (error) {
+  //     console.error('Lỗi khi xóa video:', error);
+  //   }
+  // }
+
+  async getTopVideos() {
+ 
+    const now = new Date();
+    
+    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+    startOfWeek.setHours(0, 0, 0, 0);
+  
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    startOfMonth.setHours(0, 0, 0, 0);
+  
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    startOfYear.setHours(0, 0, 0, 0);
+  
+    const timeFilters = {
+      Weekly: { createdAt: { $gte: startOfWeek } },
+      Monthly: { createdAt: { $gte: startOfMonth } },
+      Yearly: { createdAt: { $gte: startOfYear } },
+      "AllTime": {}, 
+    };
+  
+    const result = {
+      Weekly: { topViews: null, topReactions: null },
+      Monthly: { topViews: null, topReactions: null },
+      Yearly: { topViews: null, topReactions: null },
+      "AllTime": { topViews: null, topReactions: null },
+    };
+    for (const period in timeFilters) {
+      result[period].topViews = await this.videoModel
+        .find(timeFilters[period])
+        .sort({ totalViews: -1 }) 
+        .limit(1) 
+        .exec();
+      result[period].topReactions = await this.videoModel
+        .find(timeFilters[period])
+        .sort({ totalReactions: -1 })
+        .limit(1) 
+        .exec();
+    }
+    const formattedResult = {};
+    for (const period in result) {
+      formattedResult[period] = [
+        {
+          title:"Top 50 - Views",
+          image: result[period].topViews[0]?.videoThumbnail || "",
+        },
+        {
+          title:"Top 50 - Reactions",
+          image: result[period].topReactions[0]?.videoThumbnail || "",
+        },
+      ];
+    }
+  
+    return formattedResult;
+  }
+
+  
+  async getTop50Videos(title: string): Promise<Video[]> {
+    // Kiểm tra định dạng title
+    if (!title.includes("-")) {
+      throw new Error(
+        "Invalid title format. Expected: type-timeframe (e.g., Views-alltime)"
+      );
+    }
+  
+    // Tách title thành type và timeframe
+    const [type, timeframe] = title.split("-");
+  
+    // Xác định trường sắp xếp dựa trên type
+    const sortField = this.getSortField(type);
+  
+    // Xây dựng bộ lọc thời gian dựa trên timeframe
+    const timeFilter = this.getTimeFilter(timeframe);
+  
+    // Truy vấn MongoDB
+    const top50Videos = await this.videoModel
+      .find(timeFilter).populate('userId') // Lọc theo thời gian
+      .sort({ [sortField]: -1 }) // Sắp xếp giảm dần theo trường tương ứng
+      .limit(50) // Giới hạn 50 kết quả
+      .exec();
+  
+    return top50Videos;
+  }
+  
+  // Hàm helper để xác định trường sắp xếp dựa trên type
+  private getSortField(type: string): string {
+    switch (type.toLowerCase()) {
+      case "views":
+        return "totalViews";
+      case "reactions":
+        return "totalReaction";
+      default:
+        throw new Error(`Invalid type: ${type}. Expected: Views or Reactions`);
+    }
+  }
+  
+  // Hàm helper để tạo bộ lọc thời gian
+  private getTimeFilter(timeframe: string): any {
+    const now = new Date();
+    let filter = {};
+  
+    switch (timeframe.toLowerCase()) {
+      case "weekly": {
+        const oneWeekAgo = new Date(now);
+        oneWeekAgo.setDate(now.getDate() - 7);
+        filter = { createdAt: { $gte: oneWeekAgo } };
+        break;
+      }
+      case "monthly": {
+        const oneMonthAgo = new Date(now);
+        oneMonthAgo.setMonth(now.getMonth() - 1);
+        filter = { createdAt: { $gte: oneMonthAgo } };
+        break;
+      }
+      case "yearly": {
+        const oneYearAgo = new Date(now);
+        oneYearAgo.setFullYear(now.getFullYear() - 1);
+        filter = { createdAt: { $gte: oneYearAgo } };
+        break;
+      }
+      case "alltime":
+        filter = {}; // Không lọc thời gian
+        break;
+      default:
+        throw new Error(
+          `Invalid timeframe: ${timeframe}. Expected: weekly, monthly, yearly, or alltime`
+        );
+    }
+  
+    return filter;
+  }
 }

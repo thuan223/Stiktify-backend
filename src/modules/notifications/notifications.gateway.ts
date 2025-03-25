@@ -50,9 +50,14 @@ export class NotificationsGateway {
     // console.log(`User ${userId} joined room`);
   }
 
-  async sendFriendRequestNotification(recipientId: string, notification: any) {
+  async sendNotification(
+    senderId: string,
+    recipientId: string,
+    notification: any,
+  ) {
     // console.log(`📢 Gửi thông báo đến user ${recipientId}`);
-    this.server.to(recipientId).emit('receiveNotification', notification);
+    if (senderId !== recipientId)
+      this.server.to(recipientId).emit('receiveNotification', notification);
   }
 
   // @SubscribeMessage('markAsRead')
