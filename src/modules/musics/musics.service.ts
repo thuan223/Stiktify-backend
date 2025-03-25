@@ -94,7 +94,6 @@ export class MusicsService {
       categoryId,
       result._id + '',
     );
-
     // Lấy danh sách bạn bè
     const friends = await this.friendRequestService.getFriendsList(
       createMusicDto.userId,
@@ -229,8 +228,13 @@ export class MusicsService {
 
   async handleMyMusic(userId: string, current: number, pageSize: number) {
     const filter = { userId: new mongoose.Types.ObjectId(userId) };
-    const totalItems = await this.musicModel.countDocuments(filter);
-    if (totalItems === 0) {
+    const result = await this.musicModel
+    .find(filter)
+    .skip((current - 1) * pageSize)
+    .limit(pageSize)
+    .sort({ createdAt: -1 })
+    .populate('userId', 'musicId');
+    if (result.length == 0){
       return {
         meta: {
           current,
@@ -239,21 +243,15 @@ export class MusicsService {
           totalPages: 0,
         },
         result: [],
-        message: 'No videos found for this user',
+        message: 'No musics found for this user',
       };
     }
-    const skip = (current - 1) * pageSize;
-    const result = await this.musicModel
-      .find(filter)
-      .skip(skip)
-      .limit(pageSize)
-      .sort({ createdAt: -1 });
     return {
       meta: {
         current,
         pageSize,
-        totalItems,
-        totalPages: Math.ceil(totalItems / pageSize),
+        totalItems: result.length,
+        totalPages: Math.ceil(result.length / pageSize),
       },
       result,
     };
@@ -505,5 +503,117 @@ export class MusicsService {
   // Getall music id - ThanglH
   async getAllMusic(): Promise<Music[]> {
     return this.musicModel.find().exec();
+  }
+
+  async getTop50Music(title: string): Promise<Music[]> {
+    if (!title.includes('-')) {
+      throw new Error(
+        'Invalid title format. Expected: type-timeframe (e.g., Linked-alltime)',
+      );
+    }
+    const [type, timeframe] = title.split('-');
+
+    const timeFilter = this.getTimeFilter(timeframe);
+
+    if (type.toLowerCase() === 'linked') {
+      const top50Music = await this.musicModel
+        .aggregate([
+          { $match: timeFilter },
+          {
+            $lookup: {
+              from: 'videos',
+              localField: 'musicId',
+              foreignField: 'musicId',
+              as: 'linkedVideos',
+            },
+          },
+          {
+            $addFields: {
+              linkedVideoCount: { $size: '$linkedVideos' },
+            },
+          },
+          {
+            $lookup: {
+              from: 'users',
+              localField: 'userId',
+              foreignField: '_id',
+              as: 'user',
+            },
+          },
+          {
+            $unwind: {
+              path: '$user',
+              preserveNullAndEmptyArrays: true,
+            },
+          },
+          { $sort: { linkedVideoCount: -1 } },
+          { $limit: 50 },
+          { $project: { linkedVideos: 0 } },
+        ])
+        .exec();
+
+      return top50Music;
+    }
+
+    const sortField = this.getSortField(type);
+    const top50Music = await this.musicModel
+      .find(timeFilter)
+      .populate('userId')
+      .sort({ [sortField]: -1 })
+      .limit(50)
+      .exec();
+
+    return top50Music;
+  }
+  private getSortField(type: string): string {
+    switch (type.toLowerCase()) {
+      case 'listens':
+        return 'totalListener';
+      case 'reactions':
+        return 'totalReactions';
+      default:
+        throw new Error(
+          `Invalid type: ${type}. Expected: Linked, Listens, or Reactions`,
+        );
+    }
+  }
+
+  private getTimeFilter(timeframe: string): any {
+    const now = new Date();
+    let filter = {};
+
+    switch (timeframe.toLowerCase()) {
+      case 'weekly': {
+        const oneWeekAgo = new Date(now);
+        oneWeekAgo.setDate(now.getDate() - 7);
+        filter = { createdAt: { $gte: oneWeekAgo } };
+        break;
+      }
+      case 'monthly': {
+        const oneMonthAgo = new Date(now);
+        oneMonthAgo.setMonth(now.getMonth() - 1);
+        filter = { createdAt: { $gte: oneMonthAgo } };
+        break;
+      }
+      case 'yearly': {
+        const oneYearAgo = new Date(now);
+        oneYearAgo.setFullYear(now.getFullYear() - 1);
+        filter = { createdAt: { $gte: oneYearAgo } };
+        break;
+      }
+      case 'alltime':
+        filter = {};
+        break;
+      default:
+        throw new Error(
+          `Invalid timeframe: ${timeframe}. Expected: weekly, monthly, yearly, or alltime`,
+        );
+    }
+
+    return filter;
+  }
+
+  async getMusicById(id: string) {
+    return await this.musicModel.findById(id);
   }
 }

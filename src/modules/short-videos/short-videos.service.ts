@@ -31,6 +31,7 @@ import { NotificationsGateway } from '../notifications/notifications.gateway';
 import { Notification } from '../notifications/schema/notification.schema';
 import { FollowService } from '../follow/follow.service';
 
+
 @Injectable()
 export class ShortVideosService {
   constructor(
@@ -444,37 +445,6 @@ export class ShortVideosService {
     return await this.videoModel.findById(videoId);
   }
 
-  async searchVideosByDescription(
-    searchText: string,
-    current: number,
-    pageSize: number,
-  ) {
-    const regex = new RegExp(searchText, 'i');
-    const filter = { videoDescription: { $regex: regex } };
-    const totalItems = await this.videoModel.countDocuments(filter);
-    const totalPages = Math.ceil(totalItems / pageSize);
-    const skip = (current - 1) * pageSize;
-    const result = await this.videoModel
-      .find(filter)
-      .skip(skip)
-      .limit(pageSize)
-      .sort({ createdAt: -1 })
-      .select(
-        'videoUrl totalFavorite totalReaction totalViews videoDescription videoThumbnail',
-      )
-      .populate('userId', 'userName');
-
-    return {
-      meta: {
-        current,
-        pageSize,
-        totalItems,
-        totalPages,
-      },
-      result,
-    };
-  }
-
   async findByCategory(
     categoryName: string,
     current: number = 1,
@@ -662,7 +632,7 @@ export class ShortVideosService {
         select:
           '_id userName fullname email image totalFollowers totalFollowings',
       })
-      .sort({ createAt: -1 });
+      .sort({ createdAt: -1 });
 
     return {
       meta: {
@@ -959,6 +929,7 @@ RETURN u2.id AS otherUser,
     userId: string,
     numberChooseVideo: number = 2,
   ) {
+
     const similarities = await this.getUserSimilarities(userId);
     const totalSimilarity = similarities.reduce(
       (sum, user) => sum + user.similarity,
@@ -977,7 +948,7 @@ RETURN u2.id AS otherUser,
         score: weightedSum / totalSimilarity,
       };
     });
-    console.log('similarities', similarities);
+
     return recommendedScores
       .sort((a, b) => b.score - a.score)
       .slice(0, numberChooseVideo)
@@ -1022,4 +993,135 @@ RETURN u2.id AS otherUser,
   //     console.error('Lỗi khi xóa video:', error);
   //   }
   // }
+
+  async getTopVideos() {
+ 
+    const now = new Date();
+    
+    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+    startOfWeek.setHours(0, 0, 0, 0);
+  
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    startOfMonth.setHours(0, 0, 0, 0);
+  
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    startOfYear.setHours(0, 0, 0, 0);
+  
+    const timeFilters = {
+      Weekly: { createdAt: { $gte: startOfWeek } },
+      Monthly: { createdAt: { $gte: startOfMonth } },
+      Yearly: { createdAt: { $gte: startOfYear } },
+      "AllTime": {}, 
+    };
+  
+    const result = {
+      Weekly: { topViews: null, topReactions: null },
+      Monthly: { topViews: null, topReactions: null },
+      Yearly: { topViews: null, topReactions: null },
+      "AllTime": { topViews: null, topReactions: null },
+    };
+    for (const period in timeFilters) {
+      result[period].topViews = await this.videoModel
+        .find(timeFilters[period])
+        .sort({ totalViews: -1 }) 
+        .limit(1) 
+        .exec();
+      result[period].topReactions = await this.videoModel
+        .find(timeFilters[period])
+        .sort({ totalReactions: -1 })
+        .limit(1) 
+        .exec();
+    }
+    const formattedResult = {};
+    for (const period in result) {
+      formattedResult[period] = [
+        {
+          title:"Top 50 - Views",
+          image: result[period].topViews[0]?.videoThumbnail || "",
+        },
+        {
+          title:"Top 50 - Reactions",
+          image: result[period].topReactions[0]?.videoThumbnail || "",
+        },
+      ];
+    }
+  
+    return formattedResult;
+  }
+
+  
+  async getTop50Videos(title: string): Promise<Video[]> {
+    // Kiểm tra định dạng title
+    if (!title.includes("-")) {
+      throw new Error(
+        "Invalid title format. Expected: type-timeframe (e.g., Views-alltime)"
+      );
+    }
+  
+    // Tách title thành type và timeframe
+    const [type, timeframe] = title.split("-");
+  
+    // Xác định trường sắp xếp dựa trên type
+    const sortField = this.getSortField(type);
+  
+    // Xây dựng bộ lọc thời gian dựa trên timeframe
+    const timeFilter = this.getTimeFilter(timeframe);
+  
+    // Truy vấn MongoDB
+    const top50Videos = await this.videoModel
+      .find(timeFilter).populate('userId') // Lọc theo thời gian
+      .sort({ [sortField]: -1 }) // Sắp xếp giảm dần theo trường tương ứng
+      .limit(50) // Giới hạn 50 kết quả
+      .exec();
+  
+    return top50Videos;
+  }
+  
+  // Hàm helper để xác định trường sắp xếp dựa trên type
+  private getSortField(type: string): string {
+    switch (type.toLowerCase()) {
+      case "views":
+        return "totalViews";
+      case "reactions":
+        return "totalReaction";
+      default:
+        throw new Error(`Invalid type: ${type}. Expected: Views or Reactions`);
+    }
+  }
+  
+  // Hàm helper để tạo bộ lọc thời gian
+  private getTimeFilter(timeframe: string): any {
+    const now = new Date();
+    let filter = {};
+  
+    switch (timeframe.toLowerCase()) {
+      case "weekly": {
+        const oneWeekAgo = new Date(now);
+        oneWeekAgo.setDate(now.getDate() - 7);
+        filter = { createdAt: { $gte: oneWeekAgo } };
+        break;
+      }
+      case "monthly": {
+        const oneMonthAgo = new Date(now);
+        oneMonthAgo.setMonth(now.getMonth() - 1);
+        filter = { createdAt: { $gte: oneMonthAgo } };
+        break;
+      }
+      case "yearly": {
+        const oneYearAgo = new Date(now);
+        oneYearAgo.setFullYear(now.getFullYear() - 1);
+        filter = { createdAt: { $gte: oneYearAgo } };
+        break;
+      }
+      case "alltime":
+        filter = {}; // Không lọc thời gian
+        break;
+      default:
+        throw new Error(
+          `Invalid timeframe: ${timeframe}. Expected: weekly, monthly, yearly, or alltime`
+        );
+    }
+  
+    return filter;
+  }
 }

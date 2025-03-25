@@ -6,6 +6,7 @@ import { CreateTickedUserDto } from './dto/create-ticked-user.dto';
 import aqp from 'api-query-params';
 import { UsersService } from '../users/users.service';
 import { MailerService } from '@nestjs-modules/mailer';
+import { User } from '../users/schemas/user.schema';
 
 @Injectable()
 export class TickedUserService {
@@ -170,4 +171,58 @@ export class TickedUserService {
     }
     return tickStatus;
   }
+
+  checkStatusFilter(status: string) {
+    if (status === 'pending') {
+      return { status: 'pending' };
+    } else if (status === 'rejected') {
+      return { status: 'rejected' };
+    } else if (status === 'approved') {
+      return { status: 'approved' };
+    } else {
+      return {};
+    }
+  }
+
+async handleFilterAndSearchUserReTicked(query: string, current: number, pageSize: number) {
+  const { filter } = aqp(query);
+  current = current || 1;
+  pageSize = pageSize || 10;
+
+  const handleFilter = this.checkStatusFilter(filter.filterReq || '');
+  const searchRegex = filter.search ? new RegExp(`^${filter.search}`, 'i') : null;
+
+  // Truy vấn tickedUserModel và populate thông tin từ userModel
+  const tickedUsersQuery = this.tickedUserModel
+    .find(handleFilter)
+    .populate({
+      path: 'userId',
+      select: '-password', // Loại bỏ trường password
+      match: searchRegex ? { $or: [{ userName: searchRegex }, { fullname: searchRegex }] } : undefined,
+    })
+    .skip((current - 1) * pageSize)
+    .limit(pageSize);
+
+  const tickedUsers = await tickedUsersQuery.exec();
+  const totalItems = await this.tickedUserModel.countDocuments(handleFilter).exec();
+
+  // Xử lý kết quả
+  const result = tickedUsers
+    .filter(t => t.userId) // Lọc bỏ các bản ghi không có userId populated (do match)
+    .map(t => ({
+      userData: t.userId, // Thông tin user đã được populate
+      status: t.status,
+    }));
+
+  return {
+    meta: {
+      current,
+      pageSize,
+      pages: Math.ceil(totalItems / pageSize),
+      total: totalItems,
+    },
+    result,
+    message: totalItems === 0 ? 'No users found.' : '',
+  };
+}
 }

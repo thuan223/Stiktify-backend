@@ -61,6 +61,11 @@ export class ShortVideosController {
   getVideosByUserId(@Param('userId') userId: string) {
     return this.shortVideosService.getVideosByUserId(userId);
   }
+  @Public()
+  @Get('getTopVideo/:title') 
+  getTopVideo(@Param('title') title: string) {
+    return this.shortVideosService.getTop50Videos(title);
+  }
   @Get('list-video')
   findAll(
     @Query() query: string,
@@ -69,7 +74,11 @@ export class ShortVideosController {
   ) {
     return this.shortVideosService.findAll(query, +current, +pageSize);
   }
-
+  @Get('get-top-one-videos')
+  @Public()
+  getTopOneVideos() {
+    return this.shortVideosService.getTopVideos();
+  }
   @Get(':videoId')
   async getVideoById(@Param('videoId') videoId: string) {
     return this.shortVideosService.findVideoById(videoId);
@@ -163,7 +172,6 @@ export class ShortVideosController {
     }),
   )
   async getTagByAI(@UploadedFile() file: Express.Multer.File) {
-    console.log(file);
     if (!file) throw new BadRequestException('No file uploaded');
     return this.shortVideosService.getTagVideoByAi(file);
   }

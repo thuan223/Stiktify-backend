@@ -4,6 +4,7 @@ import { Model, Types } from 'mongoose';
 import { Product } from './schemas/product.schema';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import aqp from 'api-query-params';
 
 @Injectable()
 export class ProductsService {
@@ -25,6 +26,48 @@ export class ProductsService {
     }
   }
 
+  async handleGetListProduct(query: string, current: number, pageSize: number) {
+    const { filter, sort } = aqp(query);
+
+    if (filter.current) delete filter.current;
+    if (filter.pageSize) delete filter.pageSize;
+
+    if (!current) current = 1;
+    if (!pageSize) pageSize = 10;
+
+    //Tính tổng số lượng
+    const totalItems = (await this.productModel.find(filter)).length;
+    //Tính tổng số trang
+    const totalPages = Math.ceil(totalItems / pageSize);
+
+    const skip = (+current - 1) * +pageSize;
+
+    const result = await this.productModel
+      .find(filter)
+      .limit(pageSize)
+      .skip(skip)
+      .sort(sort as any);
+
+    return {
+      meta: {
+        current: current, // trang hien tai
+        pageSize: pageSize, // so luong ban ghi
+        pages: totalPages, // tong so trang voi dieu kien query
+        total: totalItems, // tong so ban ghi
+      },
+      result: result,
+    };
+  }
+
+  async handleGetProductById(id: string) {
+    const result = await this.productModel.findById(id);
+    if (!result) {
+      throw new Error('Product not found');
+    }
+    return result;
+  }
+  
+    
   // get all products - ThangLH
 async findAll(): Promise<Product[]> {
   return this.productModel.find({ isDelete: false }).exec();

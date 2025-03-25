@@ -13,6 +13,21 @@ export class ProductsController {
   async create(@Body() createProductDto: CreateProductDto) {
     return await this.productsService.create(createProductDto);
   }
+
+  @Get('list-product')
+  findAllProduct(
+    @Query() query: string,
+    @Query('current') current: string,
+    @Query('pageSize') pageSize: string,
+  ) {
+    return this.productsService.handleGetListProduct(query, +current, +pageSize);
+  }
+
+  @Get('product-details/:id')
+  findProductById(@Param('id') id: string) {
+  return this.productsService.handleGetProductById(id);
+}
+
   // get all products - ThangLH
   @Get()
   findAll() {

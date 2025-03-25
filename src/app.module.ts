@@ -40,6 +40,7 @@ import { ListeninghistoryModule } from './modules/listeninghistory/listeninghist
 import { SettingsModule } from './modules/settings/settings.module';
 import { Neo4jModule } from './modules/neo4j/neo4j.module';
 import { TickedUserModule } from './modules/ticked-user/ticked-user.module';
+import { KafkaModule } from './modules/kafka/kafka.module';
 
 @Module({
   imports: [
@@ -70,6 +71,7 @@ import { TickedUserModule } from './modules/ticked-user/ticked-user.module';
     ReportModule,
     FriendRequestModule,
     NotificationsModule,
+    KafkaModule,
     SettingsModule,
     ConfigModule.forRoot({ isGlobal: true, envFilePath: ".env" }),
     TickedUserModule,
