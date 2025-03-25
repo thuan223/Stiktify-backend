@@ -282,6 +282,7 @@ export class ShortVideosService {
         .populate('userId')
         .populate('musicId');
     }
+
     const collaboratorVideoIdList =
       await this.wishListService.getCollaborativeVideo(
         data.userId,
@@ -818,6 +819,7 @@ export class ShortVideosService {
       )
       .run();
   }
+
   async addCategoryToVideo(
     userId: string,
     categoryName: string,
@@ -840,7 +842,6 @@ export class ShortVideosService {
       )
       .run();
   }
-
   async getVideoDetails(videoId: string) {
     return this.queryRepository
       .initQuery()
@@ -954,6 +955,7 @@ RETURN u2.id AS otherUser,
       .slice(0, numberChooseVideo)
       .map((video) => video.videoId);
   }
+
 
   // async deleteAllVideos() {
   //   try {

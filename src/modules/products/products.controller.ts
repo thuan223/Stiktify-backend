@@ -40,14 +40,10 @@ searchProducts(
   @Query('category') category?: string,
   @Query('minPrice') minPrice?: string,
   @Query('maxPrice') maxPrice?: string,
-  @Query('color') color?: string
+  // @Query('color') color?: string
 ) {
-  return this.productsService.searchProducts({ name, category, minPrice, maxPrice, color });
+  return this.productsService.searchProducts({ name, category, minPrice, maxPrice });
 }
-
-
-
-//// get all products by userId - ThangLH
 
  @Get('user/:userId')
 findByUser(@Param('userId') userId: string) {

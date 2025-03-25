@@ -118,9 +118,9 @@ async searchProducts(filters: any): Promise<Product[] | { message: string }> {
   if (filters.maxPrice) {
     query.productPrice = { ...query.productPrice, $lte: parseFloat(filters.maxPrice) };
   }
-  if (filters.color) {
-    query.productColor = filters.color;
-  }
+  // if (filters.color) {
+  //   query.productColor = filters.color;
+  // }
 
   const products = await this.productModel.find(query).exec();
   
