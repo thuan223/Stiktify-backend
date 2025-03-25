@@ -18,7 +18,7 @@ import {
   UserCreateByManager,
 } from './dto/create-user.dto';
 import { SendMailDto, UpdateShopOwnerDto, UpdateUserDto } from './dto/update-user.dto';
-import { ResponseMessage } from '@/decorator/customize';
+import { Public, ResponseMessage } from '@/decorator/customize';
 import { JwtAuthGuard } from '@/auth/passport/jwt-auth.guard';
 import { BanUserDto } from './dto/ban-user.dto';
 
@@ -77,20 +77,18 @@ export class UsersController {
     return this.usersService.handleUpdateInformation(userId, updateUserDto); // Truyền userId vào service
   }
 
-  @Get('search-name')
-  @ResponseMessage('Search users successfully')
-  searchUsers(
-    @Query('search') search: string,
-    @Query('current') current: string,
-    @Query('pageSize') pageSize: string,
-    @Query('sort') sort: string,
+  @Public()
+  @Get('search-user-video')
+  searchAll(
+  @Query('searchText') searchText: string,
+  @Query('current') current: string,
+  @Query('pageSize') pageSize: string,
   ) {
-    return this.usersService.handleSearchUser(
-      search,
-      +current || 1,
-      +pageSize || 10,
-      sort ? JSON.parse(sort) : {},
-    );
+  return this.usersService.searchUserAndVideo(
+    searchText,
+    +current || 1,
+    +pageSize || 10
+  );
   }
 
   // Detail user - ThangLH

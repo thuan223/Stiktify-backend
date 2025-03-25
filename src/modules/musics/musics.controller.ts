@@ -15,14 +15,14 @@ export class MusicsController {
     return this.musicsService.handleUploadMusic(createMusicDto);
   }
 
-  @Get('my-musics')
+  @Get('my-musics/:userId')
   getUserMusics(
-    @Request() req,
+    @Param('userId') userId: string,
     @Query('current') current: string,
     @Query('pageSize') pageSize: string,
   ) {
     return this.musicsService.handleMyMusic(
-      req.user._id,
+      userId,
       +current,
       +pageSize,
     );

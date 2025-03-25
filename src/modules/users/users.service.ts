@@ -18,12 +18,15 @@ import { hashPasswordHelper } from '@/helpers/ultil';
 import { v4 as uuidv4 } from 'uuid';
 import dayjs from 'dayjs';
 import aqp from 'api-query-params';
+import { Video } from '../short-videos/schemas/short-video.schema';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private readonly mailerService: MailerService,
+    @InjectModel(Video.name)
+        private videoModel: Model<Video>
   ) {}
   isEmailExist = async (email: string) => {
     const isExist = await this.userModel.exists({ email });
@@ -429,52 +432,43 @@ export class UsersService {
     };
   }
 
-  async handleSearchUser(
-    search: string,
+  async searchUserAndVideo(
+    searchText: string,
     current: number = 1,
-    pageSize: number = 10,
-    sort: any = {},
+    pageSize: number = 10
   ) {
-    if (!search || search.trim() === '') {
+    if (!searchText || searchText.trim() === '') {
       throw new BadRequestException('Search keyword cannot be empty!');
     }
-
-    const searchRegex = new RegExp(search, 'i');
-    const filter = {
-      $and: [
-        {
-          $or: [{ userName: searchRegex }, { fullname: searchRegex }],
-        },
-        { role: { $ne: 'ADMIN' } },
-      ],
+    const searchRegex = new RegExp(searchText, 'i');
+    const userFilter = {
+         $or: [{ userName: searchRegex }, { fullname: searchRegex }],
     };
-
-    const totalItems = await this.userModel.countDocuments(filter);
-
-    if (totalItems === 0) {
-      throw new BadRequestException(
-        'No users found matching your search criteria!',
-      );
-    }
-
-    const skip = (current - 1) * pageSize;
-    const result = await this.userModel
-      .find(filter)
-      .skip(skip)
+    const totalUsers = await this.userModel.countDocuments(userFilter);
+    const userResult = await this.userModel
+      .find(userFilter)
+      .limit(5) 
+      .select('userName fullname image');
+    const videoFilter = { videoDescription: { $regex: searchRegex } };
+    const totalVideos = await this.videoModel.countDocuments(videoFilter);
+    const videoResult = await this.videoModel
+      .find(videoFilter)
+      .skip((current - 1) * pageSize)
       .limit(pageSize)
-      .sort(sort)
-      .select('userName fullname');
-
+      .sort({ createdAt: -1 })
+      .select('videoUrl videoThumbnail videoDescription totalViews')
+      .populate('userId', 'videoIdvideoId');
     return {
-      meta: {
-        current,
-        pageSize,
-        totalItems,
-        totalPages: Math.ceil(totalItems / pageSize),
+      meta: { current, pageSize },
+      data: {
+        users: { totalItems: totalUsers, result: userResult },
+        videos: { totalItems: totalVideos, result: videoResult },
       },
-      result,
+      message: totalUsers === 0 && totalVideos === 0 ? 'No results found' : 'Search results retrieved successfully',
     };
   }
+  
+
   // Detail user - ThangLH
   async getUserById(id: string) {
     const user = await this.userModel.findById(id).select('-password');
