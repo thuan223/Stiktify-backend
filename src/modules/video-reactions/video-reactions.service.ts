@@ -11,6 +11,8 @@ import {
 import { Model, Types } from 'mongoose';
 import { Video } from '../short-videos/schemas/short-video.schema';
 import { DeleteVideoReactionDto } from './dto/delete-video-reaction.dto';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
 
 @Injectable()
 export class VideoReactionsService {
@@ -18,7 +20,9 @@ export class VideoReactionsService {
     @InjectModel(VideoReaction.name)
     private readonly videoReactionModel: Model<VideoReactionDocument>,
     @InjectModel(Video.name) private VideoModal: Model<Video>,
-  ) { }
+    private notificationsService: NotificationsService,
+    private notificationsGateway: NotificationsGateway,
+  ) {}
 
   async getUserReaction(userId: string, dto: GetReaction) {
     return this.videoReactionModel
@@ -43,6 +47,43 @@ export class VideoReactionsService {
       await this.VideoModal.findByIdAndUpdate(dto.videoId, {
         $inc: { totalReaction: 1 },
       });
+      const video: any = await this.VideoModal.findById(dto.videoId).populate(
+        'userId',
+        '_id',
+      );
+
+      if (!video) {
+        throw new Error('Video not exist');
+      }
+
+      const existingNotification =
+        await this.notificationsService.findNotification({
+          sender: userId,
+          recipient: video.userId._id.toString(),
+          type: 'new-react',
+          postId: video._id,
+        });
+
+      if (existingNotification) return newReaction.save();
+
+      const notification = await this.notificationsService.createNotification({
+        sender: userId,
+        recipient: video.userId._id.toString(),
+        type: 'new-react',
+        postId: video._id,
+      });
+
+      // Lấy dữ liệu thông báo đầy đủ
+      const populatedNotification =
+        await this.notificationsService.populateNotification(notification._id);
+      console.log(populatedNotification);
+
+      // Gửi thông báo realtime qua WebSocket
+      this.notificationsGateway.sendNotification(
+        userId,
+        populatedNotification.recipient,
+        populatedNotification,
+      );
 
       return newReaction.save();
     }
@@ -75,14 +116,12 @@ export class VideoReactionsService {
         select: 'reactionTypeName',
       })
       .select('_id videoId reactionTypeId');
-      
-    return reactions.filter(r => {
-      const reactionType = r.reactionTypeId as unknown as { reactionTypeName?: string };
+
+    return reactions.filter((r) => {
+      const reactionType = r.reactionTypeId as unknown as {
+        reactionTypeName?: string;
+      };
       return reactionType?.reactionTypeName === 'Like';
     });
   }
-  
-  
 }
-
-

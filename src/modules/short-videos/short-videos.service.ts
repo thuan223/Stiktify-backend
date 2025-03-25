@@ -25,6 +25,11 @@ import FormData from 'form-data';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { QueryRepository } from '../neo4j/neo4j.service';
+import { FriendRequestService } from '../friend-request/friend-request.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
+import { Notification } from '../notifications/schema/notification.schema';
+import { FollowService } from '../follow/follow.service';
 
 @Injectable()
 export class ShortVideosService {
@@ -45,6 +50,10 @@ export class ShortVideosService {
     @Inject(forwardRef(() => ReportService))
     private reportService: ReportService,
     private readonly queryRepository: QueryRepository,
+    private friendRequestService: FriendRequestService,
+    // private followService: FollowService,
+    private notificationsService: NotificationsService,
+    private notificationsGateway: NotificationsGateway,
   ) {}
 
   //Create a new short video - ThangLH
@@ -62,6 +71,69 @@ export class ShortVideosService {
         );
         await this.videoCategoryModel.insertMany(videoCategories);
       }
+      console.log('THIS >>>', createShortVideoDto.userId);
+
+      // Lấy danh sách bạn bè
+      const friends = await this.friendRequestService.getFriendsList(
+        createShortVideoDto.userId,
+      );
+      // Gửi thông báo đến bạn bè
+      for (const friend of friends) {
+        const notification = await this.notificationsService.createNotification(
+          {
+            sender: createShortVideoDto.userId,
+            recipient: friend.friendId,
+            type: 'new-video',
+            postId: createdVideo._id,
+          },
+        );
+
+        // Lấy thông tin đầy đủ để gửi qua WebSocket
+        const populatedNotification =
+          await this.notificationsService.populateNotification(
+            notification._id,
+          );
+        console.log(populatedNotification);
+
+        // Gửi thông báo realtime qua WebSocket
+        this.notificationsGateway.sendNotification(
+          createShortVideoDto.userId,
+          friend.friendId,
+          populatedNotification,
+        );
+      }
+
+      // // Lấy danh sách follower
+      // const followers: any = await this.followService.getFollowersList(
+      //   createShortVideoDto.userId,
+      // );
+      // // Gửi thông báo đến follower
+      // for (const follower of followers) {
+      //   console.log(follower._id);
+
+      //   const notification = await this.notificationsService.createNotification(
+      //     {
+      //       sender: createShortVideoDto.userId,
+      //       recipient: follower._id,
+      //       type: 'new-video',
+      //       postId: createdVideo._id,
+      //     },
+      //   );
+
+      //   // Lấy thông tin đầy đủ để gửi qua WebSocket
+      //   const populatedNotification =
+      //     await this.notificationsService.populateNotification(
+      //       notification._id,
+      //     );
+      //   console.log(populatedNotification);
+
+      //   // Gửi thông báo realtime qua WebSocket
+      //   this.notificationsGateway.sendNotification(
+      //     createShortVideoDto.userId,
+      //     follower._id,
+      //     populatedNotification,
+      //   );
+      // }
       return createdVideo;
     } catch (error) {
       throw new BadRequestException('Failed to create video post');
@@ -209,15 +281,15 @@ export class ShortVideosService {
         .populate('userId')
         .populate('musicId');
     }
-    // const collaboratorVideoIdList =
-    //   await this.wishListService.getCollaborativeVideo(
-    //     data.userId,
-    //     resetScore.collaboration,
-    //   );
-    const collaboratorVideoIdList = await this.getCollaboratorFilteringVideo(
-      data.userId,
-      resetScore.collaboration,
-    );
+    const collaboratorVideoIdList =
+      await this.wishListService.getCollaborativeVideo(
+        data.userId,
+        resetScore.collaboration,
+      );
+    // const collaboratorVideoIdList = await this.getCollaboratorFilteringVideo(
+    //   data.userId,
+    //   resetScore.collaboration,
+    // );
     let collaboratorVideoFound = [];
     if (collaboratorVideoIdList && collaboratorVideoIdList.length > 0) {
       countVideo += collaboratorVideoIdList.length;
@@ -699,7 +771,6 @@ export class ShortVideosService {
           )
           .run();
       } else {
-
         // Nếu chưa tồn tại, tạo mới
         return await this.queryRepository
           .initQuery()
@@ -777,7 +848,11 @@ export class ShortVideosService {
       )
       .run();
   }
-  async addCategoryToVideo(userId: string, categoryName: string, score: number) {
+  async addCategoryToVideo(
+    userId: string,
+    categoryName: string,
+    score: number,
+  ) {
     return this.queryRepository
       .initQuery()
       .raw(
@@ -795,8 +870,7 @@ export class ShortVideosService {
       )
       .run();
   }
-        
-  
+
   async getVideoDetails(videoId: string) {
     return this.queryRepository
       .initQuery()
@@ -891,9 +965,8 @@ RETURN u2.id AS otherUser,
       0,
     );
 
-    if (totalSimilarity === 0) return []; 
+    if (totalSimilarity === 0) return [];
 
-  
     const recommendedScores = similarities[0]?.allVideos.map((video, index) => {
       const weightedSum = similarities.reduce(
         (sum, user) => sum + user.similarity * user.otherUserScores[index],
@@ -904,7 +977,7 @@ RETURN u2.id AS otherUser,
         score: weightedSum / totalSimilarity,
       };
     });
-    console.log("similarities", similarities);
+    console.log('similarities', similarities);
     return recommendedScores
       .sort((a, b) => b.score - a.score)
       .slice(0, numberChooseVideo)
@@ -929,7 +1002,7 @@ RETURN u2.id AS otherUser,
   //         {},
   //       )
   //       .run();
-  
+
   //     // Xóa video cùng với các mối quan hệ của nó
   //     await this.queryRepository
   //       .initQuery()
@@ -941,7 +1014,7 @@ RETURN u2.id AS otherUser,
   //         {},
   //       )
   //       .run();
-  
+
   //     console.log(
   //       'Tất cả các video và mối quan hệ liên quan đã được xóa thành công.',
   //     );
@@ -949,5 +1022,4 @@ RETURN u2.id AS otherUser,
   //     console.error('Lỗi khi xóa video:', error);
   //   }
   // }
-  
 }

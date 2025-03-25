@@ -15,6 +15,9 @@ import { MusicCategory } from '../music-categories/schemas/music-category.schema
 import { MusicCategoriesService } from '../music-categories/music-categories.service';
 import { CategoriesService } from '../categories/categories.service';
 import { QueryRepository } from '../neo4j/neo4j.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
+import { FriendRequestService } from '../friend-request/friend-request.service';
 
 @Injectable()
 export class MusicsService {
@@ -25,8 +28,11 @@ export class MusicsService {
     private musicCategoryModel: Model<MusicCategory>,
     private musicCategoryService: MusicCategoriesService,
     private categoryService: CategoriesService,
-    private readonly queryRepository: QueryRepository
-  ) { }
+    private readonly queryRepository: QueryRepository,
+    private friendRequestService: FriendRequestService,
+    private notificationsService: NotificationsService,
+    private notificationsGateway: NotificationsGateway,
+  ) {}
 
   async checkMusicById(id: string) {
     try {
@@ -49,7 +55,15 @@ export class MusicsService {
   }
 
   async handleUploadMusic(createMusicDto: CreateMusicDto) {
-    const { musicTag, categoryId, musicDescription, musicLyric, musicThumbnail, musicUrl, userId } = createMusicDto;
+    const {
+      musicTag,
+      categoryId,
+      musicDescription,
+      musicLyric,
+      musicThumbnail,
+      musicUrl,
+      userId,
+    } = createMusicDto;
 
     for (const e of musicTag) {
       if (typeof e !== 'string') {
@@ -63,7 +77,7 @@ export class MusicsService {
       } else {
         const checkCategoryId = await this.categoryService.checkCategoryById(e);
         if (!checkCategoryId) {
-          throw new NotFoundException(`Not found categoryId with id ${e}`)
+          throw new NotFoundException(`Not found categoryId with id ${e}`);
         }
       }
     }
@@ -74,9 +88,39 @@ export class MusicsService {
       musicLyric: musicLyric,
       musicThumbnail: musicThumbnail,
       musicUrl: musicUrl,
-      listeningAt: new Date()
+      listeningAt: new Date(),
     });
-    await this.musicCategoryService.handleCreateCategoryMusic(categoryId, result._id + "")
+    await this.musicCategoryService.handleCreateCategoryMusic(
+      categoryId,
+      result._id + '',
+    );
+
+    // Lấy danh sách bạn bè
+    const friends = await this.friendRequestService.getFriendsList(
+      createMusicDto.userId,
+    );
+
+    // Gửi thông báo đến bạn bè
+    for (const friend of friends) {
+      const notification = await this.notificationsService.createNotification({
+        sender: createMusicDto.userId,
+        recipient: friend.friendId,
+        type: 'new-music',
+        musicId: result._id,
+      });
+
+      // Lấy thông tin đầy đủ để gửi qua WebSocket
+      const populatedNotification =
+        await this.notificationsService.populateNotification(notification._id);
+      console.log(populatedNotification);
+
+      // Gửi thông báo realtime qua WebSocket
+      this.notificationsGateway.sendNotification(
+        createMusicDto.userId,
+        friend.friendId,
+        populatedNotification,
+      );
+    }
     return result;
   }
 
@@ -122,7 +166,7 @@ export class MusicsService {
     const filter = {
       isBlock: false,
       isDelete: false,
-      flag: false
+      flag: false,
     };
 
     const totalItems = (await this.musicModel.find(filter)).length;
@@ -165,11 +209,14 @@ export class MusicsService {
 
     if (!check.listeningAt || check.listeningAt < sevenDaysAgo) {
       result = await this.musicModel.findByIdAndUpdate(id, {
-        totalListener: check.totalListener + 1, totalListeningOnWeek: 1, listeningAt: new Date()
+        totalListener: check.totalListener + 1,
+        totalListeningOnWeek: 1,
+        listeningAt: new Date(),
       });
     } else {
       result = await this.musicModel.findByIdAndUpdate(id, {
-        totalListener: check.totalListener + 1, totalListeningOnWeek: check.totalListeningOnWeek + 1
+        totalListener: check.totalListener + 1,
+        totalListeningOnWeek: check.totalListeningOnWeek + 1,
       });
     }
 
@@ -285,7 +332,6 @@ export class MusicsService {
     return result;
   }
 
-
   // Share a music - ThangLH
   async shareMusic(id: string): Promise<{
     musicUrl: string;
@@ -294,9 +340,11 @@ export class MusicsService {
     totalListener: number;
     totalReactions: number;
   }> {
-    const music = await this.musicModel.findById(id).select(
-      'musicUrl musicDescription musicThumbnail totalListener totalReactions'
-    );
+    const music = await this.musicModel
+      .findById(id)
+      .select(
+        'musicUrl musicDescription musicThumbnail totalListener totalReactions',
+      );
 
     if (!music) {
       throw new BadRequestException('Music not found');
@@ -351,17 +399,18 @@ export class MusicsService {
     }
   }
 
-
-  async handleListAllMusicAdmin(query: string, current: number, pageSize: number) {
+  async handleListAllMusicAdmin(
+    query: string,
+    current: number,
+    pageSize: number,
+  ) {
     try {
       const { filter, sort } = aqp(query);
       if (filter.current) delete filter.current;
       if (filter.pageSize) delete filter.pageSize;
       if (!current) current = 1;
       if (!pageSize) pageSize = 10;
-      const totalItems = (
-        await this.musicModel.find(filter)
-      ).length;
+      const totalItems = (await this.musicModel.find(filter)).length;
       const totalPages = Math.ceil(totalItems / pageSize);
       const skip = (+current - 1) * +pageSize;
       const result = await this.musicModel
@@ -369,7 +418,7 @@ export class MusicsService {
         .limit(pageSize)
         .skip(skip)
         .sort(sort as any)
-        .populate('userId')
+        .populate('userId');
       return {
         meta: {
           current: current, // trang hien tai
@@ -386,56 +435,75 @@ export class MusicsService {
   }
 
   async handleRecommendMusic(userId: string) {
-    const similarUsers = await this.queryRepository.initQuery().raw(`
+    const similarUsers = await this.queryRepository
+      .initQuery()
+      .raw(
+        `
       MATCH (u1:User {id: $userId})-[:LISTENED_TO]->(m:Music)<-[:LISTENED_TO]-(u2:User)
       WHERE u1 <> u2
       WITH u2, COUNT(m) AS commonMusicCount
       ORDER BY commonMusicCount DESC
       LIMIT 5
       RETURN u2.id AS similarUserId
-  `, { userId }).run();
+  `,
+        { userId },
+      )
+      .run();
 
-    const similarUserIds = similarUsers.map(user => user.similarUserId);
+    const similarUserIds = similarUsers.map((user) => user.similarUserId);
 
     if (similarUserIds.length === 0) return [];
 
-    const recommendations = await this.queryRepository.initQuery().raw(`
+    const recommendations = await this.queryRepository
+      .initQuery()
+      .raw(
+        `
       MATCH (u1:User {id: $userId})-[:LISTENED_TO]->(m:Music)
       WITH COLLECT(m) AS listenedMusic
       MATCH (u2:User)-[:LISTENED_TO]->(m2:Music)
       WHERE u2.id IN $similarUserIds AND NOT m2 IN listenedMusic
       RETURN DISTINCT m2.id AS recommendedMusicId
       LIMIT 10
-  `, { userId, similarUserIds }).run();
+  `,
+        { userId, similarUserIds },
+      )
+      .run();
 
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const dataNeo4j = recommendations.map(music => music.recommendedMusicId);
+    const dataNeo4j = recommendations.map((music) => music.recommendedMusicId);
     const musicHot = await this.musicModel
       .find({ listeningAt: { $gte: sevenDaysAgo } })
       .limit(10 - dataNeo4j.length)
-      .sort({ totalListeningOnWeek: -1 })
+      .sort({ totalListeningOnWeek: -1 });
 
     const results = await this.musicModel.find({ _id: { $in: dataNeo4j } });
 
     const mergedArray = [...new Set([...results, ...musicHot])];
-    return mergedArray
+    return mergedArray;
   }
 
-  async handleListenMusicNeo4j(userId: Types.ObjectId, musicId: Types.ObjectId) {
-    const query = await this.queryRepository.initQuery().raw(`
+  async handleListenMusicNeo4j(
+    userId: Types.ObjectId,
+    musicId: Types.ObjectId,
+  ) {
+    const query = await this.queryRepository
+      .initQuery()
+      .raw(
+        `
       MERGE (u:User {id: $userId})
       MERGE (m:Music {id: $musicId})
       MERGE (u)-[:LISTENED_TO]->(m)
-  `, { userId, musicId }).run();
-    return query
+  `,
+        { userId, musicId },
+      )
+      .run();
+    return query;
   }
 
   // Getall music id - ThanglH
-async getAllMusic(): Promise<Music[]> {
-  return this.musicModel.find().exec();
+  async getAllMusic(): Promise<Music[]> {
+    return this.musicModel.find().exec();
+  }
 }
-
-}
-

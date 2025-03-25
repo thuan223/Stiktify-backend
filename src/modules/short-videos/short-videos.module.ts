@@ -18,6 +18,12 @@ import {
 } from '../video-categories/schemas/video-category.schema';
 import { SettingsModule } from '../settings/settings.module';
 import { HttpModule } from '@nestjs/axios';
+import { FriendRequestModule } from '../friend-request/friend-request.module';
+import { NotificationsModule } from '../notifications/notifications.module';
+import {
+  Notification,
+  NotificationSchema,
+} from '../notifications/schema/notification.schema';
 
 @Module({
   imports: [
@@ -31,12 +37,16 @@ import { HttpModule } from '@nestjs/axios';
     MongooseModule.forFeature([
       { name: Category.name, schema: CategorySchema },
     ]),
-    // Đăng ký VideoCategoryModel
     MongooseModule.forFeature([
       { name: VideoCategory.name, schema: VideoCategorySchema },
     ]),
+    MongooseModule.forFeature([
+      { name: Notification.name, schema: NotificationSchema },
+    ]),
     CategoriesModule,
     UsersModule,
+    FriendRequestModule,
+    NotificationsModule,
     forwardRef(() => ReportModule),
   ],
   controllers: [ShortVideosController],

@@ -10,6 +10,7 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
+import { Types } from 'mongoose';
 
 @Controller('notifications')
 export class NotificationsController {
@@ -22,7 +23,7 @@ export class NotificationsController {
       recipient: string;
       sender: string;
       type: string;
-      postId?: string;
+      postId?: Types.ObjectId;
     },
   ) {
     return this.notificationsService.createNotification(body);

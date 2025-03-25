@@ -19,6 +19,9 @@ export class Notification {
   @Prop({ required: false })
   postId?: string;
 
+  @Prop({ required: false })
+  musicId?: string;
+
   @Prop({
     enum: ['pending', 'accepted', 'rejected', 'read'],
     default: 'pending',
