@@ -1,60 +1,65 @@
-import { Controller, Get, Post, Body, Param, Delete, Put, UseGuards, Query } from '@nestjs/common';
+import { 
+  Controller, 
+  Post, 
+  Body, 
+  Param, 
+  Patch, 
+  Get, 
+  Query, 
+  Res 
+} from '@nestjs/common';
 import { OrderService } from './order.service';
 import { CreateOrderDto, UpdateOrderStatusDto, UpdateShippingInfoDto } from './dto/create-order.dto';
-import { Order } from './schemas/order.schema';
+import { Response } from 'express';
 import { Types } from 'mongoose';
-import { JwtAuthGuard } from '@/auth/passport/jwt-auth.guard';
 
 @Controller('orders')
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
-  // Tạo Order
-  @UseGuards(JwtAuthGuard)
   @Post()
-  async create(@Body() createOrderDto: CreateOrderDto): Promise<Order> {
-    return this.orderService.create(createOrderDto);
+  async createOrder(@Body() createOrderDto: CreateOrderDto) {
+    const order = await this.orderService.createOrder(createOrderDto);
+    
+    if (createOrderDto.paymentMethod === 'VNPAY') {
+      const paymentUrl = await this.orderService.createVNPayPaymentUrl(order);
+      return { order, paymentUrl };
+    } else if (createOrderDto.paymentMethod === 'COD') {
+      // Use order._id.toString() or Types.ObjectId conversion
+      await this.orderService.processCODOrder(order._id.toString());
+      return { order, message: 'COD Order created successfully' };
+    }
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Get()
-  async findAll(@Query('userId') userId?: string): Promise<Order[]> {
-    return this.orderService.findAll(userId ? new Types.ObjectId(userId) : undefined);
+  @Get('vnpay-return')
+  async vnpayReturn(@Query() queryParams: any, @Res() res: Response) {
+    try {
+      const order = await this.orderService.handleVNPayReturn(queryParams);
+      
+      // Redirect based on payment status
+      if (order.status === 'completed') {
+        return res.redirect('http://yourwebsite.com/payment-success');
+      } else {
+        return res.redirect('http://yourwebsite.com/payment-failed');
+      }
+    } catch (error) {
+      return res.redirect('http://yourwebsite.com/payment-error');
+    }
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Get(':id')
-  async findOne(@Param('id') id: string): Promise<Order> {
-    return this.orderService.findOne(id);
+  @Patch('/:id/status')
+  async updateOrderStatus(
+    @Param('id') orderId: string, 
+    @Body() updateOrderStatusDto: UpdateOrderStatusDto
+  ) {
+    return await this.orderService.updateOrderStatus(orderId, updateOrderStatusDto);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Put(':id/status')
-  async updateStatus(
-    @Param('id') id: string,
-    @Body() updateStatusDto: UpdateOrderStatusDto,
-  ): Promise<Order> {
-    return this.orderService.updateStatus(id, updateStatusDto);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Put(':id/shipping-info')
+  @Patch('/:id/shipping')
   async updateShippingInfo(
-    @Param('id') id: string,
-    @Body() shippingInfoDto: UpdateShippingInfoDto,
-  ): Promise<Order> {
-    return this.orderService.updateShippingInfo(id, shippingInfoDto);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Put(':id/mark-paid')
-  async markAsPaid(@Param('id') id: string): Promise<Order> {
-    return this.orderService.markAsPaid(id);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Delete(':id')
-  async remove(@Param('id') id: string): Promise<Order> {
-    return this.orderService.remove(id);
+    @Param('id') orderId: string, 
+    @Body() updateShippingInfoDto: UpdateShippingInfoDto
+  ) {
+    return await this.orderService.updateShippingInfo(orderId, updateShippingInfoDto);
   }
 }

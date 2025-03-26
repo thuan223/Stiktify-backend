@@ -1,8 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Order, OrderDocument } from './schemas/order.schema';
 import { CreateOrderDto, UpdateOrderStatusDto, UpdateShippingInfoDto } from './dto/create-order.dto';
+import { createHash } from 'crypto';
+import { format } from 'date-fns';
 
 @Injectable()
 export class OrderService {
@@ -10,100 +12,139 @@ export class OrderService {
     @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
   ) {}
 
-    // Tạo Order
-  async create(createOrderDto: CreateOrderDto): Promise<Order> {
-    // For COD orders, set isPaid to false initially
-    // For VNPAY, we would need to handle payment processing (simplified here)
-    const isPaid = createOrderDto.paymentMethod === 'COD' || createOrderDto.isPaid === true;
-    
+  // VNPAY Configuration
+  private readonly vnpTmnCode = 'K5MJJP0Y';
+  private readonly vnpHashSecret = 'CWEANXMYO6N2I8MTDKOSKVJ3HVIAB7RH';
+  private readonly vnpUrl = 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
+  private readonly vnpReturnUrl = 'http://yourwebsite.com/order/vnpay-return'; // Update with your return URL
+
+  async createOrder(createOrderDto: CreateOrderDto): Promise<Order> {
     const newOrder = new this.orderModel({
       ...createOrderDto,
-      isPaid,
+      userId: new Types.ObjectId(createOrderDto.userId),
+      productId: new Types.ObjectId(createOrderDto.productId),
       status: 'pending',
+      isPaid: false
     });
 
-    return newOrder.save();
+    return await newOrder.save();
   }
 
-  async findAll(userId?: Types.ObjectId): Promise<Order[]> {
-    const filter = userId ? { userId } : {};
-    return this.orderModel.find(filter)
-      .populate('userId', 'name email')
-      .populate('productId', 'name price description')
-      .exec();
+  async createVNPayPaymentUrl(order: Order): Promise<string> {
+    const date = new Date();
+    const createDate = format(date, 'yyyyMMddHHmmss');
+    const orderId = order?._id.toString();
+    const amount = order.amount * 100; // Convert to VND cents
+
+    const ipAddr = '127.0.0.1'; // Replace with actual client IP
+
+    const tmnCode = this.vnpTmnCode;
+    const secretKey = this.vnpHashSecret;
+
+    let vnpParams: any = {
+      vnp_Version: '2.1.0',
+      vnp_Command: 'pay',
+      vnp_TmnCode: tmnCode,
+      vnp_Locale: 'vn',
+      vnp_CurrCode: 'VND',
+      vnp_TxnRef: orderId,
+      vnp_OrderInfo: `Thanh toan cho ma don hang ${orderId}`,
+      vnp_Amount: amount,
+      vnp_ReturnUrl: this.vnpReturnUrl,
+      vnp_IpAddr: ipAddr,
+      vnp_CreateDate: createDate,
+    };
+
+    // Sort parameters
+    const sortedParams = Object.keys(vnpParams)
+      .sort()
+      .reduce((result, key) => {
+        result[key] = vnpParams[key];
+        return result;
+      }, {});
+
+    // Create signature
+    const signData = Object.keys(sortedParams)
+      .map(key => `${key}=${sortedParams[key]}`)
+      .join('&');
+    const hmac = createHash('sha512');
+    const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
+
+    vnpParams['vnp_SecureHash'] = signed;
+
+    // Build query string
+    const queryParams = new URLSearchParams(vnpParams).toString();
+    return `${this.vnpUrl}?${queryParams}`;
   }
 
-  async findOne(id: string): Promise<Order> {
-    const order = await this.orderModel.findById(id)
-      .populate('userId', 'name email')
-      .populate('productId', 'name price description')
-      .exec();
-    
-    if (!order) {
-      throw new NotFoundException(`Order with ID ${id} not found`);
+  async handleVNPayReturn(queryParams: any): Promise<Order> {
+    const { vnp_ResponseCode, vnp_TxnRef, vnp_Amount, vnp_SecureHash } = queryParams;
+
+    // Verify signature
+    const secureHash = queryParams.vnp_SecureHash;
+    delete queryParams.vnp_SecureHash;
+
+    const sortedParams = Object.keys(queryParams)
+      .sort()
+      .reduce((result, key) => {
+        result[key] = queryParams[key];
+        return result;
+      }, {});
+
+    const signData = Object.keys(sortedParams)
+      .map(key => `${key}=${sortedParams[key]}`)
+      .join('&');
+    const hmac = createHash('sha512');
+    const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
+
+    if (secureHash !== signed) {
+      throw new BadRequestException('Invalid payment signature');
     }
-    
+
+    const order = await this.orderModel.findById(vnp_TxnRef);
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    if (vnp_ResponseCode === '00') {
+      order.status = 'completed';
+      order.isPaid = true;
+      await order.save();
+    } else {
+      order.status = 'failed';
+      await order.save();
+    }
+
     return order;
   }
 
-  async updateStatus(id: string, updateStatusDto: UpdateOrderStatusDto): Promise<Order> {
-    const order = await this.orderModel.findById(id);
-    
-    if (!order) {
-      throw new NotFoundException(`Order with ID ${id} not found`);
-    }
-
-    // When marking an order as completed and it's COD, set isPaid to true
-    if (updateStatusDto.status === 'completed' && order.paymentMethod === 'COD') {
-      order.isPaid = true;
-    }
-    
-    order.status = updateStatusDto.status;
-    return order.save();
+  async updateOrderStatus(orderId: string, updateOrderStatusDto: UpdateOrderStatusDto): Promise<Order> {
+    return await this.orderModel.findByIdAndUpdate(
+      orderId, 
+      { status: updateOrderStatusDto.status }, 
+      { new: true }
+    );
   }
 
-  async updateShippingInfo(id: string, shippingInfoDto: UpdateShippingInfoDto): Promise<Order> {
-    const order = await this.orderModel.findById(id);
-    
-    if (!order) {
-      throw new NotFoundException(`Order with ID ${id} not found`);
-    }
-    
-    // Only allow updating shipping info when order is still pending
-    if (order.status !== 'pending') {
-      throw new BadRequestException('Cannot update shipping information of non-pending order');
-    }
-    
-    order.fullName = shippingInfoDto.fullName;
-    order.phoneNumber = shippingInfoDto.phoneNumber;
-    order.address = shippingInfoDto.address;
-    order.city = shippingInfoDto.city;
-    
-    return order.save();
+  async updateShippingInfo(orderId: string, updateShippingInfoDto: UpdateShippingInfoDto): Promise<Order> {
+    return await this.orderModel.findByIdAndUpdate(
+      orderId, 
+      updateShippingInfoDto, 
+      { new: true }
+    );
   }
 
-  async markAsPaid(id: string): Promise<Order> {
-    const order = await this.orderModel.findById(id);
-    
+  async processCODOrder(orderId: string): Promise<Order> {
+    const order = await this.orderModel.findById(orderId);
     if (!order) {
-      throw new NotFoundException(`Order with ID ${id} not found`);
+      throw new NotFoundException('Order not found');
     }
-    
-    if (order.isPaid) {
-      throw new BadRequestException('Order is already paid');
-    }
-    
-    order.isPaid = true;
-    return order.save();
-  }
 
-  async remove(id: string): Promise<Order> {
-    const deletedOrder = await this.orderModel.findByIdAndDelete(id);
-    
-    if (!deletedOrder) {
-      throw new NotFoundException(`Order with ID ${id} not found`);
-    }
-    
-    return deletedOrder;
+    // For COD, mark as pending initially
+    order.status = 'pending';
+    order.isPaid = false;
+    await order.save();
+
+    return order;
   }
 }
