@@ -46,9 +46,8 @@ export class PlaylistsController {
   @ResponseMessage('Deleted successfully')
   deletePlaylist(
     @Param('id') id: string,
-    @Body() req: { userId: string }
   ) {
-    return this.playlistsService.handleDeletePlaylist(id, req.userId);
+    return this.playlistsService.handleDeletePlaylist(id);
   }
 
   @Get(':id')
