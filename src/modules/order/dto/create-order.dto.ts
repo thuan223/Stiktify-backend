@@ -3,11 +3,11 @@ import { IsString, IsNumber, IsMongoId, IsEnum, IsNotEmpty, IsBoolean, IsOptiona
 export class CreateOrderDto {
   @IsMongoId()
   @IsNotEmpty()
-  userId: string; // ⚠️ Đổi từ Types.ObjectId -> string để tránh lỗi
+  userId: string; 
 
   @IsMongoId()
   @IsNotEmpty()
-  productId: string; // ⚠️ Đổi từ Types.ObjectId -> string để tránh lỗi
+  productId: string;
 
   @IsNumber()
   @IsNotEmpty()
@@ -27,11 +27,11 @@ export class CreateOrderDto {
 
   @IsString()
   @IsNotEmpty()
-  address: string;
+  emailAddress: string;
 
   @IsString()
   @IsNotEmpty()
-  city: string;
+  shippingAddress: string;
   
   @IsBoolean()
   @IsOptional()
@@ -55,9 +55,9 @@ export class UpdateShippingInfoDto {
 
   @IsString()
   @IsNotEmpty()
-  address: string;
+  emailAddress: string;
 
   @IsString()
   @IsNotEmpty()
-  city: string;
+  shippingAddress: string;
 }

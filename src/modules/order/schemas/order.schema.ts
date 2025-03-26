@@ -1,12 +1,13 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { User } from '@/modules/users/schemas/user.schema';
-import { Product } from '@/modules/products/schemas/product.schema';
 
 export type OrderDocument = Order & Document;
 
 @Schema({ timestamps: true })
 export class Order {
+  // Add this line to explicitly define _id
+  _id: Types.ObjectId;
+
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   userId: Types.ObjectId;
 
@@ -33,10 +34,10 @@ export class Order {
   phoneNumber: string;
 
   @Prop({ required: true })
-  address: string;
+  emailAddress: string;
 
   @Prop({ required: true })
-  city: string;
+  shippingAddress: string;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

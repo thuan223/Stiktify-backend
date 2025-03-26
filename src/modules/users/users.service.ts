@@ -757,5 +757,4 @@ export class UsersService {
       total: number;
     })[];
   }
-
 }
