@@ -62,4 +62,16 @@ export class OrderController {
   ) {
     return await this.orderService.updateShippingInfo(orderId, updateShippingInfoDto);
   }
+
+
+  @Get()
+  async getAllOrders() {
+    return await this.orderService.getAllOrders();
+  }
+  
+  @Get('/:id')
+  async getOrderById(@Param('id') orderId: string) {
+    return await this.orderService.getOrderById(orderId);
+  }
+  
 }

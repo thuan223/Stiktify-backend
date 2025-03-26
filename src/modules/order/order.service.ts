@@ -147,4 +147,19 @@ export class OrderService {
 
     return order;
   }
+  
+
+  async getAllOrders(): Promise<Order[]> {
+    return await this.orderModel.find().exec();
+  }
+  
+  async getOrderById(orderId: string): Promise<Order> {
+    const order = await this.orderModel.findById(orderId).exec();
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+    return order;
+  }
+  
 }
+  
