@@ -61,18 +61,16 @@ export class ReportController {
   async searcMusicReport(
     @Query('search') search: string,
     @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
   ) {
-    return this.reportService.searchReportMusic(search, startDate, endDate);
+    return this.reportService.searchReportMusic(search, startDate);
   }
 
   @Get('search-video')
   async searchVideoReport(
     @Query('search') search: string,
     @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
   ) {
-    return this.reportService.searchReportVideo(search, startDate, endDate);
+    return this.reportService.searchReportVideo(search, startDate);
   }
   
   @Get(':id')
