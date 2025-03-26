@@ -176,9 +176,9 @@ export class PlaylistsService {
     return `This action updates a #${id} playlist`;
   }
 
-  async checkPlaylistIsExist(id: string, userId: string) {
+  async checkPlaylistIsExist(id: string) {
     try {
-      const result = await this.playlistModel.findById(id, { userId: userId })
+      const result = await this.playlistModel.findById(id)
       if (result) return true
 
       return false
@@ -187,12 +187,8 @@ export class PlaylistsService {
     }
   }
 
-  async handleDeletePlaylist(id: string, userId: string) {
-    if (!userId) {
-      throw new BadRequestException("Missing field required!")
-    }
-
-    const check = await this.checkPlaylistIsExist(id, userId)
+  async handleDeletePlaylist(id: string) {
+    const check = await this.checkPlaylistIsExist(id)
 
     if (!check) {
       throw new NotFoundException(`Not found playlist with id: ${id}`)
