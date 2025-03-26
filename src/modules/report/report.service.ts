@@ -296,30 +296,27 @@ export class ReportService {
     if (startDate) {
       dateFilter = { ...dateFilter, createdAt: { $gte: new Date(startDate) } };
     }
-    if (endDate) {
-      const endDateWithTime = new Date(endDate);
-      endDateWithTime.setHours(23, 59, 59, 999);  
-      dateFilter = { 
-        ...dateFilter, 
-        createdAt: { 
-          ...dateFilter.createdAt, 
-          $lte: endDateWithTime 
-        } 
-      }; 
-    }
     const result = await this.reportModel
       .find({
         musicId: { $in: musicIds.map(item => item._id) },
         ...dateFilter, 
       })
-      .populate('musicId', 'musicDescription musicUrl musicThumbnail') 
+      .populate({
+        path: 'musicId',
+        select: 'musicDescription musicUrl musicThumbnail',
+        populate: {
+          path: 'userId',
+          select: 'userName', 
+        },
+      })
+      .populate('userId', 'userName fullname email')
       .sort({ updatedAt: -1 }) 
       .limit(10);
   
     return { result };
   }
 
-  async searchReportVideo(search: string, startDate?: string, endDate?: string) {
+  async searchReportVideo(search: string, startDate?: string) {
     const searchRegex = new RegExp(search, 'i'); 
     const videoIds = await this.videoModel.find({
       videoDescription: { $regex: searchRegex },
@@ -331,23 +328,20 @@ export class ReportService {
     if (startDate) {
       dateFilter = { ...dateFilter, createdAt: { $gte: new Date(startDate) } };
     }
-    if (endDate) {
-      const endDateWithTime = new Date(endDate);
-      endDateWithTime.setHours(23, 59, 59, 999);  
-      dateFilter = { 
-        ...dateFilter, 
-        createdAt: { 
-          ...dateFilter.createdAt, 
-          $lte: endDateWithTime 
-        } 
-      }; 
-    }
     const result = await this.reportModel
       .find({
         videoId: { $in: videoIds.map(item => item._id) },
         ...dateFilter, 
       })
-      .populate('videoId', 'videoDescription videoUrl videoThumbnail') 
+      .populate({
+        path: 'videoId',
+        select: 'videoDescription videoUrl videoThumbnail',
+        populate: {
+          path: 'userId',
+          select: 'userName', 
+        },
+      }) 
+      .populate('userId', 'userName fullname email')
       .sort({ updatedAt: -1 }) 
       .limit(10);
     return { result }; 
