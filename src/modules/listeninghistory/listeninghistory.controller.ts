@@ -26,8 +26,9 @@ export class ListeninghistoryController {
   @Get('search-history')
   async searchHistory(
     @Query('search') search: string,
+    @Query('startDate') startDate?: string
   ) {
-    return this.listeninghistoryService.searchListeningHistory(search);
+    return this.listeninghistoryService.searchListeningHistory(search, startDate);
   }
 
   @Get(':id')

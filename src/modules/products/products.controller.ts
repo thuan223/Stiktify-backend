@@ -28,6 +28,19 @@ export class ProductsController {
   return this.productsService.handleGetProductById(id);
 }
 
+@Get('search-product')
+  findProductSearch(
+    @Query() query: any,
+    @Query('current') current: string,
+    @Query('pageSize') pageSize: string,
+  ) {
+    return this.productsService.handleSearchProduct(
+      query,
+      +current,
+      +pageSize,
+    );
+  }
+
   // get all products - ThangLH
   @Get()
   findAll() {
