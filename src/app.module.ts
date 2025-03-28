@@ -42,9 +42,11 @@ import { Neo4jModule } from './modules/neo4j/neo4j.module';
 import { TickedUserModule } from './modules/ticked-user/ticked-user.module';
 import { OrderModule } from './modules/order/order.module';
 import { KafkaModule } from './modules/kafka/kafka.module';
+import { RatingModule } from './modules/ratings/ratings.module';
 
 @Module({
   imports: [
+    RatingModule,
     OrderModule,
     Neo4jModule.forRootAsync(),
     UploadModule,
