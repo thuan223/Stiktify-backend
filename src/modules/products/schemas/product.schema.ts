@@ -31,6 +31,9 @@ export class Product {
 
   @Prop({ default: false })
   isDelete: boolean;
+
+  @Prop()
+  rating: string;
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);

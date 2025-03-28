@@ -6,12 +6,12 @@ import {
   Patch, 
   Get, 
   Query, 
-  Res 
+  Res,
+  HttpStatus 
 } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { CreateOrderDto, UpdateOrderStatusDto, UpdateShippingInfoDto } from './dto/create-order.dto';
 import { Response } from 'express';
-import { Types } from 'mongoose';
 
 @Controller('orders')
 export class OrderController {
@@ -25,7 +25,6 @@ export class OrderController {
       const paymentUrl = await this.orderService.createVNPayPaymentUrl(order);
       return { order, paymentUrl };
     } else if (createOrderDto.paymentMethod === 'COD') {
-      // Use order._id.toString() or Types.ObjectId conversion
       await this.orderService.processCODOrder(order._id.toString());
       return { order, message: 'COD Order created successfully' };
     }
@@ -63,7 +62,6 @@ export class OrderController {
     return await this.orderService.updateShippingInfo(orderId, updateShippingInfoDto);
   }
 
-
   @Get()
   async getAllOrders() {
     return await this.orderService.getAllOrders();
@@ -73,5 +71,10 @@ export class OrderController {
   async getOrderById(@Param('id') orderId: string) {
     return await this.orderService.getOrderById(orderId);
   }
-  
+// Get Order Products
+  @Get('/:id/products')
+async getOrderProducts(@Param('id') orderId: string) {
+  return await this.orderService.getOrderProducts(orderId);
+}
+
 }
