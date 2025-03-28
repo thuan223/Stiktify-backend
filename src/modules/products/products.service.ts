@@ -131,4 +131,40 @@ async searchProducts(filters: any): Promise<Product[] | { message: string }> {
   return products;
 }
 
+async handleSearchProduct(
+  query: any,
+  current: number,
+  pageSize: number,
+) {
+  current = current && !isNaN(Number(current)) ? Number(current) : 1;
+  pageSize = pageSize && !isNaN(Number(pageSize)) ? Number(pageSize) : 10;
+  let handleSearch = [];
+  if (
+    query.search &&
+    typeof query.search === 'string' &&
+    query.search.trim().length > 0
+  ) {
+    const searchRegex = new RegExp(query.search, 'i');
+    handleSearch = [{ productName: searchRegex }];
+  }
+  const filterQuery = handleSearch.length > 0 ? { $or: handleSearch } : {};
+  const totalItems = await this.productModel.countDocuments(filterQuery);
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const skip = (current - 1) * pageSize;
+  const result = await this.productModel
+    .find(filterQuery)
+    .limit(pageSize)
+    .skip(skip)
+    .sort(query.sort || {});
+  return {
+    meta: {
+      current,
+      pageSize,
+      total: totalItems,
+      pages: totalPages,
+    },
+    result,
+  };
 }
+}
+

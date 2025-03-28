@@ -3,6 +3,7 @@ import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { Product } from './schemas/product.schema';
+import { Public } from '@/decorator/customize';
 
 @Controller('products')
 export class ProductsController {
@@ -14,6 +15,7 @@ export class ProductsController {
     return await this.productsService.create(createProductDto);
   }
 
+  @Public()
   @Get('list-product')
   findAllProduct(
     @Query() query: string,
@@ -23,10 +25,25 @@ export class ProductsController {
     return this.productsService.handleGetListProduct(query, +current, +pageSize);
   }
 
+  @Public()
   @Get('product-details/:id')
   findProductById(@Param('id') id: string) {
   return this.productsService.handleGetProductById(id);
 }
+
+@Public()
+@Get('search-product')
+  findProductSearch(
+    @Query() query: any,
+    @Query('current') current: string,
+    @Query('pageSize') pageSize: string,
+  ) {
+    return this.productsService.handleSearchProduct(
+      query,
+      +current,
+      +pageSize,
+    );
+  }
 
   // get all products - ThangLH
   @Get()

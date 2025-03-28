@@ -52,22 +52,28 @@ export class ListeninghistoryService {
     return { deletedCount: result.deletedCount }; 
   }
 
-async searchListeningHistory(search: string) {
-  const searchRegex = new RegExp(search, 'i'); 
-  const musicIds = await this.musicModel.find({
-    musicDescription: { $regex: searchRegex }, 
-  }).select('_id');
-  if (musicIds.length === 0) {
-    return { message: "No history found for the search term!" };
+  async searchListeningHistory(search: string, startDate?: string) {
+    const searchRegex = new RegExp(search, 'i'); 
+    const musicIds = await this.musicModel.find({
+      musicDescription: { $regex: searchRegex }, 
+    }).select('_id');
+    if (musicIds.length === 0) {
+      return { message: "No history found for the search term!" };
+    }
+    let dateFilter: any = {};
+    if (startDate) {
+      dateFilter = { ...dateFilter, createdAt: { $gte: new Date(startDate) } };
+    }
+    const result = await this.listeningHistoryModel
+      .find({ 
+        musicId: { $in: musicIds.map(item => item._id) }, 
+        ...dateFilter 
+      })
+      .populate('musicId')
+      .sort({ updatedAt: -1 });
+    return { result };
   }
-  const result = await this.listeningHistoryModel
-    .find({ musicId: { $in: musicIds.map(item => item._id) } })
-    .populate('musicId')
-    .sort({ updatedAt: -1 });
-  return { result };
-}
 
-  
   findAll() {
     return `This action returns all listeninghistory`;
   }

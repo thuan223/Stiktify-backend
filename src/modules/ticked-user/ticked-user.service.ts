@@ -184,45 +184,59 @@ export class TickedUserService {
     }
   }
 
-async handleFilterAndSearchUserReTicked(query: string, current: number, pageSize: number) {
-  const { filter } = aqp(query);
-  current = current || 1;
-  pageSize = pageSize || 10;
+  async handleFilterAndSearchUserReTicked(query: string, current: number, pageSize: number) {
+    const { filter } = aqp(query);
+    current = current || 1;
+    pageSize = pageSize || 10;
+    const handleFilter = this.checkStatusFilter(filter.filterReq || '');
+    const searchRegex = new RegExp(`^${filter.search}`, 'i');
+    const skip = (+current - 1) * +pageSize;
 
-  const handleFilter = this.checkStatusFilter(filter.filterReq || '');
-  const searchRegex = filter.search ? new RegExp(`^${filter.search}`, 'i') : null;
+    let handleSearch = [];
 
-  // Truy vấn tickedUserModel và populate thông tin từ userModel
-  const tickedUsersQuery = this.tickedUserModel
-    .find(handleFilter)
-    .populate({
-      path: 'userId',
-      select: '-password', // Loại bỏ trường password
-      match: searchRegex ? { $or: [{ userName: searchRegex }, { fullname: searchRegex }] } : undefined,
-    })
-    .skip((current - 1) * pageSize)
-    .limit(pageSize);
-
-  const tickedUsers = await tickedUsersQuery.exec();
-  const totalItems = await this.tickedUserModel.countDocuments(handleFilter).exec();
-
-  // Xử lý kết quả
-  const result = tickedUsers
-    .filter(t => t.userId) // Lọc bỏ các bản ghi không có userId populated (do match)
-    .map(t => ({
-      userData: t.userId, // Thông tin user đã được populate
-      status: t.status,
-    }));
-
-  return {
-    meta: {
-      current,
-      pageSize,
-      pages: Math.ceil(totalItems / pageSize),
-      total: totalItems,
-    },
-    result,
-    message: totalItems === 0 ? 'No users found.' : '',
-  };
-}
+    if (filter.search.length > 0) {
+      handleSearch = [
+        { userName: searchRegex },
+        { fullname: searchRegex },
+      ];
+    }
+    const tickedUsersQuery = await this.tickedUserModel
+      .find(handleFilter)
+      .populate({
+        path: 'userId',
+        select: '-password',
+        match:  { $or:handleSearch } 
+      })
+      .skip(skip)
+      .limit(pageSize);
+  
+  
+    const totalItems = await this.tickedUserModel.countDocuments(handleFilter).exec();
+    const result = await Promise.all(
+      tickedUsersQuery
+        .filter(t => t.userId)
+        .map(async (element) => {
+          const user = element.userId;
+          return {
+            userData: user, 
+            tickedRequests: [{
+              id: element._id,
+              status: element.status,
+            }],
+            total: 1, 
+          };
+        }),
+    );
+  
+    return {
+      meta: {
+        current,
+        pageSize,
+        pages: Math.ceil(totalItems / pageSize),
+        total: totalItems,
+      },
+      result:result,
+      message: totalItems === 0 ? 'No users found.' : '',
+    };
+  }
 }
