@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Order, OrderDocument } from './schemas/order.schema';
+import { Order, OrderDocument, OrderProduct } from './schemas/order.schema';
 import { CreateOrderDto, UpdateOrderStatusDto, UpdateShippingInfoDto } from './dto/create-order.dto';
 import { createHash } from 'crypto';
 import { format } from 'date-fns';
@@ -16,15 +16,30 @@ export class OrderService {
   private readonly vnpTmnCode = 'K5MJJP0Y';
   private readonly vnpHashSecret = 'CWEANXMYO6N2I8MTDKOSKVJ3HVIAB7RH';
   private readonly vnpUrl = 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
-  private readonly vnpReturnUrl = 'http://yourwebsite.com/order/vnpay-return'; // Update with your return URL
+  private readonly vnpReturnUrl = 'http://yourwebsite.com/order/vnpay-return';
 
   async createOrder(createOrderDto: CreateOrderDto): Promise<Order> {
+    // Transform products to OrderProduct format
+    const orderProducts: OrderProduct[] = createOrderDto.products.map(product => ({
+      productId: new Types.ObjectId(product.productId),
+      productName: product.productName,
+      price: product.price,
+      image: product.image,
+      description: product.description,
+      quantity: product.quantity // Added quantity field
+    }));
+
+    // Calculate total amount based on products
+    const totalAmount = orderProducts.reduce((total, product) => 
+      total + (product.price * product.quantity), 0);
+
     const newOrder = new this.orderModel({
       ...createOrderDto,
       userId: new Types.ObjectId(createOrderDto.userId),
-      productId: new Types.ObjectId(createOrderDto.productId),
+      products: orderProducts,
+      amount: totalAmount, // Set calculated amount
       status: 'pending',
-      isPaid: false
+      isPaid: createOrderDto.isPaid || false
     });
 
     return await newOrder.save();
@@ -34,7 +49,7 @@ export class OrderService {
     const date = new Date();
     const createDate = format(date, 'yyyyMMddHHmmss');
     const orderId = order?._id.toString();
-    const amount = order.amount * 100; // Convert to VND cents
+    const amount = Math.round(order.amount * 100); // Convert to VND cents
 
     const ipAddr = '127.0.0.1'; // Replace with actual client IP
 
@@ -129,7 +144,7 @@ export class OrderService {
   async updateShippingInfo(orderId: string, updateShippingInfoDto: UpdateShippingInfoDto): Promise<Order> {
     return await this.orderModel.findByIdAndUpdate(
       orderId, 
-      updateShippingInfoDto, 
+      { $set: updateShippingInfoDto }, 
       { new: true }
     );
   }
@@ -143,11 +158,11 @@ export class OrderService {
     // For COD, mark as pending initially
     order.status = 'pending';
     order.isPaid = false;
+    order.paymentMethod = 'COD';
     await order.save();
 
     return order;
   }
-  
 
   async getAllOrders(): Promise<Order[]> {
     return await this.orderModel.find().exec();
@@ -160,6 +175,13 @@ export class OrderService {
     }
     return order;
   }
-  
+// Get Order Products
+  async getOrderProducts(orderId: string): Promise<OrderProduct[]> {
+    const order = await this.orderModel.findById(orderId).exec();
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+    
+    return order.products;
+  }
 }
-  
