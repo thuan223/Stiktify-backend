@@ -11,7 +11,7 @@ import {
   import { Request } from 'express';
 import { JwtAuthGuard } from '@/auth/passport/jwt-auth.guard';
   
-  @Controller('orders')
+  @Controller('rating')
   export class RatingController {
     constructor(private readonly ratingService: RatingService) {}
   
