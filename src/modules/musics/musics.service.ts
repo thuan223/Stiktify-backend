@@ -527,66 +527,55 @@ export class MusicsService {
   }
 
   async handleTrackRelated(req: TrackRelatedDto) {
-    const { musicId, musicTag } = req
-    if (!musicId) {
-      throw new BadRequestException(`Missing param musicId!`)
-    }
-    console.log(musicId + " : " + musicTag);
-
-    let configMusicId = [];
-    let configMusicTag = [];
-
-    for (const element of musicId) {
-      const data = new Types.ObjectId(element)
-      configMusicId.push(data)
-    }
-    for (const element of musicTag) {
-      const data = {
-        _id: new Types.ObjectId(element._id + ""),
-        fullname: element.fullname
-      }
-      configMusicTag.push(data)
+    const { musicId, musicTag } = req;
+    if (!musicId || !Array.isArray(musicId) || musicId.length === 0) {
+      throw new BadRequestException(`Missing or invalid param: musicId`);
     }
 
-    let music: any;
-    let count = 0
+    console.log(`Processing musicId: ${musicId}, musicTag: ${JSON.stringify(musicTag)}`);
+
+    const configMusicId = musicId.map(id => new Types.ObjectId(id));
+    const configMusicTag = (musicTag || []).map(tag => ({
+      _id: new Types.ObjectId(tag._id.toString()),
+      fullname: tag.fullname
+    }));
+
     for (const element of configMusicId) {
-      music = await this.checkMusicById(element)
-      count++;
+      const music = await this.checkMusicById(element + "");
       if (!music) {
-        throw new BadRequestException(`Music not exist in the system!`)
-      } else if (count === configMusicId.length) {
-        const result = await this.musicModel.findOne({
-          _id: { $nin: configMusicId },
-          userId: music.userId,
-        });
-
-        if (!result) {
-          if (configMusicTag && configMusicTag.length !== 0) {
-            for (var i = 0; i < configMusicTag.length - 1; i++) {
-              const result = await this.musicModel.findOne({
-                _id: { $nin: configMusicId },
-                userId: configMusicTag[i + 1]._id,
-              });
-              if (!result) {
-                const result = await this.musicModel.findOne({
-                  userId: music.userId,
-                });
-                return result
-              }
-              return result
-            }
-          } else {
-            const result = await this.musicModel.findOne({
-              userId: music.userId,
-            });
-            return result
-          }
-        }
-        return result;
+        throw new BadRequestException(`Music not exist in the system!`);
       }
     }
+
+    let result = await this.musicModel.findOne({
+      _id: { $nin: configMusicId },
+      userId: (await this.checkMusicById(configMusicId[0] + "")).userId,
+    });
+    if (!result && configMusicTag.length > 0) {
+      for (const tag of configMusicTag) {
+
+        result = await this.musicModel.findOne({
+          _id: { $nin: configMusicId },
+          userId: tag._id,
+        });
+        if (result) return result;
+      }
+    }
+
+    // if (!result) {
+    //   result = await this.musicModel.findOne({
+    //     _id: { $nin: configMusicId },
+    //   });
+    // }
+
+    if (!result) {
+      result = await this.musicModel.findOne({
+        userId: musicTag[0]._id,
+      });
+    }
+    return result;
   }
+
 
   async getTop50Music(title: string): Promise<Music[]> {
     if (!title.includes('-')) {

@@ -15,7 +15,17 @@ import { Public } from '@/decorator/customize';
 
 @Controller('follow')
 export class FollowController {
-  constructor(private readonly followService: FollowService) {}
+  constructor(private readonly followService: FollowService) { }
+
+  @Post('check-follow')
+  async checkFollow(
+    @Body() body: { followerId: string; followingId: string },
+  ): Promise<any> {
+    return this.followService.checkFollow(
+      body.followerId,
+      body.followingId,
+    );
+  }
 
   @Post('create-follow')
   async followUserByBody(

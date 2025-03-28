@@ -13,7 +13,7 @@ export class FollowService {
     @InjectModel(Follow.name) private followModel: Model<Follow>,
     @InjectModel(User.name) private userModel: Model<User>,
     private videoService: ShortVideosService,
-  ) {}
+  ) { }
   create(createFollowDto: CreateFollowDto) {
     return 'This action adds a new follow';
   }
@@ -122,4 +122,11 @@ export class FollowService {
       .populate('userId', 'userName email image');
     return followersList.map((follow) => follow.userId);
   }
+
+  // async getFollowersList(userId: string) {
+  //   const followersList = await this.followModel
+  //     .find({ userFollowingId: new Types.ObjectId(userId) })
+  //     .populate('userId', 'userName email image');
+  //   return followersList.map((follow) => follow.userId);
+  // }
 }
