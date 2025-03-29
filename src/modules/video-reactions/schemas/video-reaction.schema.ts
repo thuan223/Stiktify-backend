@@ -1,4 +1,4 @@
-import { ReactionType } from '@/modules/reaction-types/schemas/reaction-type.schema';
+
 import { Video } from '@/modules/short-videos/schemas/short-video.schema';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Schema as MongooseSchema, Types } from 'mongoose';
