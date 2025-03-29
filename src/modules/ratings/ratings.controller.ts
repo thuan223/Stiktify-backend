@@ -17,7 +17,6 @@ export class RatingsController {
       throw new BadRequestException('User ID not found in request');
     }
 
-    // Kiểm tra giá trị sao có hợp lệ không
     if (createRatingDto.star < 1 || createRatingDto.star > 5) {
       throw new BadRequestException('Rating star must be between 1 and 5');
     }
