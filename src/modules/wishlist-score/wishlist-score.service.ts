@@ -181,7 +181,7 @@ export class WishlistScoreService {
     const setting = await this.settingsService.findAll();
     const wishListScoreCount =
       setting.algorithmConfig.numberOfCount.wishListScoreCount;
-    await this.videoService.addCreatorToVideo(userId + "", creatorId + "", scoreBonus);
+    await this.videoService.addCreatorToUser(userId + "", creatorId + "", scoreBonus);
     const existingCreator = await this.wishListScoreModel.findOne({
       creatorId,
       userId,
@@ -221,7 +221,7 @@ export class WishlistScoreService {
     const wishListScoreCount =
       setting.algorithmConfig.numberOfCount.wishListScoreCount;
 
-    await this.videoService.addCreatorToUser(userId + "", categoryId + "", scoreBonus);
+    await this.videoService.addCategoryToUser(userId + "", categoryId + "", scoreBonus);
 
     const existingCategory = await this.wishListScoreModel.findOne({
       categoryId,
