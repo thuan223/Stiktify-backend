@@ -17,9 +17,9 @@ export class WishlistService {
     @Inject(forwardRef(() => WishlistScoreService))
     private wishListScoreService: WishlistScoreService,
     @Inject(forwardRef(() => SettingsService))
-    private settingsService:SettingsService,
+    private settingsService: SettingsService,
     private viewingHistoryService: ViewinghistoryService,
-  ) {}
+  ) { }
   async create(createWishlistDto: CreateWishlistDto) {
     let suggestByVideo;
     if (createWishlistDto.triggerAction != 'ScrollVideo') {
@@ -30,6 +30,7 @@ export class WishlistService {
     );
 
     if (suggestByVideo) {
+      if (createWishlistDto.triggerAction == "WatchVideo") await this.wishListScoreService.createGraphDBWatchData(createWishlistDto.userId, createWishlistDto.id, suggestByVideo);
       const wishListScores = await this.getScoreBySuggestIDAndType(
         suggestByVideo,
         createWishlistDto.userId,
@@ -49,7 +50,6 @@ export class WishlistService {
       );
       if (videoFound.length === 1) {
         return await this.createWishListVideo(
-          suggestByVideo,
           videoFound[0]._id,
           createWishlistDto.userId,
         );
@@ -61,7 +61,6 @@ export class WishlistService {
         createWishlistDto.userId,
       );
       return await this.createWishListVideo(
-        suggestByVideo,
         bestVideo._id,
         createWishlistDto.userId,
       );
@@ -152,28 +151,27 @@ export class WishlistService {
     return bestVideo;
   }
 
-  async createWishListVideo( suggestByVideo:any,videoId: string, userId: string) {
-    await this.wishListScoreService.createGraphDBWatchData(userId, videoId,suggestByVideo);
+  async createWishListVideo(videoId: string, userId: string) {
     const setting = await this.settingsService.findAll();
     const wishListCount = setting.algorithmConfig.numberOfCount.wishListCount;
-    
+
     const existingWishListItem = await this.wishListModel.findOne({
       userId: userId,
       videoId: videoId,
     });
-    
+
     if (existingWishListItem) {
-        return { message: 'Wishlist item already exists' };
+      return { message: 'Wishlist item already exists' };
     }
     const existingWishList = await this.wishListModel.find({ userId }).sort({ createdAt: 1 });
     if (existingWishList.length >= wishListCount) {
-        const oldestItem = existingWishList[0];
-        await this.wishListModel.deleteOne({ _id: oldestItem._id });
+      const oldestItem = existingWishList[0];
+      await this.wishListModel.deleteOne({ _id: oldestItem._id });
     }
-    
+
     const newWishListItem = new this.wishListModel({ userId, videoId });
     return await newWishListItem.save();
-}
+  }
 
 
   async getScoreBySuggestIDAndType(
@@ -321,7 +319,7 @@ export class WishlistService {
         const videoId = wishlist.videoId.toString();
 
         // if (!userVideoIds.has(videoId)) {
-          videoIdFound.add(videoId);
+        videoIdFound.add(videoId);
         // }
       }
     }
@@ -422,14 +420,14 @@ export class WishlistService {
   }
   async getCollaborativeVideo(userId: string, numberChooseVideo: number = 1) {
     const userWishListData = await this.wishListModel.find({ userId });
-    const userWishList = new Set(userWishListData.map((item) => item.videoId+""));
+    const userWishList = new Set(userWishListData.map((item) => item.videoId + ""));
 
     const predictedScores = await this.getPredictedScores(userId);
-    const filteredVideos = Object.entries(predictedScores) 
+    const filteredVideos = Object.entries(predictedScores)
       .filter(([videoId]) => !userWishList.has(videoId))
-      .sort((a, b) => b[1] - a[1]) 
+      .sort((a, b) => b[1] - a[1])
       .slice(0, numberChooseVideo)
-      .map(([videoId]) => videoId); 
+      .map(([videoId]) => videoId);
 
     return filteredVideos;
   }
@@ -438,20 +436,20 @@ export class WishlistService {
       {
         $group: {
           _id: '$userId',
-          count: { $sum: 1 }, 
+          count: { $sum: 1 },
         },
       },
       {
         $group: {
           _id: null,
-          totalCount: { $sum: '$count' }, 
+          totalCount: { $sum: '$count' },
           totalUsers: { $sum: 1 },
         },
       },
       {
         $project: {
           _id: 0,
-          averageCount: { $divide: ['$totalCount', '$totalUsers'] }, 
+          averageCount: { $divide: ['$totalCount', '$totalUsers'] },
         },
       },
     ]);

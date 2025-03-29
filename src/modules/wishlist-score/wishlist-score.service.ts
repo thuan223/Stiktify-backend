@@ -19,7 +19,7 @@ export class WishlistScoreService {
     @Inject(forwardRef(() => SettingsService))
     private settingsService: SettingsService,
     private videoCategoriesService: VideoCategoriesService,
-  ) {}
+  ) { }
   create(createWishlistScoreDto: CreateWishlistScoreDto) {
     return 'This action adds a new wishlistScore';
   }
@@ -111,7 +111,7 @@ export class WishlistScoreService {
     const setting = await this.settingsService.findAll();
     const wishListScoreCount =
       setting.algorithmConfig.numberOfCount.wishListScoreCount;
-    await this.videoService.addTagToVideo( userId+"",tag+"",scoreBonus);
+    await this.videoService.addTagToUser(userId + "", tag + "", scoreBonus);
     const existingTag = await this.wishListScoreModel.findOne({ tag, userId });
 
     if (existingTag) {
@@ -147,7 +147,7 @@ export class WishlistScoreService {
       musicId,
       userId,
     });
-    await this.videoService.addMusicToVideo(userId+"",musicId+"",scoreBonus);
+    await this.videoService.addMusicToUser(userId + "", musicId + "", scoreBonus);
     if (existingMusic) {
       await this.wishListScoreModel.updateOne(
         { musicId, userId },
@@ -181,7 +181,7 @@ export class WishlistScoreService {
     const setting = await this.settingsService.findAll();
     const wishListScoreCount =
       setting.algorithmConfig.numberOfCount.wishListScoreCount;
-    await this.videoService.addCreatorToVideo(userId+"",creatorId+"",scoreBonus);
+    await this.videoService.addCreatorToVideo(userId + "", creatorId + "", scoreBonus);
     const existingCreator = await this.wishListScoreModel.findOne({
       creatorId,
       userId,
@@ -221,8 +221,8 @@ export class WishlistScoreService {
     const wishListScoreCount =
       setting.algorithmConfig.numberOfCount.wishListScoreCount;
 
-    await this.videoService.addCategoryToVideo(userId+"",categoryId+"",scoreBonus);
-    
+    await this.videoService.addCreatorToUser(userId + "", categoryId + "", scoreBonus);
+
     const existingCategory = await this.wishListScoreModel.findOne({
       categoryId,
       userId,
@@ -456,17 +456,17 @@ export class WishlistScoreService {
   ) {
     await this.videoService.watchVideo(userId, videoId + '', 0);
     for (let i = 0; i < suggestByVideo.tags.length; i++) {
-      await this.videoService.addTagToVideo(videoId+"", suggestByVideo.tags[i], 0);
+      await this.videoService.addTagToVideo(videoId + "", suggestByVideo.tags[i], 0);
     }
-    if(suggestByVideo.musicId)
-    await this.videoService.addMusicToVideo(videoId+"", suggestByVideo.musicId+"", 0);
+    if (suggestByVideo.musicId)
+      await this.videoService.addMusicToVideo(videoId + "", suggestByVideo.musicId + "", 0);
 
     console.log(suggestByVideo.categoryId);
     for (let i = 0; i < suggestByVideo.categoryId.length; i++) {
-      await this.videoService.addTagToVideo(videoId+"", suggestByVideo.categoryId[i]+"", 0);
+      await this.videoService.addCategoryToVideo(videoId + "", suggestByVideo.categoryId[i] + "", 0);
     }
-    await this.videoService.addCreatorToVideo(videoId+"", suggestByVideo.creatorId+"", 0);
-    console.log(await this.videoService.getVideoDetails(videoId+""));
+    await this.videoService.addCreatorToVideo(videoId + "", suggestByVideo.creatorId + "", 0);
+    console.log(await this.videoService.getVideoDetails(videoId + ""));
   }
   findAll() {
     return `This action returns all wishlistScore`;
