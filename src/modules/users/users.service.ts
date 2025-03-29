@@ -34,8 +34,8 @@ export class UsersService {
     @InjectModel(User.name) private userModel: Model<User>,
     private readonly mailerService: MailerService,
     @InjectModel(Video.name)
-        private videoModel: Model<Video>
-  ) {}
+    private videoModel: Model<Video>
+  ) { }
   isEmailExist = async (email: string) => {
     const isExist = await this.userModel.exists({ email });
     if (isExist) return true;
@@ -137,7 +137,11 @@ export class UsersService {
     return { isBeforeCheck };
   }
   async retryActive(email: string) {
-    const user = await this.userModel.findOne({ email });
+    const user = await this.userModel.findOne({
+      $or: [{ email }, { userName: email }]
+    });
+
+    console.log(user)
     if (!user) {
       throw new BadRequestException('Account does not exist');
     }
@@ -450,12 +454,12 @@ export class UsersService {
     }
     const searchRegex = new RegExp(searchText, 'i');
     const userFilter = {
-         $or: [{ userName: searchRegex }, { fullname: searchRegex }],
+      $or: [{ userName: searchRegex }, { fullname: searchRegex }],
     };
     const totalUsers = await this.userModel.countDocuments(userFilter);
     const userResult = await this.userModel
       .find(userFilter)
-      .limit(5) 
+      .limit(5)
       .select('userName fullname image');
     const videoFilter = { videoDescription: { $regex: searchRegex } };
     const totalVideos = await this.videoModel.countDocuments(videoFilter);
@@ -475,7 +479,7 @@ export class UsersService {
       message: totalUsers === 0 && totalVideos === 0 ? 'No results found' : 'Search results retrieved successfully',
     };
   }
-  
+
 
   // Detail user - ThangLH
   async getUserById(id: string) {
