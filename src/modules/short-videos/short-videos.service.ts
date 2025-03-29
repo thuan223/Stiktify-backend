@@ -832,14 +832,17 @@ export class ShortVideosService {
         `
         MATCH (v:Video {id: $videoId})
         MERGE (t:Tag {name: $tagName})
-        MERGE (v)-[:HAS_TAG {score: $score}]->(t)
+        MERGE (v)-[ht:HAS_TAG]->(t)
+        ON CREATE SET ht.score = $score
+        ON MATCH SET ht.score = ht.score + $score
         SET v.score = v.score + $score
-        RETURN v.id
+        RETURN v.id, ht.score
       `,
         { videoId, tagName, score },
       )
       .run();
   }
+  
   async addMusicToVideo(videoId: string, musicId: string, score: number) {
     return this.queryRepository
       .initQuery()
@@ -847,14 +850,17 @@ export class ShortVideosService {
         `
         MATCH (v:Video {id: $videoId})
         MERGE (m:Music {id: $musicId})
-        MERGE (v)-[:HAS_MUSIC {score: $score}]->(m)
+        MERGE (v)-[hm:HAS_MUSIC]->(m)
+        ON CREATE SET hm.score = $score
+        ON MATCH SET hm.score = hm.score + $score
         SET v.score = v.score + $score
-        RETURN v.id
+        RETURN v.id, hm.score
       `,
         { videoId, musicId, score },
       )
       .run();
   }
+  
   async addCreatorToVideo(videoId: string, creatorId: string, score: number) {
     return this.queryRepository
       .initQuery()
@@ -862,30 +868,36 @@ export class ShortVideosService {
         `
         MATCH (v:Video {id: $videoId})
         MERGE (c:Creator {id: $creatorId})
-        MERGE (v)-[:CREATED_BY {score: $score}]->(c)
+        MERGE (v)-[cb:CREATED_BY]->(c)
+        ON CREATE SET cb.score = $score
+        ON MATCH SET cb.score = cb.score + $score
         SET v.score = v.score + $score
-        RETURN v.id
-      `, { videoId, creatorId, score },
+        RETURN v.id, cb.score
+      `,
+        { videoId, creatorId, score },
       )
       .run();
   }
+  
 
   async addCategoryToVideo(videoId: string, categoryName: string, score: number) {
     return this.queryRepository
       .initQuery()
       .raw(
         `
-      MATCH (v:Video {id: $videoId})
-      MERGE (cat:Category {name: $categoryName})
-      MERGE (v)-[:IN_CATEGORY {score: $score}]->(cat)
-      SET v.score = v.score + $score
-      RETURN v.id
-    `,
+        MATCH (v:Video {id: $videoId})
+        MERGE (cat:Category {name: $categoryName})
+        MERGE (v)-[ic:IN_CATEGORY]->(cat)
+        ON CREATE SET ic.score = $score
+        ON MATCH SET ic.score = ic.score + $score
+        SET v.score = v.score + $score
+        RETURN v.id, ic.score
+      `,
         { videoId, categoryName, score },
       )
       .run();
   }
-
+  
   async getVideoDetails(videoId: string) {
     return this.queryRepository
       .initQuery()
