@@ -195,9 +195,7 @@ export class StorePlaylistService {
         path: 'playlistId',
       })
       .populate({
-        path: 'musicId',
-        select:
-          '_id musicUrl musicThumbnail musicLyric musicDescription userId',
+        path: 'musicId'
       })
       .sort({ createdAt: -1 });
 
