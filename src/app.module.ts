@@ -12,7 +12,6 @@ import { ShortVideosModule } from './modules/short-videos/short-videos.module';
 import { CommentsModule } from './modules/comments/comments.module';
 import { MusicCategoriesModule } from './modules/music-categories/music-categories.module';
 import { VideoCategoriesModule } from './modules/video-categories/video-categories.module';
-import { ReactionTypesModule } from './modules/reaction-types/reaction-types.module';
 import { VideoReactionsModule } from './modules/video-reactions/video-reactions.module';
 import { CommentReactionsModule } from './modules/comment-reactions/comment-reactions.module';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
@@ -42,9 +41,12 @@ import { Neo4jModule } from './modules/neo4j/neo4j.module';
 import { TickedUserModule } from './modules/ticked-user/ticked-user.module';
 import { OrderModule } from './modules/order/order.module';
 import { KafkaModule } from './modules/kafka/kafka.module';
+import { RatingModule } from './modules/ratings/ratings.module';
+import { ReactionTypesModule } from './modules/report/reaction-types/reaction-types.module';
 
 @Module({
   imports: [
+    RatingModule,
     OrderModule,
     Neo4jModule.forRootAsync(),
     UploadModule,

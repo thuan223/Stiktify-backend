@@ -1,4 +1,5 @@
-import { ReactionType } from '@/modules/reaction-types/schemas/reaction-type.schema';
+
+import { ReactionType } from '@/modules/report/reaction-types/schemas/reaction-type.schema';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Schema as MongooseSchema, Types } from 'mongoose';
 
