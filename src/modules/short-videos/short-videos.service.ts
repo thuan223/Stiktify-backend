@@ -283,15 +283,15 @@ export class ShortVideosService {
         .populate('musicId');
     }
 
-    const collaboratorVideoIdList =
-      await this.wishListService.getCollaborativeVideo(
-        data.userId,
-        resetScore.collaboration,
-      );
-    // const collaboratorVideoIdList = await this.getCollaboratorFilteringVideo(
-    //   data.userId,
-    //   resetScore.collaboration,
-    // );
+    // const collaboratorVideoIdList =
+    //   await this.wishListService.getCollaborativeVideo(
+    //     data.userId,
+    //     resetScore.collaboration,
+    //   );
+    const collaboratorVideoIdList = await this.getCollaboratorFilteringVideo(
+      data.userId,
+      resetScore.collaboration,
+    );
     let collaboratorVideoFound = [];
     if (collaboratorVideoIdList && collaboratorVideoIdList.length > 0) {
       countVideo += collaboratorVideoIdList.length;
@@ -766,65 +766,69 @@ export class ShortVideosService {
   }
 
   async addTagToUser(userId: string, tagName: string, score: number) {
-    return this.queryRepository
+    const result = await this.queryRepository
       .initQuery()
       .raw(
         `
-        MATCH (u:User {id: $userId})-[:WATCHED]->(v:Video)
-        MATCH (v)-[ht:HAS_TAG]->(t:Tag {name: $tagName})
-        SET ht.score = ht.score + $score
-        SET v.score = v.score + $score
-        RETURN v.id, ht.score
+        MATCH (u:User {id: $userId})-[w:WATCHED]->(v:Video)
+        MATCH (v)-[:HAS_TAG]->(t:Tag {name: $tagName})
+        SET w.score = coalesce(w.score, 0) + $score
+        RETURN v.id, w.score
       `,
         { userId, tagName, score },
       )
       .run();
+  
+    console.log(result); // Kiểm tra dữ liệu trả về
+    return result;
   }
+  
+  
   async addMusicToUser(userId: string, musicId: string, score: number) {
     return this.queryRepository
       .initQuery()
       .raw(
         `
-        MATCH (u:User {id: $userId})-[:WATCHED]->(v:Video)
-        MATCH (v)-[hm:HAS_MUSIC]->(m:Music {id: $musicId})
-        SET hm.score = hm.score + $score
-        SET v.score = v.score + $score
-        RETURN v.id, hm.score
+        MATCH (u:User {id: $userId})-[w:WATCHED]->(v:Video)
+        MATCH (v)-[:HAS_MUSIC]->(m:Music {id: $musicId})
+        SET w.score = coalesce(w.score, 0) + $score
+        RETURN v.id, w.score
       `,
         { userId, musicId, score },
       )
       .run();
   }
+  
   async addCreatorToUser(userId: string, creatorId: string, score: number) {
     return this.queryRepository
       .initQuery()
       .raw(
         `
-        MATCH (u:User {id: $userId})-[:WATCHED]->(v:Video)
-        MATCH (v)-[cb:CREATED_BY]->(c:Creator {id: $creatorId})
-        SET cb.score = cb.score + $score
-        SET v.score = v.score + $score
-        RETURN v.id, cb.score
+        MATCH (u:User {id: $userId})-[w:WATCHED]->(v:Video)
+        MATCH (v)-[:CREATED_BY]->(c:Creator {id: $creatorId})
+        SET w.score = coalesce(w.score, 0) + $score
+        RETURN v.id, w.score
       `,
         { userId, creatorId, score },
       )
       .run();
   }
+  
   async addCategoryToUser(userId: string, categoryName: string, score: number) {
     return this.queryRepository
       .initQuery()
       .raw(
         `
-        MATCH (u:User {id: $userId})-[:WATCHED]->(v:Video)
-        MATCH (v)-[ic:IN_CATEGORY]->(cat:Category {name: $categoryName})
-        SET ic.score = ic.score + $score
-        SET v.score = v.score + $score
-        RETURN v.id, ic.score
+        MATCH (u:User {id: $userId})-[w:WATCHED]->(v:Video)
+        MATCH (v)-[:IN_CATEGORY]->(cat:Category {name: $categoryName})
+        SET w.score = coalesce(w.score, 0) + $score
+        RETURN v.id, w.score
       `,
         { userId, categoryName, score },
       )
       .run();
   }
+  
   async addTagToVideo(videoId: string, tagName: string, score: number) {
     return this.queryRepository
       .initQuery()
@@ -986,7 +990,6 @@ RETURN u2.id AS otherUser,
     userId: string,
     numberChooseVideo: number = 2,
   ) {
-
     const similarities = await this.getUserSimilarities(userId);
     const totalSimilarity = similarities.reduce(
       (sum, user) => sum + user.similarity,
@@ -1013,44 +1016,44 @@ RETURN u2.id AS otherUser,
   }
 
 
-  // async deleteAllVideos() {
-  //   try {
-  //     // Xóa tất cả mối quan hệ liên quan đến video
-  //     await this.queryRepository
-  //       .initQuery()
-  //       .raw(
-  //         `
-  //         MATCH (v:Video)
-  //         OPTIONAL MATCH (v)-[r:WATCHED]->(u:User)
-  //         OPTIONAL MATCH (v)-[r2:HAS_TAG]->(t:Tag)
-  //         OPTIONAL MATCH (v)-[r3:IN_CATEGORY]->(c:Category)
-  //         OPTIONAL MATCH (v)-[r4:CREATED_BY]->(cr:Creator)
-  //         OPTIONAL MATCH (v)-[r5:HAS_MUSIC]->(m:Music)
-  //         DELETE r, r2, r3, r4, r5
-  //         `,
-  //         {},
-  //       )
-  //       .run();
+  async deleteAllVideos() {
+    try {
+      // Xóa tất cả mối quan hệ liên quan đến video
+      await this.queryRepository
+        .initQuery()
+        .raw(
+          `
+          MATCH (v:Video)
+          OPTIONAL MATCH (v)-[r:WATCHED]->(u:User)
+          OPTIONAL MATCH (v)-[r2:HAS_TAG]->(t:Tag)
+          OPTIONAL MATCH (v)-[r3:IN_CATEGORY]->(c:Category)
+          OPTIONAL MATCH (v)-[r4:CREATED_BY]->(cr:Creator)
+          OPTIONAL MATCH (v)-[r5:HAS_MUSIC]->(m:Music)
+          DELETE r, r2, r3, r4, r5
+          `,
+          {},
+        )
+        .run();
 
-  //     // Xóa video cùng với các mối quan hệ của nó
-  //     await this.queryRepository
-  //       .initQuery()
-  //       .raw(
-  //         `
-  //         MATCH (v:Video)
-  //         DETACH DELETE v
-  //         `,
-  //         {},
-  //       )
-  //       .run();
+      // Xóa video cùng với các mối quan hệ của nó
+      await this.queryRepository
+        .initQuery()
+        .raw(
+          `
+          MATCH (v:Video)
+          DETACH DELETE v
+          `,
+          {},
+        )
+        .run();
 
-  //     console.log(
-  //       'Tất cả các video và mối quan hệ liên quan đã được xóa thành công.',
-  //     );
-  //   } catch (error) {
-  //     console.error('Lỗi khi xóa video:', error);
-  //   }
-  // }
+      console.log(
+        'Tất cả các video và mối quan hệ liên quan đã được xóa thành công.',
+      );
+    } catch (error) {
+      console.error('Lỗi khi xóa video:', error);
+    }
+  }
 
   async getTopVideos() {
 

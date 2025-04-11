@@ -22,15 +22,17 @@ export class WishlistService {
   ) { }
   async create(createWishlistDto: CreateWishlistDto) {
     let suggestByVideo;
-    if (createWishlistDto.triggerAction != 'ScrollVideo') {
-      await this.wishListScoreService.triggerWishListScore(createWishlistDto);
-    }
     suggestByVideo = await this.wishListScoreService.findSuggestByVideo(
       createWishlistDto.id,
     );
+    if (createWishlistDto.triggerAction != 'ScrollVideo') {
+      if (createWishlistDto.triggerAction == "WatchVideo") await this.wishListScoreService.createGraphDBWatchData(createWishlistDto.userId, createWishlistDto.id, suggestByVideo);
+      await this.wishListScoreService.triggerWishListScore(createWishlistDto);
+    }
+
 
     if (suggestByVideo) {
-      if (createWishlistDto.triggerAction == "WatchVideo") await this.wishListScoreService.createGraphDBWatchData(createWishlistDto.userId, createWishlistDto.id, suggestByVideo);
+     
       const wishListScores = await this.getScoreBySuggestIDAndType(
         suggestByVideo,
         createWishlistDto.userId,
